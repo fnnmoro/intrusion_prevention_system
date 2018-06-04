@@ -1,0 +1,14 @@
+# pycharm idea
+.idea
+
+# tests folder
+tests
+
+# virtual environment
+venv
+
+# pycache
+__pycache__
+
+# tmp
+tmp.py
