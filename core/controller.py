@@ -1,9 +1,10 @@
+import os
 from model import Gatherer
 from model import Formatter
 from model import Modifier
 from model import Extractor
 from model import Detector
-from view import print_flows, export_flows, evaluation_metrics
+from view import print_flows, export_flows, evaluation_metrics, scatter_plot
 
 print("anomaly detector")
 print("1 - build dataset")
@@ -61,10 +62,10 @@ while option != 4:
                 sample = input("csv sample: ")
                 file_name[1] = sample
 
-                raw_csv = gt.open_csv(sample=int(sample))
+                flows = gt.open_csv(sample=int(sample))
 
-                ft = Formatter(raw_csv)
-                header, flows = ft.format_csv()
+                ft = Formatter(flows)
+                header, flows = ft.format_flows()
 
                 md = Modifier(flows, header)
                 header, flows = md.modify_flows()
@@ -79,11 +80,15 @@ while option != 4:
                 print("completed cleaning", end="\n\n")
             elif option == 6:
                 print("merging flows", end="\n\n")
-                dataset_name = input("dataset name: ")
+                dataset_name = input("dataset name: ") + ".csv"
                 print()
 
-                flows = gt.open_csv()[1:]
-                export_flows(flows, csv_path, dataset_name + ".csv", mode='a')
+                flows = gt.open_csv()
+
+                if not os.path.exists(csv_path + dataset_name):
+                    export_flows([flows[0]], csv_path, dataset_name, mode='a')
+                export_flows(flows[1:], csv_path, dataset_name, mode='a')
+
                 print("merged flows", end="\n\n")
             elif option == 7:
                 exit()
@@ -109,7 +114,18 @@ while option != 4:
         try:
             gt = Gatherer(csv_path=csv_path)
             flows = gt.open_csv()
-            print_flows(flows)
+
+            ft = Formatter(flows)
+            flows = ft.format_flows(train_model=True)[1]
+
+            """scatter_plot(flows, 10, 11, 'td', 'ipkt', 'time duration x input packets')
+            scatter_plot(flows, 10, 15, 'td', 'pps', 'time duration x packets per second')
+            scatter_plot(flows, 10, 12, 'td', 'ibyt', 'time duration x input bytes')
+            scatter_plot(flows, 10, 13, 'td', 'bps', 'time duration x bits per second')
+            scatter_plot(flows, 11, 12, 'ipkt', 'ibyt', 'input packets x input bytes')
+            scatter_plot(flows, 15, 13, 'pps', 'bps', 'packets per second x bits per second')
+            scatter_plot(flows, 11, 15, 'ipkt', 'pps', 'input packets x packets per second')
+            scatter_plot(flows, 12, 13, 'ibyt', 'bps', 'input packets x bits per second')"""
 
             ex = Extractor(flows)
             dataset = ex.kfold(int(input("split data in: ")), True)
@@ -125,6 +141,7 @@ while option != 4:
 
                 evaluation_metrics(pred[0], test_labels, "decision tree")
                 evaluation_metrics(pred[1], test_labels, "support vector machine")
+                scatter_plot(pred[2], 0, 1, title="pca")
 
                 num += 1
 
