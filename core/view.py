@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import matplotlib.pyplot as plt
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 
 
@@ -103,3 +104,12 @@ def evaluation_metrics(pred, test_labels, name):
         print()
     print()
 
+
+def scatter_plot(flows, xfeature, yfeature, xlabel="", ylabel="", title=""):
+    plt.scatter([entry[xfeature] for entry in flows], [entry[yfeature] for entry in flows], c="red")
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+
+    plt.show()
