@@ -6,7 +6,9 @@ import datetime
 import subprocess
 from sklearn import tree
 from sklearn.svm import SVC
+from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
 class Gatherer:
@@ -207,7 +209,7 @@ class Gatherer:
 
             with open(csv_path + csv_files[idx], mode='r') as file:
                 csv_file = csv.reader(file)
-                csv_flows = []
+                flows = []
                 count = 0
 
                 for line in csv_file:
@@ -215,7 +217,7 @@ class Gatherer:
                     if count != sample:
                         # checks if is not the last line
                         if "Summary" not in line[0]:
-                            csv_flows.append(line)
+                            flows.append(line)
                             count += 1
                         # break if the last line was found
                         else:
@@ -223,7 +225,7 @@ class Gatherer:
                     # break if the core was reached
                     else:
                         break
-                return csv_flows
+                return flows
         except IndexError as error:
             print()
             print(error, end="\n\n")
@@ -236,28 +238,34 @@ class Gatherer:
 class Formatter:
     """Formats the raw csv"""
 
-    def __init__(self, raw_csv):
+    def __init__(self, flows):
         """Initializes the main variable"""
 
-        self.raw_csv = raw_csv
+        self.flows = flows
 
-    def format_csv(self):
+    def format_flows(self, train_model=False):
         """Formats the raw flows into flows to used in machine learning algorithms"""
 
         header = []
-        for entry in self.raw_csv:
-            self.delete_features(entry)
-            self.change_columns(entry)
-            # checks if is the header
-            if "ts" in entry[0]:
-                header.append(entry)
+        for entry in self.flows:
+            if train_model == False:
+                self.delete_features(entry)
+                self.change_columns(entry)
+                # checks if is the header
+                if "ts" in entry[0]:
+                    header.append(entry)
+                else:
+                    self.replace_missing_features(entry)
+                    self.change_data_types(entry)
+                    self.format_flag(entry)
             else:
-                self.replace_missing_features(entry)
-                self.change_data_types(entry)
-                self.format_flag(entry)
-        del self.raw_csv[0]
+                if "ts" in entry[0]:
+                    header.append(entry)
+                else:
+                    self.change_data_types(entry, train_model=True)
+        del self.flows[0]
 
-        return header, self.raw_csv
+        return header, self.flows
 
     @staticmethod
     def delete_features(entry):
@@ -280,7 +288,7 @@ class Formatter:
             entry[idx] = features
 
     @staticmethod
-    def change_data_types(entry):
+    def change_data_types(entry, train_model=False):
         """Changes the data type according to the type of the feature"""
 
         entry[0:2] = [datetime.datetime.strptime(i, "%Y-%m-%d %H:%M:%S") for i in entry[0:2]]
@@ -288,6 +296,8 @@ class Formatter:
         entry[8:10] = [int(i) for i in entry[8:10]]
         entry[10] = round(float(entry[10]), 3)
         entry[11:13] = [int(i) for i in entry[11:13]]
+        if train_model == True:
+            entry[13:17] = [int(i) for i in entry[13:17]]
 
     @staticmethod
     def format_flag(entry):
@@ -458,9 +468,6 @@ class Extractor:
         dataset = []
 
         for training_index, test_index in kf.split(features):
-            print(training_index)
-            print(test_index)
-            print()
             training_features = [features[i] for i in training_index]
             test_features = [features[i] for i in test_index]
             training_labels = [labels[i] for i in training_index]
@@ -479,6 +486,7 @@ class Detector:
 
         self.decision_tree = tree.DecisionTreeClassifier()
         self.support_vector_machine = SVC()
+        self.pca = PCA(n_components=2)
 
     def execute_classifiers(self, training_features, test_features, training_labels):
         self.decision_tree.fit(training_features, training_labels)
@@ -487,7 +495,9 @@ class Detector:
         self.support_vector_machine.fit(training_features, training_labels)
         svm_pred = self.support_vector_machine.predict(test_features)
 
-        return dt_pred, svm_pred
+        pca_red = self.pca.fit_transform(training_features)
+
+        return dt_pred, svm_pred, pca_red
 
     def get_ma_models(self):
         return [self.decision_tree, self.support_vector_machine]
