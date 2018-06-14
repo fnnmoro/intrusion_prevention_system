@@ -110,45 +110,70 @@ while option != 4:
         print("dataset built", end="\n\n")
 
     elif option == 2:
-        print("training the model")
         try:
+            print("training the model")
+
             gt = Gatherer(csv_path=csv_path)
             flows = gt.open_csv()
 
             ft = Formatter(flows)
             flows = ft.format_flows(train_model=True)[1]
 
-            """scatter_plot(flows, 10, 11, 'td', 'ipkt', 'time duration x input packets')
-            scatter_plot(flows, 10, 15, 'td', 'pps', 'time duration x packets per second')
-            scatter_plot(flows, 10, 12, 'td', 'ibyt', 'time duration x input bytes')
-            scatter_plot(flows, 10, 13, 'td', 'bps', 'time duration x bits per second')
-            scatter_plot(flows, 11, 12, 'ipkt', 'ibyt', 'input packets x input bytes')
-            scatter_plot(flows, 15, 13, 'pps', 'bps', 'packets per second x bits per second')
-            scatter_plot(flows, 11, 15, 'ipkt', 'pps', 'input packets x packets per second')
-            scatter_plot(flows, 12, 13, 'ibyt', 'bps', 'input packets x bits per second')"""
-
-            ex = Extractor(flows)
-            dataset = ex.kfold(int(input("split data in: ")), True)
-            print()
-
             dt = Detector()
 
-            num = 1
-            for training_features, test_features, training_labels, test_labels in dataset:
-                print("Test ", num)
+            ex = Extractor(flows)
+            features = ex.extract_features()
+            labels = ex.extract_labels()
 
-                pred = dt.execute_classifiers(training_features, test_features, training_labels)
+            print("1 - view the dataset patterns")
+            print("2 - execute the machine learning algorithms")
+            print("3 - back to main", end="\n\n")
 
-                evaluation_metrics(pred[0], test_labels, "decision tree")
-                evaluation_metrics(pred[1], test_labels, "support vector machine")
-                scatter_plot(pred[2], 0, 1, title="pca")
-
-                num += 1
-
-            ml_models.extend(dt.get_ma_models())
-
-            option = int(input("proceed or stop training the model: "))
+            option = int(input("choose an option: "))
             print()
+
+            while option != 3:
+                if option == 1:
+                    scatter_plot(flows, 10, 11, 'td', 'ipkt', 'time duration x input packets')
+                    scatter_plot(flows, 10, 15, 'td', 'pps', 'time duration x packets per second')
+                    scatter_plot(flows, 10, 12, 'td', 'ibyt', 'time duration x input bytes')
+                    scatter_plot(flows, 10, 13, 'td', 'bps', 'time duration x bits per second')
+                    scatter_plot(flows, 11, 12, 'ipkt', 'ibyt', 'input packets x input bytes')
+                    scatter_plot(flows, 15, 13, 'pps', 'bps', 'packets per second x bits per second')
+                    scatter_plot(flows, 11, 15, 'ipkt', 'pps', 'input packets x packets per second')
+                    scatter_plot(flows, 12, 13, 'ibyt', 'bps', 'input packets x bits per second')
+
+                    pattern = dt.find_patterns(features)
+                    scatter_plot(pattern, 0, 1, title="pca - dataset")
+
+                elif option == 2:
+                    dataset = ex.k_fold(int(input("split data in: ")), True, features, labels)
+                    print()
+
+                    dt.create_classifiers()
+
+                    num = 1
+                    for training_features, test_features, training_labels, test_labels in dataset:
+                        print("Test ", num, end="\n\n")
+                        pred = dt.execute_classifiers(training_features, test_features, training_labels)
+
+                        evaluation_metrics(pred[0], test_labels, "decision tree")
+                        evaluation_metrics(pred[1], test_labels, "support vector machine")
+
+                        num += 1
+
+                    ml_models.extend(dt.get_ma_models())
+                elif option == 3:
+                    exit()
+                else:
+                    print("Invalid option")
+
+                print("1 - view the dataset patterns")
+                print("2 - execute the machine learning algorithms")
+                print("3 - back to main", end="\n\n")
+
+                option = int(input("choose an option: "))
+                print()
         except ValueError as error:
             print(error, end="\n\n")
 
