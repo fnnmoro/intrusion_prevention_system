@@ -4,11 +4,12 @@ import os
 import csv
 import datetime
 import subprocess
-from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.model_selection import GridSearchCV
+
 
 
 class Gatherer:
@@ -445,7 +446,7 @@ class Extractor:
         features = []
 
         for entry in self.flows:
-            features.append(entry[8:16])
+            features.append(entry[10:16])
 
         return features
 
@@ -459,11 +460,8 @@ class Extractor:
 
         return labels
 
-    def kfold(self, n_splits, shuffle):
+    def kfold(self, n_splits, shuffle, features, labels):
         """Divides into many sets the features and labels to training and test"""
-        features = self.extract_features()
-        labels = self.extract_labels()
-
         kf = KFold(n_splits=n_splits, shuffle=shuffle)
         dataset = []
 
@@ -483,24 +481,44 @@ class Detector:
 
     def __init__(self):
         """Initializes the main variables"""
+        self.classifiers = []
 
-        self.decision_tree = tree.DecisionTreeClassifier()
-        self.support_vector_machine = SVC()
-        self.pca = PCA(n_components=2)
+    def create_classifiers(self):
+        param = self.define_parameters()
+
+        self.classifiers.append(GridSearchCV(DecisionTreeClassifier(), param[0]))
+        self.classifiers.append(GridSearchCV(SVC(), param[1]))
+
+    @staticmethod
+    def define_parameters():
+        param_tree = {"criterion": ["gini", "entropy"], "splitter": ["best", "random"], "max_depth": [3, 6, 9]}
+
+        param_svm = {"kernel": ["linear", "rbf"], "C": [1.0, 10.0], "gamma": ["auto", 1.0]}
+
+        param = [param_tree, param_svm]
+
+        return param
 
     def execute_classifiers(self, training_features, test_features, training_labels):
-        self.decision_tree.fit(training_features, training_labels)
-        dt_pred = self.decision_tree.predict(test_features)
+        pred = []
 
-        self.support_vector_machine.fit(training_features, training_labels)
-        svm_pred = self.support_vector_machine.predict(test_features)
+        for clf in self.classifiers:
+            clf.fit(training_features, training_labels)
+            pred.append(clf.predict(test_features))
+            print("parameters: ", clf.best_params_, end="\n\n")
 
-        pca_red = self.pca.fit_transform(training_features)
+        return pred
 
-        return dt_pred, svm_pred, pca_red
+    @staticmethod
+    def find_patterns(features):
+        pca = PCA(n_components=2)
+
+        pattern = pca.fit_transform(features)
+
+        return pattern
 
     def get_ma_models(self):
-        return [self.decision_tree, self.support_vector_machine]
+        return self.classifiers
 
 
 class Mitigator:
