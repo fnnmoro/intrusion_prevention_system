@@ -7,14 +7,15 @@ from model import Detector
 from view import print_flows, export_flows, evaluation_metrics, scatter_plot
 
 print("anomaly detector")
-print("1 - build dataset")
-print("2 - training the model")
-print("3 - execute the model")
+print("1 - build the dataset")
+print("2 - train the model")
+print("3 - run the model")
 print("4 - stop", end="\n\n")
 
 option = int(input("choose an option: "))
 print()
 
+dataset_path = "/home/flmoro/research_project/dataset/"
 pcap_path = "/home/flmoro/research_project/dataset/pcap/"
 nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
 csv_path = "/home/flmoro/research_project/dataset/csv/"
@@ -123,9 +124,10 @@ while option != 4:
 
             ex = Extractor(flows)
             features = ex.extract_features()
+            #features = ex.preprocessing_features(features)
             labels = ex.extract_labels()
 
-            print("1 - view the dataset patterns")
+            print("1 - visualize the dataset patterns")
             print("2 - execute the machine learning algorithms")
             print("3 - back to main", end="\n\n")
 
@@ -134,31 +136,39 @@ while option != 4:
 
             while option != 3:
                 if option == 1:
-                    scatter_plot(flows, 10, 11, 'td', 'ipkt', 'time duration x input packets')
-                    scatter_plot(flows, 10, 15, 'td', 'pps', 'time duration x packets per second')
-                    scatter_plot(flows, 10, 12, 'td', 'ibyt', 'time duration x input bytes')
-                    scatter_plot(flows, 10, 13, 'td', 'bps', 'time duration x bits per second')
-                    scatter_plot(flows, 11, 12, 'ipkt', 'ibyt', 'input packets x input bytes')
-                    scatter_plot(flows, 15, 13, 'pps', 'bps', 'packets per second x bits per second')
-                    scatter_plot(flows, 11, 15, 'ipkt', 'pps', 'input packets x packets per second')
-                    scatter_plot(flows, 12, 13, 'ibyt', 'bps', 'input packets x bits per second')
+                    scatter_plot(features, labels, 0, 1, "td", "ipkt", "time duration x input packets")
+                    scatter_plot(features, labels, 0, 5, "td", "pps", "time duration x packets per second")
+                    scatter_plot(features, labels, 0, 2, "td", "ibyt", "time duration x input bytes")
+                    scatter_plot(features, labels, 0, 3, "td", "bps", "time duration x bits per second")
+                    scatter_plot(features, labels, 1, 2, "ipkt", "ibyt", "input packets x input bytes")
+                    scatter_plot(features, labels, 5, 3, "pps", "bps", "packets per second x bits per second")
+                    scatter_plot(features, labels, 1, 5, "ipkt", "pps", "input packets x packets per second")
+                    scatter_plot(features, labels, 2, 3, "ibyt", "bps", "input packets x bits per second")
 
                     pattern = dt.find_patterns(features)
-                    scatter_plot(pattern, 0, 1, title="pca - dataset")
+                    scatter_plot(pattern, labels, 0, 1, 'x', 'y', "principal component analysis (pca)")
 
                 elif option == 2:
+                    methods = ["decision tree", "bernoulli naive bayes", "gaussian naive bayes",
+                               "multinomial naive bayes", "k-nearest neighbors", "support vector machine",
+                               "stochastic gradient descent", "passive aggressive", "perceptron",
+                               "multi-layer perceptron", "online bernoulli naive bayes", "online gaussian naive bayes",
+                               "online multinomial naive bayes", "online stochastic gradient descent",
+                               "online passive aggressive", "online perceptron", "online multi-layer perceptron"]
+
                     dataset = ex.k_fold(int(input("split data in: ")), True, features, labels)
                     print()
 
-                    dt.create_classifiers()
+                    param = dt.define_parameters()
+                    dt.create_classifiers(param)
 
                     num = 1
                     for training_features, test_features, training_labels, test_labels in dataset:
-                        print("Test ", num, end="\n\n")
-                        pred = dt.execute_classifiers(training_features, test_features, training_labels)
+                        pred, param = dt.execute_classifiers(training_features, test_features, training_labels)
 
-                        evaluation_metrics(pred[0], test_labels, "decision tree")
-                        evaluation_metrics(pred[1], test_labels, "support vector machine")
+                        for i in range(len(pred)):
+                            evaluation_metrics(pred[i], test_labels, param[i], methods[i], num, dataset_path,
+                                               "results_flows_w60_s60398.txt")
 
                         num += 1
 
@@ -188,9 +198,9 @@ while option != 4:
         print("Invalid option")
 
     print("anomaly detector")
-    print("1 - build dataset")
-    print("2 - training the model")
-    print("3 - execute the model")
+    print("1 - build the dataset")
+    print("2 - train the model")
+    print("3 - run the model")
     print("4 - stop", end="\n\n")
 
     option = int(input("choose an option: "))
