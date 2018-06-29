@@ -4,12 +4,17 @@ import os
 import csv
 import datetime
 import subprocess
-from sklearn.tree import DecisionTreeClassifier
+import numpy as np
 from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, Perceptron
+from sklearn.naive_bayes import MultinomialNB, BernoulliNB, GaussianNB
+from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold
 from sklearn.model_selection import GridSearchCV
-
+from sklearn import preprocessing
 
 
 class Gatherer:
@@ -460,7 +465,13 @@ class Extractor:
 
         return labels
 
-    def kfold(self, n_splits, shuffle, features, labels):
+    def preprocessing_features(self, features):
+        ppa = preprocessing.QuantileTransformer()
+        std_features = ppa.fit_transform(features)
+
+        return std_features
+
+    def k_fold(self, n_splits, shuffle, features, labels):
         """Divides into many sets the features and labels to training and test"""
         kf = KFold(n_splits=n_splits, shuffle=shuffle)
         dataset = []
@@ -482,32 +493,70 @@ class Detector:
     def __init__(self):
         """Initializes the main variables"""
         self.classifiers = []
+        #self.online_classifiers = []
 
-    def create_classifiers(self):
-        param = self.define_parameters()
+    def create_classifiers(self, param):
+        self.classifiers.extend([DecisionTreeClassifier(), BernoulliNB(), GaussianNB(), MultinomialNB(),
+                                 KNeighborsClassifier(), SVC(), SGDClassifier(), PassiveAggressiveClassifier(),
+                                 Perceptron(), MLPClassifier()])
 
-        self.classifiers.append(GridSearchCV(DecisionTreeClassifier(), param[0]))
-        self.classifiers.append(GridSearchCV(SVC(), param[1]))
+        """self.online_classifiers.extend([BernoulliNB(), GaussianNB(), MultinomialNB(), SGDClassifier(),
+                                        PassiveAggressiveClassifier(), Perceptron(), MLPClassifier()])"""
+
+        for i in range(len(self.classifiers)):
+            self.classifiers[i] = GridSearchCV(self.classifiers[i], param[i])
 
     @staticmethod
     def define_parameters():
-        param_tree = {"criterion": ["gini", "entropy"], "splitter": ["best", "random"], "max_depth": [3, 6, 9]}
+        dtr = {"criterion": ["gini", "entropy"], "splitter": ["best", "random"], "max_depth": [3, 6, 9],
+               "min_samples_leaf": [1, 5, 10], "min_samples_split": [2, 5, 10]}
 
-        param_svm = {"kernel": ["linear", "rbf"], "C": [1.0, 10.0], "gamma": ["auto", 1.0]}
+        bnb = {"alpha": [0.5, 1.0], "fit_prior": [True, False]}
 
-        param = [param_tree, param_svm]
+        gnb = {}
+
+        mnb = {"alpha": [0.5, 1.0], "fit_prior": [True, False]}
+
+        knn = {"n_neighbors": [5, 10, 15], "weights": ["uniform", "distance"],
+                     "algorithm": ["ball_tree", "kd_tree", "brute"], "leaf_size": [1, 15, 30]}
+
+        svm = [{"kernel": ["linear"], "C": [0.01, 0.1, 1.0, 10.0]}, {"kernel": ["rbf", "poly", "sigmoid"],
+                "C": [0.01, 0.1, 1.0, 10.0], "gamma": [0.01, 0.1, 1.0, 10.0]}]
+
+        sgd = {"loss": ["hinge", "modified_huber", "perceptron"], "penalty": ["l1", "l2", "elasticnet"],
+                     "max_iter": [np.ceil(10**6 / 60398), 50, 100], "alpha": [0.0001, 0.01, 0.1],
+                     "learning_rate": ["constant", "optimal"], "eta0": [0.0, 1.0]}
+
+        pag = {"C": [0.01, 0.1, 1.0, 10.0], "max_iter": [np.ceil(10 ** 6 / 60398), 50, 100],
+               "loss": ["hinge", "squared_hinge"]}
+
+        ppn = {"penalty": ["l1", "l2", "elasticnet"]}
+
+        mlp = {"hidden_layer_sizes": [(5,2), (7, 5)], "activation": ["relu", "tanh", "logistic"],
+               "solver": ["sgd", "lbfgs", "adam"], "alpha": [0.0001, 0.01, 0.1],
+               "max_iter": [np.ceil(10**6 / 60398), 50, 100],
+               "learning_rate": ["constant", "invscaling", "adaptive"]}
+
+        #param = [dtr, bnb, gnb, mnb, knn, svm, sgd, pag, ppn, mlp]
+        param = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
 
         return param
 
     def execute_classifiers(self, training_features, test_features, training_labels):
         pred = []
+        param = []
 
         for clf in self.classifiers:
             clf.fit(training_features, training_labels)
             pred.append(clf.predict(test_features))
-            print("parameters: ", clf.best_params_, end="\n\n")
+            param.append(clf.best_params_)
 
-        return pred
+        """for on_clf in self.online_classifiers:
+            on_clf.partial_fit(training_features, training_labels, classes=[0,1])
+            pred.append(on_clf.predict(test_features))
+            param.append({})"""
+
+        return pred, param
 
     @staticmethod
     def find_patterns(features):
