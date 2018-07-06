@@ -37,49 +37,50 @@ class Gatherer:
 
                 # loop to list the content of the directories
                 for content in os.walk(new_path, onerror=True):
-                    print("\n {0}".format(new_path))
-                    print("{0:^7} {1:^30}".format("index", "file"))
+                    if execute_model == False:
+                        print("\n {0}".format(new_path))
+                        print("{0:^7} {1:^30}".format("index", "file"))
 
-                    # checks if the directory is empty
-                    if content[1] != [] or content[2] != []:
-                        # prints all the directories
-                        for file in sorted(content[1]):
-                            print("{0:^7} {1:^30}".format(count, file))
-                            count += 1
-                        print()
-                        count = 0
+                        # checks if the directory is empty
+                        if content[1] != [] or content[2] != []:
+                            # prints all the directories
+                            for file in sorted(content[1]):
+                                print("{0:^7} {1:^30}".format(count, file))
+                                count += 1
+                            print()
+                            count = 0
 
-                        # prints all the files
-                        for file in sorted(content[2]):
-                            print("{0:^7} {1:^30}".format(count, file))
-                            count += 1
+                            # prints all the files
+                            for file in sorted(content[2]):
+                                print("{0:^7} {1:^30}".format(count, file))
+                                count += 1
 
-                        # select the current directory
-                        idx = int(input("\nselect this directory: "))
-                        proceed = 0
+                            # select the current directory
+                            idx = int(input("\nselect this directory: "))
+                            proceed = 0
 
-                        # if you do not select the directory and it's not empty
-                        # it's possible to back to main or choose a directory
-                        if idx != 1:
-                            back_main = int(input("back to previous directory: "))
+                            # if you do not select the directory and it's not empty
+                            # it's possible to back to main or choose a directory
+                            if idx != 1:
+                                back_main = int(input("back to previous directory: "))
 
-                            # if selected, return to the main path
-                            if back_main == 1:
-                                if old_path != []:
-                                    new_path = old_path.pop(-1)
-                            else:
-                                idx = int(input("choose directory: "))
-                                # stores the old path to can back
-                                old_path.append(new_path)
-                                # concatenates the select directory with the path
-                                new_path += sorted(content[1])[idx] + "/"
-                            proceed = 1
+                                # if selected, return to the main path
+                                if back_main == 1:
+                                    if old_path != []:
+                                        new_path = old_path.pop(-1)
+                                else:
+                                    idx = int(input("choose directory: "))
+                                    # stores the old path to can back
+                                    old_path.append(new_path)
+                                    # concatenates the select directory with the path
+                                    new_path += sorted(content[1])[idx] + "/"
+                                proceed = 1
 
-                    else:
-                        print("\nthere isn't content inside {0}".format(new_path))
-                        if old_path != []:
-                            new_path = old_path.pop(-1)
-                    break
+                        else:
+                            print("\nthere isn't content inside {0}".format(new_path))
+                            if old_path != []:
+                                new_path = old_path.pop(-1)
+                        break
 
             return new_path, sorted(content[2])
         except FileNotFoundError as error:
@@ -240,6 +241,19 @@ class Gatherer:
         # remove temporary files from nfcapd path
         os.system("rm {0}nfcapd*".format(self.nfcapd_path))
 
+    def nfcapd_collector(self, win_time=0):
+        try:
+            if not os.path.exists(self.nfcapd_path):
+                os.system("mkdir {0}".format(self.nfcapd_path))
+
+            process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T", "all", "-b", "127.0.0.1", "-p", "7777",
+                                        "-l", self.nfcapd_path, "-D"])
+
+            return process
+        except subprocess.CalledProcessError as error:
+            print()
+            print(error, end="\n\n")
+
 
 class Formatter:
     """Formats the raw csv"""
@@ -332,7 +346,7 @@ class Modifier:
 
     def modify_flows(self):
         # if self.aggregate is on, insert flw before lbl
-        self.header[0].extend(["bps", "bpp", "pps", "lbl"])
+        self.header[0].extend(["bps", "bpp", "pps", "flw", "lbl"])
         self.header[0][7] = "iflg"
 
         lbl_num = int(input("label number: "))
@@ -340,11 +354,11 @@ class Modifier:
 
         for entry in self.flows:
             self.create_features(entry)
-            #entry.append(1)
+            entry.append(1)
             entry.append(lbl_num)
             self.count_flags(entry)
 
-        #self.aggregate_flows()
+        self.aggregate_flows()
 
         return self.header, self.flows
 
@@ -496,9 +510,11 @@ class Detector:
         #self.online_classifiers = []
 
     def create_classifiers(self, param):
-        self.classifiers.extend([DecisionTreeClassifier(), BernoulliNB(), GaussianNB(), MultinomialNB(),
+        """self.classifiers.extend([DecisionTreeClassifier(), BernoulliNB(), GaussianNB(), MultinomialNB(),
                                  KNeighborsClassifier(), SVC(), SGDClassifier(), PassiveAggressiveClassifier(),
-                                 Perceptron(), MLPClassifier()])
+                                 Perceptron(), MLPClassifier()])"""
+
+        self.classifiers.append(MLPClassifier())
 
         """self.online_classifiers.extend([BernoulliNB(), GaussianNB(), MultinomialNB(), SGDClassifier(),
                                         PassiveAggressiveClassifier(), Perceptron(), MLPClassifier()])"""
@@ -524,21 +540,22 @@ class Detector:
                 "C": [0.01, 0.1, 1.0, 10.0], "gamma": [0.01, 0.1, 1.0, 10.0]}]
 
         sgd = {"loss": ["hinge", "modified_huber", "perceptron"], "penalty": ["l1", "l2", "elasticnet"],
-                     "max_iter": [np.ceil(10**6 / 60398), 50, 100], "alpha": [0.0001, 0.01, 0.1],
-                     "learning_rate": ["constant", "optimal"], "eta0": [0.0, 1.0]}
+                     "max_iter": [int(np.ceil(10**6 / 60398)), 50, 100], "alpha": [0.0001, 0.01, 0.1],
+                     "learning_rate": ["constant", "optimal"], "eta0": [0.5, 1.0]}
 
-        pag = {"C": [0.01, 0.1, 1.0, 10.0], "max_iter": [np.ceil(10 ** 6 / 60398), 50, 100],
-               "loss": ["hinge", "squared_hinge"]}
+        pag = {"C": [0.01, 0.1, 1.0, 10.0], "max_iter": [int(np.ceil(10 ** 6 / 60398)), 50, 100],
+               "loss": ["hinge"]}
 
         ppn = {"penalty": ["l1", "l2", "elasticnet"]}
 
         mlp = {"hidden_layer_sizes": [(5,2), (7, 5)], "activation": ["relu", "tanh", "logistic"],
                "solver": ["sgd", "lbfgs", "adam"], "alpha": [0.0001, 0.01, 0.1],
-               "max_iter": [np.ceil(10**6 / 60398), 50, 100],
+               "max_iter": [int(np.ceil(10**6 / 60398)), 50, 100],
                "learning_rate": ["constant", "invscaling", "adaptive"]}
 
         #param = [dtr, bnb, gnb, mnb, knn, svm, sgd, pag, ppn, mlp]
-        param = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
+        #param = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
+        param = [mlp]
 
         return param
 
@@ -559,12 +576,27 @@ class Detector:
         return pred, param
 
     @staticmethod
+    def execute_model(ma_model, features):
+        pred = ma_model.predict(features)
+
+        return pred
+
+    @staticmethod
     def find_patterns(features):
         pca = PCA(n_components=2)
 
         pattern = pca.fit_transform(features)
 
         return pattern
+
+    def find_anomalies(self, features, pred):
+        anomalies = []
+
+        for idx, lbl in enumerate(pred):
+            if lbl == 1:
+                anomalies.append(features[idx])
+
+        return anomalies
 
     def get_ma_models(self):
         return self.classifiers
