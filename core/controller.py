@@ -1,4 +1,5 @@
 import os
+import time
 from model import Gatherer
 from model import Formatter
 from model import Modifier
@@ -6,21 +7,23 @@ from model import Extractor
 from model import Detector
 from view import print_flows, export_flows, evaluation_metrics, scatter_plot
 
+dataset_path = "/home/flmoro/research_project/dataset/"
+pcap_path = "/home/flmoro/research_project/dataset/pcap/"
+nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
+csv_path = "/home/flmoro/research_project/dataset/csv/"
+
 print("anomaly detector")
 print("1 - build the dataset")
 print("2 - train the model")
-print("3 - run the model")
+print("3 - execute the model")
 print("4 - stop", end="\n\n")
 
 option = int(input("choose an option: "))
 print()
 
-dataset_path = "/home/flmoro/research_project/dataset/"
-pcap_path = "/home/flmoro/research_project/dataset/pcap/"
-nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
-csv_path = "/home/flmoro/research_project/dataset/csv/"
-file_name = ["", "", ""]
-ml_models = []
+Gatherer(pcap_path, nfcapd_path, csv_path).check_path_exist()
+
+dt = Detector()
 
 while option != 4:
 
@@ -39,6 +42,7 @@ while option != 4:
         print()
 
         gt = Gatherer(pcap_path, nfcapd_path, csv_path)
+        file_name = ["", "", ""]
         while option != 7:
             if option == 1:
                 print("splitting file", end="\n\n")
@@ -55,7 +59,7 @@ while option != 4:
 
             elif option == 3:
                 print("converting nfcapd to flows")
-                file_name[2] = gt.convert_nfcapd_csv()
+                file_name[2] = gt.convert_nfcapd_csv()[0]
                 print("converted nfcapd files", end="\n\n")
 
             elif option == 4:
@@ -77,7 +81,7 @@ while option != 4:
                 print("completed file", end="\n\n")
             elif option == 5:
                 print("cleaning nfcapd files", end="\n\n")
-                gt.clean_nfcapd_files()
+                gt.clean_files()
                 print("completed cleaning", end="\n\n")
             elif option == 6:
                 print("merging flows", end="\n\n")
@@ -118,13 +122,11 @@ while option != 4:
             flows = gt.open_csv()
 
             ft = Formatter(flows)
-            flows = ft.format_flows(train_model=True)[1]
-
-            dt = Detector()
+            flows = ft.format_flows()[1]
 
             ex = Extractor(flows)
             features = ex.extract_features()
-            #features = ex.preprocessing_features(features)
+            features = ex.preprocessing_features(features)
             labels = ex.extract_labels()
 
             print("1 - visualize the dataset patterns")
@@ -149,12 +151,13 @@ while option != 4:
                     scatter_plot(pattern, labels, 0, 1, 'x', 'y', "principal component analysis (pca)")
 
                 elif option == 2:
-                    methods = ["decision tree", "bernoulli naive bayes", "gaussian naive bayes",
+                    """methods = ["decision tree", "bernoulli naive bayes", "gaussian naive bayes",
                                "multinomial naive bayes", "k-nearest neighbors", "support vector machine",
                                "stochastic gradient descent", "passive aggressive", "perceptron",
                                "multi-layer perceptron", "online bernoulli naive bayes", "online gaussian naive bayes",
                                "online multinomial naive bayes", "online stochastic gradient descent",
-                               "online passive aggressive", "online perceptron", "online multi-layer perceptron"]
+                               "online passive aggressive", "online perceptron", "online multi-layer perceptron"]"""
+                    methods = ["decision tree"]
 
                     dataset = ex.k_fold(int(input("split data in: ")), True, features, labels)
                     print()
@@ -168,11 +171,9 @@ while option != 4:
 
                         for i in range(len(pred)):
                             evaluation_metrics(pred[i], test_labels, param[i], methods[i], num, dataset_path,
-                                               "results_flows_w60_s60398.txt")
+                                               "test.txt")
 
                         num += 1
-
-                    ml_models.extend(dt.get_ma_models())
                 elif option == 3:
                     exit()
                 else:
@@ -190,7 +191,40 @@ while option != 4:
         print("model finished", end="\n\n")
 
     elif option == 3:
-        pass
+        gt = Gatherer(nfcapd_path=nfcapd_path, csv_path=csv_path)
+        process = gt.nfcapd_collector(60)
+
+        time.sleep(5)
+        try:
+            num = 0
+            while True:
+                file_name, skip = gt.convert_nfcapd_csv(True)
+
+                if skip == 0:
+                    flows = gt.open_csv(-1, True)
+                    gt.clean_files(True)
+
+                    ft = Formatter(flows)
+                    header, flows = ft.format_flows(True)
+
+                    md = Modifier(flows, header)
+                    header, flows = md.modify_flows(True)
+
+                    ex = Extractor(flows)
+                    features = ex.extract_features()
+                    features = ex.preprocessing_features(features)
+
+                    pred = dt.execute_classifiers(test_features=features, execute_model=True)[0]
+
+                    for idx, entry in enumerate(flows):
+                        entry[-1] = pred[0][idx]
+
+                    export_flows(flows, csv_path + "flows/", "flows_w" + str(60) + "_"
+                                 + file_name, header)
+
+                time.sleep(1)
+        finally:
+            process.kill()
 
     elif option == 4:
         exit()
@@ -200,7 +234,7 @@ while option != 4:
     print("anomaly detector")
     print("1 - build the dataset")
     print("2 - train the model")
-    print("3 - run the model")
+    print("3 - execute the model")
     print("4 - stop", end="\n\n")
 
     option = int(input("choose an option: "))
