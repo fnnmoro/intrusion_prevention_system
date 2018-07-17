@@ -87,7 +87,7 @@ def evaluation_metrics(pred, test_labels, param, method, num, dst_path, file_nam
     """Prints the evaluation metrics for the machine learning algorithms"""
     try:
         with open(dst_path + file_name, mode='a') as file:
-            file.write("Test " + str(num) + "\n\n")
+            file.write("results " + str(num) + "\n\n")
 
             print("[" + method + "]", end="\n\n", file=file)
 
