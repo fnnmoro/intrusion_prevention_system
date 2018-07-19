@@ -24,13 +24,26 @@ class Gatherer:
         self.nfcapd_path = nfcapd_path
         self.csv_path = csv_path
 
+    def check_path_exist(self):
+        if not os.path.exists(self.pcap_path):
+            os.system("mkdir {0}".format(self.pcap_path))
+
+        if not os.path.exists(self.nfcapd_path):
+            os.system("mkdir {0}".format(self.nfcapd_path))
+
+        if not os.path.exists(self.csv_path):
+            os.system("mkdir {0}".format(self.csv_path))
+            os.system("mkdir {0}flows/".format(self.csv_path))
+            os.system("mkdir {0}raw_flows/".format(self.csv_path))
+            os.system("mkdir {0}tmp_flows/".format(self.csv_path))
+
     @staticmethod
-    def directory_content(path):
+    def directory_content(path, execute_model=False):
         try:
-            proceed = 1
             new_path = path
             old_path = []
 
+            proceed = 1
             # loop to explore the directories
             while proceed == 1:
                 count = 0
@@ -81,6 +94,8 @@ class Gatherer:
                             if old_path != []:
                                 new_path = old_path.pop(-1)
                         break
+                    else:
+                        proceed = 0
 
             return new_path, sorted(content[2])
         except FileNotFoundError as error:
@@ -120,7 +135,6 @@ class Gatherer:
                     subprocess.run("tcpdump -r {0}{1} -w {0}split/{2} -C {3}"
                                    .format(tmp_pcap_path, pcap_file[i], file_name, size), shell=True,
                                    check=True)
-
                     print()
 
                 # renames all split pcap files
@@ -141,10 +155,6 @@ class Gatherer:
         try:
             # gets the path and the list of files
             tmp_pcap_path, pcap_files = self.directory_content(self.pcap_path)
-
-            # creates the nfcapd folder
-            if not os.path.exists(self.nfcapd_path):
-                os.system("mkdir {0}".format(self.nfcapd_path))
 
             print()
             start_idx = int(input("choose the initial pcap file: "))
@@ -167,34 +177,40 @@ class Gatherer:
             print()
             print(error)
 
-    def convert_nfcapd_csv(self):
+    def convert_nfcapd_csv(self, execute_model=False):
         try:
-            # gets the path and the list of files
-            nfcapd_files = self.directory_content(self.nfcapd_path)[1]
+            start_idx = 0
+            final_idx = 0
+            name = "execute"
+            if execute_model == False:
+                tmp_csv_path = self.csv_path + "raw_flows/"
+                # gets the path and the list of files
+                nfcapd_files = self.directory_content(self.nfcapd_path)[1]
 
-            # creates the nfcapd folder
-            if not os.path.exists(self.csv_path):
-                os.system("mkdir {0}".format(self.csv_path))
-                os.system("mkdir {0}raw_flows/".format(self.csv_path))
-                os.system("mkdir {0}flows/".format(self.csv_path))
+                print()
+                start_idx = int(input("choose the initial nfcapd file: "))
+                final_idx = int(input("choose the final nfcapd file: "))
+                print()
 
-            print()
-            start_idx = int(input("choose the initial nfcapd file: "))
-            final_idx = int(input("choose the final nfcapd file: "))
-            print()
+                name = input("csv name: ")
+                print()
+            else:
+                tmp_csv_path = self.csv_path + "tmp_flows/"
+                nfcapd_files = self.directory_content(self.nfcapd_path, True)[1]
 
-            name = input("csv name: ")
-            print()
             # time to complete the file name
             start_time = nfcapd_files[start_idx].split("nfcapd.")[1]
             final_time = nfcapd_files[final_idx].split("nfcapd.")[1]
             file_name = name + "_" + start_time + "-" + final_time + ".csv"
 
-            # read the nfcapd files and convert to csv files
-            subprocess.run("nfdump -O tstart -o csv -6 -R {0}{1}:{2} > {3}raw_flows/raw_{4}"
-                           .format(self.nfcapd_path, nfcapd_files[start_idx], nfcapd_files[final_idx],
-                                   self.csv_path, file_name), shell=True, check=True)
-            return file_name
+            skip = 1
+            if "current" not in nfcapd_files[start_idx]:
+                # read the nfcapd files and convert to csv files
+                subprocess.run("nfdump -O tstart -o csv -6 -R {0}{1}:{2} > {3}raw_{4}"
+                               .format(self.nfcapd_path, nfcapd_files[start_idx], nfcapd_files[final_idx],
+                                       tmp_csv_path, file_name), shell=True, check=True)
+                skip = 0
+            return file_name, skip
         except subprocess.CalledProcessError as error:
             print()
             print(error, end="\n\n")
@@ -205,14 +221,18 @@ class Gatherer:
             print()
             print(error, end="\n\n")
 
-    def open_csv(self, sample=-1):
+    def open_csv(self, sample=-1, execute_model=False):
         """Opens a CSV file containing raw flows"""
         try:
-            csv_path, csv_files = self.directory_content(self.csv_path)
+            idx = 0
+            if execute_model == False:
+                csv_path, csv_files = self.directory_content(self.csv_path)
 
-            print()
-            idx = int(input("choose csv file: "))
-            print()
+                print()
+                idx = int(input("choose csv file: "))
+                print()
+            else:
+                csv_path, csv_files = self.directory_content(self.csv_path  + "tmp_flows/", True)
 
             with open(csv_path + csv_files[idx], mode='r') as file:
                 csv_file = csv.reader(file)
@@ -237,18 +257,18 @@ class Gatherer:
             print()
             print(error, end="\n\n")
 
-    def clean_nfcapd_files(self):
-        # remove temporary files from nfcapd path
-        os.system("rm {0}nfcapd*".format(self.nfcapd_path))
+    def clean_files(self, execute_model=False):
+        if execute_model == False:
+            # remove temporary files from nfcapd path
+            os.system("rm {0}nfcapd*".format(self.nfcapd_path))
+        else:
+            os.system("rm {0}nfcapd.20*".format(self.nfcapd_path))
+            os.system("mv {0}tmp_flows/* {0}raw_flows".format(self.csv_path))
 
     def nfcapd_collector(self, win_time=0):
         try:
-            if not os.path.exists(self.nfcapd_path):
-                os.system("mkdir {0}".format(self.nfcapd_path))
-
             process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T", "all", "-b", "127.0.0.1", "-p", "7777",
                                         "-l", self.nfcapd_path, "-D"])
-
             return process
         except subprocess.CalledProcessError as error:
             print()
@@ -263,12 +283,12 @@ class Formatter:
 
         self.flows = flows
 
-    def format_flows(self, train_model=False):
+    def format_flows(self, execute_model=False):
         """Formats the raw flows into flows to used in machine learning algorithms"""
 
         header = []
         for entry in self.flows:
-            if train_model == False:
+            if execute_model == True:
                 self.delete_features(entry)
                 self.change_columns(entry)
                 # checks if is the header
@@ -276,13 +296,13 @@ class Formatter:
                     header.append(entry)
                 else:
                     self.replace_missing_features(entry)
-                    self.change_data_types(entry)
+                    self.change_data_types(entry, True)
                     self.format_flag(entry)
             else:
                 if "ts" in entry[0]:
                     header.append(entry)
                 else:
-                    self.change_data_types(entry, train_model=True)
+                    self.change_data_types(entry)
         del self.flows[0]
 
         return header, self.flows
@@ -308,7 +328,7 @@ class Formatter:
             entry[idx] = features
 
     @staticmethod
-    def change_data_types(entry, train_model=False):
+    def change_data_types(entry, execute_model=False):
         """Changes the data type according to the type of the feature"""
 
         entry[0:2] = [datetime.datetime.strptime(i, "%Y-%m-%d %H:%M:%S") for i in entry[0:2]]
@@ -316,7 +336,7 @@ class Formatter:
         entry[8:10] = [int(i) for i in entry[8:10]]
         entry[10] = round(float(entry[10]), 3)
         entry[11:13] = [int(i) for i in entry[11:13]]
-        if train_model == True:
+        if execute_model == False:
             entry[13:17] = [int(i) for i in entry[13:17]]
 
     @staticmethod
@@ -344,21 +364,23 @@ class Modifier:
         self.flows = flows
         self.header = header
 
-    def modify_flows(self):
+    def modify_flows(self, execute_model=False):
         # if self.aggregate is on, insert flw before lbl
-        self.header[0].extend(["bps", "bpp", "pps", "flw", "lbl"])
+        self.header[0].extend(["bps", "bpp", "pps", "lbl"])
         self.header[0][7] = "iflg"
+        lbl_num = 2
 
-        lbl_num = int(input("label number: "))
-        print()
+        if execute_model == False:
+            lbl_num = int(input("label number: "))
+            print()
 
         for entry in self.flows:
             self.create_features(entry)
-            entry.append(1)
+            #entry.append(1)
             entry.append(lbl_num)
             self.count_flags(entry)
 
-        self.aggregate_flows()
+        #self.aggregate_flows()
 
         return self.header, self.flows
 
@@ -510,11 +532,9 @@ class Detector:
         #self.online_classifiers = []
 
     def create_classifiers(self, param):
-        """self.classifiers.extend([DecisionTreeClassifier(), BernoulliNB(), GaussianNB(), MultinomialNB(),
+        self.classifiers.extend([DecisionTreeClassifier(), BernoulliNB(), GaussianNB(), MultinomialNB(),
                                  KNeighborsClassifier(), SVC(), SGDClassifier(), PassiveAggressiveClassifier(),
-                                 Perceptron(), MLPClassifier()])"""
-
-        self.classifiers.append(MLPClassifier())
+                                 Perceptron(), MLPClassifier()])
 
         """self.online_classifiers.extend([BernoulliNB(), GaussianNB(), MultinomialNB(), SGDClassifier(),
                                         PassiveAggressiveClassifier(), Perceptron(), MLPClassifier()])"""
@@ -553,18 +573,18 @@ class Detector:
                "max_iter": [int(np.ceil(10**6 / 60398)), 50, 100],
                "learning_rate": ["constant", "invscaling", "adaptive"]}
 
-        #param = [dtr, bnb, gnb, mnb, knn, svm, sgd, pag, ppn, mlp]
+        param = [dtr, bnb, gnb, mnb, knn, svm, sgd, pag, ppn, mlp]
         #param = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
-        param = [mlp]
 
         return param
 
-    def execute_classifiers(self, training_features, test_features, training_labels):
+    def execute_classifiers(self, training_features=[], test_features=[], training_labels=[], execute_model=False):
         pred = []
         param = []
 
         for clf in self.classifiers:
-            clf.fit(training_features, training_labels)
+            if execute_model == False:
+                clf.fit(training_features, training_labels)
             pred.append(clf.predict(test_features))
             param.append(clf.best_params_)
 
@@ -574,12 +594,6 @@ class Detector:
             param.append({})"""
 
         return pred, param
-
-    @staticmethod
-    def execute_model(ma_model, features):
-        pred = ma_model.predict(features)
-
-        return pred
 
     @staticmethod
     def find_patterns(features):
@@ -597,9 +611,6 @@ class Detector:
                 anomalies.append(features[idx])
 
         return anomalies
-
-    def get_ma_models(self):
-        return self.classifiers
 
 
 class Mitigator:
