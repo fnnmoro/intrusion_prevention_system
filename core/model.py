@@ -12,7 +12,7 @@ from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, Per
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB, GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn import preprocessing
 
@@ -507,21 +507,16 @@ class Extractor:
 
         return std_features
 
-    def k_fold(self, n_splits, shuffle, features, labels):
+    def k_fold(self, n_splits, shuffle): #, features, labels):
         """Divides into many sets the features and labels to training and test"""
         kf = KFold(n_splits=n_splits, shuffle=shuffle)
-        dataset = []
 
-        for training_index, test_index in kf.split(features):
-            training_features = [features[i] for i in training_index]
-            test_features = [features[i] for i in test_index]
-            training_labels = [labels[i] for i in training_index]
-            test_labels = [labels[i] for i in test_index]
+        return kf
 
-            dataset.append([training_features, test_features, training_labels, test_labels])
+    def train_test_split(self, features, labels):
+        dataset = train_test_split(features, labels, test_size=0.20)
 
         return dataset
-
 
 class Detector:
     """Detects anomalous flow using machine learning algorithms"""
@@ -531,7 +526,7 @@ class Detector:
         self.classifiers = []
         #self.online_classifiers = []
 
-    def create_classifiers(self, param):
+    def create_classifiers(self, param, cv):
         self.classifiers.extend([DecisionTreeClassifier(), BernoulliNB(), GaussianNB(), MultinomialNB(),
                                  KNeighborsClassifier(), SVC(), SGDClassifier(), PassiveAggressiveClassifier(),
                                  Perceptron(), MLPClassifier()])
@@ -540,7 +535,7 @@ class Detector:
                                         PassiveAggressiveClassifier(), Perceptron(), MLPClassifier()])"""
 
         for i in range(len(self.classifiers)):
-            self.classifiers[i] = GridSearchCV(self.classifiers[i], param[i])
+            self.classifiers[i] = GridSearchCV(self.classifiers[i], param[i], cv=cv)
 
     @staticmethod
     def define_parameters():

@@ -126,7 +126,7 @@ while option != 4:
 
             ex = Extractor(flows)
             features = ex.extract_features()
-            features = ex.preprocessing_features(features)
+            #features = ex.preprocessing_features(features)
             labels = ex.extract_labels()
 
             print("1 - visualize the dataset patterns")
@@ -151,29 +151,26 @@ while option != 4:
                     scatter_plot(pattern, labels, 0, 1, 'x', 'y', "principal component analysis (pca)")
 
                 elif option == 2:
-                    """methods = ["decision tree", "bernoulli naive bayes", "gaussian naive bayes",
+                    methods = ["decision tree", "bernoulli naive bayes", "gaussian naive bayes",
                                "multinomial naive bayes", "k-nearest neighbors", "support vector machine",
                                "stochastic gradient descent", "passive aggressive", "perceptron",
                                "multi-layer perceptron", "online bernoulli naive bayes", "online gaussian naive bayes",
                                "online multinomial naive bayes", "online stochastic gradient descent",
-                               "online passive aggressive", "online perceptron", "online multi-layer perceptron"]"""
-                    methods = ["decision tree"]
+                               "online passive aggressive", "online perceptron", "online multi-layer perceptron"]
 
-                    dataset = ex.k_fold(int(input("split data in: ")), True, features, labels)
+                    kf = ex.k_fold(int(input("split data in: ")), True)
                     print()
 
+                    dataset = ex.train_test_split(features, labels)
+
                     param = dt.define_parameters()
-                    dt.create_classifiers(param)
+                    dt.create_classifiers(param, kf)
 
-                    num = 1
-                    for training_features, test_features, training_labels, test_labels in dataset:
-                        pred, param = dt.execute_classifiers(training_features, test_features, training_labels)
+                    pred, param = dt.execute_classifiers(dataset[0], dataset[1], dataset[2])
 
-                        for i in range(len(pred)):
-                            evaluation_metrics(pred[i], test_labels, param[i], methods[i], num, dataset_path,
-                                               "test.txt")
+                    for idx in range(len(pred)):
+                        evaluation_metrics(pred[idx], dataset[3], param[idx], methods[idx], dataset_path, "test.txt")
 
-                        num += 1
                 elif option == 3:
                     exit()
                 else:

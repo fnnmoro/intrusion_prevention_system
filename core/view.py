@@ -83,12 +83,10 @@ def memory_size(object, name):
         print("{0} B".format(b))
 
 
-def evaluation_metrics(pred, test_labels, param, method, num, dst_path, file_name):
+def evaluation_metrics(pred, test_labels, param, method, dst_path, file_name):
     """Prints the evaluation metrics for the machine learning algorithms"""
     try:
         with open(dst_path + file_name, mode='a') as file:
-            file.write("results " + str(num) + "\n\n")
-
             print("[" + method + "]", end="\n\n", file=file)
 
             print("precion: ", round(precision_score(test_labels, pred, average="micro"), 3), file=file)
