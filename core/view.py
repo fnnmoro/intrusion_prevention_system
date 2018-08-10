@@ -1,6 +1,6 @@
-import os
 import sys
 import csv
+from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
@@ -57,10 +57,25 @@ def export_flows(flows, dst_path, file_name, header ="", mode='w', sample=-1):
         print(error, end="\n\n")
 
 
-def processing_time(start, end, name):
-    """Prints the processing time"""
+def record_datatime(dst_path=""):
+    try:
+        with open(dst_path, mode='a') as file:
+            print(datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"), end="\n\n", file=file)
+    except FileNotFoundError as error:
+        print(error, end="\n\n")
 
-    print("{0} time: {1}".format(name, round(end - start, 7)))
+
+def processing_time(start, end, name="", dst_path="", no_output=False):
+    """Prints the processing time"""
+    time = round(end - start, 7)
+    if no_output == False:
+        try:
+            with open(dst_path, mode='a') as file:
+                    print("{0} time: {1}".format(name, time), end="\n\n", file=file)
+        except FileNotFoundError as error:
+            print(error, end="\n\n")
+    else:
+        return time
 
 
 def memory_size(object, name):
@@ -83,10 +98,10 @@ def memory_size(object, name):
         print("{0} B".format(b))
 
 
-def evaluation_metrics(pred, test_labels, param, method, dst_path, file_name):
+def evaluation_metrics(pred, test_labels, param, method, time, dst_path):
     """Prints the evaluation metrics for the machine learning algorithms"""
     try:
-        with open(dst_path + file_name, mode='a') as file:
+        with open(dst_path, mode='a') as file:
             print("[" + method + "]", end="\n\n", file=file)
 
             print("precion: ", round(precision_score(test_labels, pred, average="micro"), 3), file=file)
@@ -108,6 +123,7 @@ def evaluation_metrics(pred, test_labels, param, method, dst_path, file_name):
             print(file=file)
 
             print("parameters: ", param, end="\n\n", file=file)
+            print("processing time: ", time, end="\n\n", file=file)
             print("----------", end="\n\n", file=file)
 
     except FileNotFoundError as error:
