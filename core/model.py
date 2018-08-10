@@ -2,7 +2,9 @@
 
 import os
 import csv
-import datetime
+import ast
+import time
+from datetime import datetime
 import subprocess
 import numpy as np
 from sklearn.svm import SVC
@@ -15,6 +17,7 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn import preprocessing
+from view import processing_time
 
 
 class Gatherer:
@@ -283,12 +286,12 @@ class Formatter:
 
         self.flows = flows
 
-    def format_flows(self, execute_model=False):
+    def format_flows(self, training_model=False):
         """Formats the raw flows into flows to used in machine learning algorithms"""
 
         header = []
         for entry in self.flows:
-            if execute_model == True:
+            if training_model == False:
                 self.delete_features(entry)
                 self.change_columns(entry)
                 # checks if is the header
@@ -296,13 +299,13 @@ class Formatter:
                     header.append(entry)
                 else:
                     self.replace_missing_features(entry)
-                    self.change_data_types(entry, True)
+                    self.change_data_types(entry)
                     self.format_flag(entry)
             else:
                 if "ts" in entry[0]:
                     header.append(entry)
                 else:
-                    self.change_data_types(entry)
+                    self.change_data_types(entry, True)
         del self.flows[0]
 
         return header, self.flows
@@ -328,16 +331,19 @@ class Formatter:
             entry[idx] = features
 
     @staticmethod
-    def change_data_types(entry, execute_model=False):
+    def change_data_types(entry, training_model=False):
         """Changes the data type according to the type of the feature"""
 
-        entry[0:2] = [datetime.datetime.strptime(i, "%Y-%m-%d %H:%M:%S") for i in entry[0:2]]
-        entry[6:8] = [i.lower() for i in entry[6:8]]
+        entry[0:2] = [datetime.strptime(i, "%Y-%m-%d %H:%M:%S") for i in entry[0:2]]
         entry[8:10] = [int(i) for i in entry[8:10]]
-        entry[10] = round(float(entry[10]), 3)
         entry[11:13] = [int(i) for i in entry[11:13]]
-        if execute_model == False:
-            entry[13:17] = [int(i) for i in entry[13:17]]
+
+        if training_model == True:
+            entry[7] = ast.literal_eval(entry[7])
+            entry[13:] = [int(i) for i in entry[13:]]
+        else:
+            entry[6:8] = [i.lower() for i in entry[6:8]]
+            entry[10] = round(float(entry[10]), 3)
 
     @staticmethod
     def format_flag(entry):
@@ -365,46 +371,47 @@ class Modifier:
         self.header = header
 
     def modify_flows(self, execute_model=False):
-        # if self.aggregate is on, insert flw before lbl
-        self.header[0].extend(["bps", "bpp", "pps", "lbl"])
-        self.header[0][7] = "iflg"
         lbl_num = 2
+        #self.header[0].append("lbl")
+        self.header[0].extend(["flw", "lbl"])
+        self.header[0][7] = "iflg"
 
         if execute_model == False:
             lbl_num = int(input("label number: "))
             print()
 
         for entry in self.flows:
-            self.create_features(entry)
-            #entry.append(1)
-            entry.append(lbl_num)
             self.count_flags(entry)
-
-        #self.aggregate_flows()
+            entry.append(1)
+            entry.append(lbl_num)
 
         return self.header, self.flows
 
-    @staticmethod
-    def create_features(entry):
+    def create_features(self):
         """Creates new features"""
+        self.header[0][13:13] = ["bps", "bpp", "pps"]
 
-        # checks if the packet value isn't zero
-        if entry[11] != 0:
-            # bits per packet
-            bpp = int(round(((8 * entry[12]) / entry[11]), 0))
-        else:
-            bpp = 0
-        # checks if the time duration isn't zero
-        if entry[10] > 0:
-            # bits per second
-            bps = int(round(((8 * entry[12]) / entry[10]), 0))
-            # packet per second
-            pps = int(round(entry[11] / entry[10], 0))
-        else:
-            bps = 0
-            pps = 0
+        for entry in self.flows:
+            # checks if the packet value isn't zero
 
-        entry.extend([bps, bpp, pps])
+            if entry[11] != 0:
+                # bits per packet
+                bpp = int(round(((8 * entry[12]) / entry[11]), 0))
+            else:
+                bpp = 0
+            # checks if the time duration isn't zero
+            if entry[10] > 0:
+                # bits per second
+                bps = int(round(((8 * entry[12]) / entry[10]), 0))
+                # packet per second
+                pps = int(round(entry[11] / entry[10], 0))
+            else:
+                bps = 0
+                pps = 0
+
+            entry[13:13] = [bps, bpp, pps]
+
+        return self.header, self.flows
 
     @staticmethod
     def count_flags(entry):
@@ -424,7 +431,7 @@ class Modifier:
         else:
             entry[7] = [0]
 
-    def aggregate_flows(self):
+    def aggregate_flows(self, threshold=-1):
         """Aggregates the flows according to features of mac, ip and protocol"""
 
         # replaces sp and dp to isp and idp
@@ -433,23 +440,33 @@ class Modifier:
 
         # aggregates the flows entries in the first occurrence
         for idx, entry in enumerate(self.flows):
+            count = 1
             # checks if the entry has already been aggregated
             if entry != [None]:
+                print(entry)
                 # keeps only the ports with unique numbers
                 sp = {entry[8]}
                 dp = {entry[9]}
                 # checks if there are more occurrences in relation to the first one
                 for tmp_idx, tmp_entry in enumerate(self.flows):
-                    # avoids aggregating the first occurrence twice
-                    if tmp_idx > idx:
-                        # checks if the mac, ip and protocol are equal in the occurrences
-                        if entry[2:7] == tmp_entry[2:7]:
+                    rules1 = [tmp_idx > idx, tmp_entry != [None], count < threshold]
+
+                    if all(rules1):
+                        rules2 = [entry[0].minute == tmp_entry[0].minute, entry[2:7] == tmp_entry[2:7]]
+                        if all(rules2):
                             self.aggregate_features(entry, tmp_entry, sp, dp)
                             # marks the occurrences already aggregated
                             self.flows[tmp_idx] = [None]
+
+                            count += 1
                 # counts the quantity of ports with the same occurences
                 entry[8] = len(sp)
                 entry[9] = len(dp)
+
+                if not isinstance(entry[10], float):
+                    entry[10] = entry[10].seconds
+                else:
+                    entry[10] = int(entry[10])
 
         # filters only the entries of aggregate flows
         self.flows = list(filter(lambda entry: entry != [None], self.flows))
@@ -465,13 +482,10 @@ class Modifier:
         entry[7] = [x + y for x, y in zip(entry[7], tmp_entry[7])]
         sp.add(tmp_entry[8])
         dp.add(tmp_entry[9])
-        entry[10] = round(entry[10] + tmp_entry[10], 3)
+        entry[10] = tmp_entry[1] - entry[0]
         entry[11] += tmp_entry[11]
         entry[12] += tmp_entry[12]
         entry[13] += tmp_entry[13]
-        entry[14] += tmp_entry[14]
-        entry[15] += tmp_entry[15]
-        entry[16] += tmp_entry[16]
 
 
 class Extractor:
@@ -481,13 +495,13 @@ class Extractor:
         """Initializes the main variables"""
         self.flows = flows
 
-    def extract_features(self):
+    def extract_features(self, start, end):
         """Extracts the features"""
 
         features = []
 
         for entry in self.flows:
-            features.append(entry[10:16])
+            features.append(entry[start:end+1])
 
         return features
 
@@ -517,6 +531,7 @@ class Extractor:
         dataset = train_test_split(features, labels, test_size=0.20)
 
         return dataset
+
 
 class Detector:
     """Detects anomalous flow using machine learning algorithms"""
@@ -576,19 +591,27 @@ class Detector:
     def execute_classifiers(self, training_features=[], test_features=[], training_labels=[], execute_model=False):
         pred = []
         param = []
+        times = []
 
+        idx = 0
         for clf in self.classifiers:
+            start = time.time()
+
             if execute_model == False:
                 clf.fit(training_features, training_labels)
             pred.append(clf.predict(test_features))
             param.append(clf.best_params_)
+
+            end = time.time()
+            times.append(processing_time(start, end, no_output=True))
+            idx += 1
 
         """for on_clf in self.online_classifiers:
             on_clf.partial_fit(training_features, training_labels, classes=[0,1])
             pred.append(on_clf.predict(test_features))
             param.append({})"""
 
-        return pred, param
+        return pred, param, times
 
     @staticmethod
     def find_patterns(features):
