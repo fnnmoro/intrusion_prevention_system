@@ -16,8 +16,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.model_selection import GridSearchCV
-from sklearn import preprocessing
-from view import processing_time
+from sklearn.preprocessing import QuantileTransformer, MinMaxScaler, MaxAbsScaler, RobustScaler
+from view import processing_time, show_directory_content
+from tools import menu
 
 
 class Gatherer:
@@ -43,64 +44,40 @@ class Gatherer:
     @staticmethod
     def directory_content(path, execute_model=False):
         try:
-            new_path = path
-            old_path = []
+            path = [path]
+            content = []
 
-            proceed = 1
+            option = 0
             # loop to explore the directories
-            while proceed == 1:
-                count = 0
+            while option != 4:
+                content = list(os.walk(path[-1]))[0]
 
-                # loop to list the content of the directories
-                for content in os.walk(new_path, onerror=True):
-                    if execute_model == False:
-                        print("\n {0}".format(new_path))
-                        print("{0:^7} {1:^30}".format("index", "file"))
+                if execute_model == False:
+                    if content[1] != [] or content[2] != []:
+                        show_directory_content(content, path[-1])
 
-                        # checks if the directory is empty
-                        if content[1] != [] or content[2] != []:
-                            # prints all the directories
-                            for file in sorted(content[1]):
-                                print("{0:^7} {1:^30}".format(count, file))
-                                count += 1
-                            print()
-                            count = 0
+                        print()
+                        option = menu(["select this directory", "choose directory",
+                                       "back to previous directory", "stop"])
 
-                            # prints all the files
-                            for file in sorted(content[2]):
-                                print("{0:^7} {1:^30}".format(count, file))
-                                count += 1
-
-                            # select the current directory
-                            idx = int(input("\nselect this directory: "))
-                            proceed = 0
-
-                            # if you do not select the directory and it's not empty
-                            # it's possible to back to main or choose a directory
-                            if idx != 1:
-                                back_main = int(input("back to previous directory: "))
-
-                                # if selected, return to the main path
-                                if back_main == 1:
-                                    if old_path != []:
-                                        new_path = old_path.pop(-1)
-                                else:
-                                    idx = int(input("choose directory: "))
-                                    # stores the old path to can back
-                                    old_path.append(new_path)
-                                    # concatenates the select directory with the path
-                                    new_path += sorted(content[1])[idx] + "/"
-                                proceed = 1
-
+                        if option == 1:
+                            break
+                        elif option == 2:
+                            idx = int(input("choose directory: "))
+                            path.append("{0}{1}/".format(path[-1], sorted(content[1])[idx-1]))
+                        elif option == 3:
+                            if path != []:
+                                del path[-1]
+                        elif option == 4:
+                            break
                         else:
-                            print("\nthere isn't content inside {0}".format(new_path))
-                            if old_path != []:
-                                new_path = old_path.pop(-1)
-                        break
+                            print("invalid option")
                     else:
-                        proceed = 0
+                        print("\nthere isn't content")
+                        if path != []:
+                            del path[-1]
 
-            return new_path, sorted(content[2])
+            return path[-1], sorted(content[2])
         except FileNotFoundError as error:
             print()
             print(error, end="\n\n")
@@ -126,8 +103,8 @@ class Gatherer:
                     os.system("mkdir {0}split/".format(tmp_pcap_path))
 
                 print()
-                start_idx = int(input("choose the initial pcap file: "))
-                final_idx = int(input("choose the final pcap file: "))
+                start_idx = int(input("choose the initial pcap file: "))-1
+                final_idx = int(input("choose the final pcap file: "))-1
                 print()
 
                 # loop to split multiple pcap files
@@ -160,8 +137,8 @@ class Gatherer:
             tmp_pcap_path, pcap_files = self.directory_content(self.pcap_path)
 
             print()
-            start_idx = int(input("choose the initial pcap file: "))
-            final_idx = int(input("choose the final pcap file: "))
+            start_idx = int(input("choose the initial pcap file: "))-1
+            final_idx = int(input("choose the final pcap file: "))-1
             print()
 
             # loop to read the pcap files to convert to nfcapd files
@@ -191,8 +168,8 @@ class Gatherer:
                 nfcapd_files = self.directory_content(self.nfcapd_path)[1]
 
                 print()
-                start_idx = int(input("choose the initial nfcapd file: "))
-                final_idx = int(input("choose the final nfcapd file: "))
+                start_idx = int(input("choose the initial nfcapd file: "))-1
+                final_idx = int(input("choose the final nfcapd file: "))-1
                 print()
 
                 name = input("csv name: ")
@@ -232,7 +209,7 @@ class Gatherer:
                 csv_path, csv_files = self.directory_content(self.csv_path)
 
                 print()
-                idx = int(input("choose csv file: "))
+                idx = int(input("choose csv file: "))-1
                 print()
             else:
                 csv_path, csv_files = self.directory_content(self.csv_path  + "tmp_flows/", True)
@@ -336,14 +313,14 @@ class Formatter:
 
         entry[0:2] = [datetime.strptime(i, "%Y-%m-%d %H:%M:%S") for i in entry[0:2]]
         entry[8:10] = [int(i) for i in entry[8:10]]
-        entry[11:13] = [int(i) for i in entry[11:13]]
+        entry[10] = round(float(entry[10]))
+        entry[11:] = [int(i) for i in entry[11:]]
 
         if training_model == True:
             entry[7] = ast.literal_eval(entry[7])
-            entry[13:] = [int(i) for i in entry[13:]]
         else:
             entry[6:8] = [i.lower() for i in entry[6:8]]
-            entry[10] = round(float(entry[10]), 3)
+
 
     @staticmethod
     def format_flag(entry):
@@ -399,12 +376,13 @@ class Modifier:
                 bpp = int(round(((8 * entry[12]) / entry[11]), 0))
             else:
                 bpp = 0
+
             # checks if the time duration isn't zero
             if entry[10] > 0:
                 # bits per second
-                bps = int(round(((8 * entry[12]) / entry[10]), 0))
+                bps = int(round(((8 * entry[12]) / entry[10])))
                 # packet per second
-                pps = int(round(entry[11] / entry[10], 0))
+                pps = int(round(entry[11] / entry[10]))
             else:
                 bps = 0
                 pps = 0
@@ -443,7 +421,6 @@ class Modifier:
             count = 1
             # checks if the entry has already been aggregated
             if entry != [None]:
-                print(entry)
                 # keeps only the ports with unique numbers
                 sp = {entry[8]}
                 dp = {entry[9]}
@@ -516,7 +493,7 @@ class Extractor:
         return labels
 
     def preprocessing_features(self, features):
-        ppa = preprocessing.QuantileTransformer()
+        ppa = QuantileTransformer(output_distribution='normal')
         std_features = ppa.fit_transform(features)
 
         return std_features
@@ -542,49 +519,49 @@ class Detector:
         #self.online_classifiers = []
 
     def create_classifiers(self, param, cv):
-        self.classifiers.extend([DecisionTreeClassifier(), BernoulliNB(), GaussianNB(), MultinomialNB(),
-                                 KNeighborsClassifier(), SVC(), SGDClassifier(), PassiveAggressiveClassifier(),
-                                 Perceptron(), MLPClassifier()])
+        self.classifiers.extend([DecisionTreeClassifier(), GaussianNB(), KNeighborsClassifier(), SVC(),
+                                 PassiveAggressiveClassifier(), MLPClassifier()])
 
         """self.online_classifiers.extend([BernoulliNB(), GaussianNB(), MultinomialNB(), SGDClassifier(),
                                         PassiveAggressiveClassifier(), Perceptron(), MLPClassifier()])"""
 
         for i in range(len(self.classifiers)):
-            self.classifiers[i] = GridSearchCV(self.classifiers[i], param[i], cv=cv)
+            self.classifiers[i] = GridSearchCV(self.classifiers[i], param[i], cv=cv, scoring="f1")
 
     @staticmethod
     def define_parameters():
         dtr = {"criterion": ["gini", "entropy"], "splitter": ["best", "random"], "max_depth": [3, 6, 9],
                "min_samples_leaf": [1, 5, 10], "min_samples_split": [2, 5, 10]}
 
-        bnb = {"alpha": [0.5, 1.0], "fit_prior": [True, False]}
+        #bnb = {"alpha": [0.5, 1.0], "fit_prior": [True, False]}
 
         gnb = {}
 
-        mnb = {"alpha": [0.5, 1.0], "fit_prior": [True, False]}
+        mnb = {"alpha": [0.0001, 0.01, 0.1], "fit_prior": [True, False]}
 
         knn = {"n_neighbors": [5, 10, 15], "weights": ["uniform", "distance"],
                      "algorithm": ["ball_tree", "kd_tree", "brute"], "leaf_size": [1, 15, 30]}
 
-        svm = [{"kernel": ["linear"], "C": [0.01, 0.1, 1.0, 10.0]}, {"kernel": ["rbf", "poly", "sigmoid"],
+        svm = [{"kernel": ["rbf"],
                 "C": [0.01, 0.1, 1.0, 10.0], "gamma": [0.01, 0.1, 1.0, 10.0]}]
 
-        sgd = {"loss": ["hinge", "modified_huber", "perceptron"], "penalty": ["l1", "l2", "elasticnet"],
+        """sgd = {"loss": ["hinge", "modified_huber", "perceptron"], "penalty": ["l1", "l2", "elasticnet"],
                      "max_iter": [int(np.ceil(10**6 / 60398)), 50, 100], "alpha": [0.0001, 0.01, 0.1],
-                     "learning_rate": ["constant", "optimal"], "eta0": [0.5, 1.0]}
+                     "learning_rate": ["constant", "optimal"], "eta0": [0.5, 1.0]}"""
 
         pag = {"C": [0.01, 0.1, 1.0, 10.0], "max_iter": [int(np.ceil(10 ** 6 / 60398)), 50, 100],
                "loss": ["hinge"]}
 
-        ppn = {"penalty": ["l1", "l2", "elasticnet"]}
+        #ppn = {"penalty": ["l1", "l2", "elasticnet"]}
 
-        mlp = {"hidden_layer_sizes": [(5,2), (7, 5)], "activation": ["relu", "tanh", "logistic"],
+        mlp = {"hidden_layer_sizes": [(5, 2), (7, 5)], "activation": ["relu", "tanh", "logistic"],
                "solver": ["sgd", "lbfgs", "adam"], "alpha": [0.0001, 0.01, 0.1],
                "max_iter": [int(np.ceil(10**6 / 60398)), 50, 100],
                "learning_rate": ["constant", "invscaling", "adaptive"]}
 
-        param = [dtr, bnb, gnb, mnb, knn, svm, sgd, pag, ppn, mlp]
+        param = [dtr, gnb, knn, svm, pag, mlp]
         #param = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
+        #param = [mlp]
 
         return param
 

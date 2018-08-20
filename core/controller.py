@@ -5,29 +5,22 @@ from model import Formatter
 from model import Modifier
 from model import Extractor
 from model import Detector
+from tools import menu
 from view import print_flows, export_flows, evaluation_metrics, scatter_plot, processing_time, record_datatime
 
 dataset_path = "/home/flmoro/research_project/dataset/"
 pcap_path = "/home/flmoro/research_project/dataset/pcap/"
 nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
-#csv_path = "/home/flmoro/research_project/dataset/csv/"
-csv_path = "/home/flmoro/research_project/tests/t11/"
+csv_path = "/home/flmoro/research_project/dataset/csv/"
+#csv_path = "/home/flmoro/research_project/tests/t16/"
 
-result_name = "results_flows_af_w60_s309.txt"
+result_name = "execute_model.txt"
 
-methods_names = ["decision tree", "bernoulli naive bayes", "gaussian naive bayes", "multinomial naive bayes",
-                 "k-nearest neighbors", "support vector machine", "stochastic gradient descent", "passive aggressive",
-                 "perceptron", "multi-layer perceptron", "online bernoulli naive bayes", "online gaussian naive bayes",
-                 "online multinomial naive bayes", "online stochastic gradient descent", "online passive aggressive",
-                 "online perceptron", "online multi-layer perceptron"]
+methods_names = ["decision tree", "gaussian naive bayes", "k-nearest neighbors", "support vector machine",
+                 "passive aggressive", "multi-layer perceptron"]
 
 print("anomaly detector")
-print("1 - build the dataset")
-print("2 - train the model")
-print("3 - execute the model")
-print("4 - stop", end="\n\n")
-
-option = int(input("choose an option: "))
+option = menu(["build the dataset", "train the model", "execute the model", "stop"])
 print()
 
 Gatherer(pcap_path, nfcapd_path, csv_path).check_path_exist()
@@ -39,15 +32,8 @@ while option != 4:
     if option == 1:
 
         print("building the dataset", end="\n\n")
-        print("1 - split pcap")
-        print("2 - convert pcap to nfcapd")
-        print("3 - convert nfcapd to flows")
-        print("4 - format and modify the flows")
-        print("5 - clean nfcapd files")
-        print("6 - merge flows files")
-        print("7 - back to main", end="\n\n")
-
-        option = int(input("choose an option: "))
+        option = menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
+                       "format and modify the flows", "clean nfcapd files", "merge flows files", "back to main"])
         print()
 
         gt = Gatherer(pcap_path, nfcapd_path, csv_path)
@@ -108,20 +94,13 @@ while option != 4:
 
                 print("merged flows", end="\n\n")
             elif option == 7:
-                exit()
+                break
             else:
                 print("Invalid option")
 
             print("building the dataset", end="\n\n")
-            print("1 - split pcap")
-            print("2 - convert pcap to nfcapd")
-            print("3 - convert nfcapd to flows")
-            print("4 - format and modify the flows")
-            print("5 - clean nfcapd files")
-            print("6 - merge flows files")
-            print("7 - back to main", end="\n\n")
-
-            option = int(input("choose an option: "))
+            option = menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
+                           "format and modify the flows", "clean nfcapd files", "merge flows files", "back to main"])
             print()
 
         print("dataset built", end="\n\n")
@@ -148,11 +127,7 @@ while option != 4:
             end = time.time()
             processing_time(start, end, "training model - open and format", dataset_path + result_name)
 
-            print("1 - visualize the dataset patterns")
-            print("2 - execute the machine learning algorithms")
-            print("3 - back to main", end="\n\n")
-
-            option = int(input("choose an option: "))
+            option = menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
             print()
 
             while option != 3:
@@ -193,7 +168,7 @@ while option != 4:
                     pred, param, times = dt.execute_classifiers(dataset[0], dataset[1], dataset[2])
 
                     for idx in range(len(pred)):
-                        evaluation_metrics(pred[idx], dataset[3], param[idx], methods_names[idx], times[idx],
+                        evaluation_metrics(dataset[3], pred[idx], param[idx], methods_names[idx], times[idx],
                                            dataset_path + result_name)
 
 
@@ -204,13 +179,12 @@ while option != 4:
                     record_datatime(dataset_path + result_name)
 
                 elif option == 3:
-                    exit()
+                    break
                 else:
                     print("Invalid option")
 
-                print("1 - view the dataset patterns")
-                print("2 - execute the machine learning algorithms")
-                print("3 - back to main", end="\n\n")
+                option = menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
+                print()
 
                 option = int(input("choose an option: "))
                 print()
@@ -238,11 +212,11 @@ while option != 4:
 
                     md = Modifier(flows, header)
                     header, flows = md.modify_flows(True)
-                    header, flows = md.aggregate_flows(150)
+                    header, flows = md.aggregate_flows(100)
                     header, flows = md.create_features()
 
                     ex = Extractor(flows)
-                    features = ex.extract_features()
+                    features = ex.extract_features(8, 16)
                     features = ex.preprocessing_features(features)
 
                     pred = dt.execute_classifiers(test_features=features, execute_model=True)[0]
@@ -253,6 +227,8 @@ while option != 4:
                     export_flows(flows, csv_path + "flows/", "flows_w" + str(60) + "_"
                                  + result_name, header)
 
+                    print("ok")
+
                 time.sleep(1)
         finally:
             process.kill()
@@ -260,13 +236,8 @@ while option != 4:
     elif option == 4:
         exit()
     else:
-        print("Invalid option")
+        print("invalid option")
 
     print("anomaly detector")
-    print("1 - build the dataset")
-    print("2 - train the model")
-    print("3 - execute the model")
-    print("4 - stop", end="\n\n")
-
-    option = int(input("choose an option: "))
+    option = menu(["build the dataset", "train the model", "execute the model", "stop"])
     print()

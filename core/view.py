@@ -1,5 +1,6 @@
 import sys
 import csv
+import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
@@ -98,15 +99,15 @@ def memory_size(object, name):
         print("{0} B".format(b))
 
 
-def evaluation_metrics(pred, test_labels, param, method, time, dst_path):
+def evaluation_metrics(test_labels, pred, param, method, time, dst_path):
     """Prints the evaluation metrics for the machine learning algorithms"""
     try:
         with open(dst_path, mode='a') as file:
             print("[" + method + "]", end="\n\n", file=file)
 
-            print("precion: ", round(precision_score(test_labels, pred, average="micro"), 3), file=file)
-            print("recall: ", round(recall_score(test_labels, pred, average="micro"), 3), file=file)
-            print("f1-score: ", round(f1_score(test_labels, pred, average="micro"), 3), file=file)
+            print("precion: ", round(precision_score(test_labels, pred), 3), file=file)
+            print("recall: ", round(recall_score(test_labels, pred), 3), file=file)
+            print("f1-score: ", round(f1_score(test_labels, pred), 3), file=file)
             conf_matrix = confusion_matrix(test_labels, pred)
             print(file=file)
 
@@ -145,3 +146,21 @@ def scatter_plot(features, labels, x_column, y_column, x_lbl="", y_lbl="", title
     plt.title(title)
 
     plt.show()
+
+
+def show_directory_content(content, path):
+    print("\n {0}".format(path))
+    print("{0:^7} {1:^7} {2:^30}".format("index", "type", "file"))
+
+    count = 1
+    # prints all the directories
+    for file in sorted(content[1]):
+        print("{0:^7} {1:^7} {2:^30}".format(count, "d", file))
+        count += 1
+    print()
+    count = 1
+
+    # prints all the files
+    for file in sorted(content[2]):
+        print("{0:^7} {1:^7} {2:^30}".format(count, "f", file))
+        count += 1
