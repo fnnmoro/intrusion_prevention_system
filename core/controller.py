@@ -6,15 +6,14 @@ from model import Modifier
 from model import Extractor
 from model import Detector
 from tools import menu
-from view import print_flows, export_flows, evaluation_metrics, scatter_plot, processing_time, record_datatime
+from view import print_flows, export_flows, evaluation_metrics, scatter_plot
 
 dataset_path = "/home/flmoro/research_project/dataset/"
 pcap_path = "/home/flmoro/research_project/dataset/pcap/"
 nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
 csv_path = "/home/flmoro/research_project/dataset/csv/"
-#csv_path = "/home/flmoro/research_project/tests/t16/"
 
-result_name = "execute_model.txt"
+result_name = "result.csv"
 
 methods_names = ["decision tree", "gaussian naive bayes", "k-nearest neighbors", "support vector machine",
                  "passive aggressive", "multi-layer perceptron"]
@@ -109,10 +108,6 @@ while option != 4:
         try:
             print("training the model")
 
-            record_datatime(dataset_path + result_name)
-
-            start = time.time()
-
             gt = Gatherer(csv_path=csv_path)
             flows = gt.open_csv()
 
@@ -124,15 +119,12 @@ while option != 4:
             features = ex.preprocessing_features(features)
             labels = ex.extract_labels()
 
-            end = time.time()
-            processing_time(start, end, "training model - open and format", dataset_path + result_name)
-
             option = menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
             print()
 
             while option != 3:
                 if option == 1:
-                    scatter_plot(features, labels, 0, 3, "isp", "ipkt", "i source port x input packets")
+                    """scatter_plot(features, labels, 0, 3, "isp", "ipkt", "i source port x input packets")
                     scatter_plot(features, labels, 0, 4, "isp", "ibyt", "i source port x input bytes")
                     scatter_plot(features, labels, 0, 8, "isp", "flw", "i source port x flows")
                     scatter_plot(features, labels, 0, 5, "isp", "bps", "i source port x bits per second")
@@ -149,14 +141,12 @@ while option != 4:
                     scatter_plot(features, labels, 3, 4, "ipkt", "ibyt", "input packets x input bytes")
                     scatter_plot(features, labels, 7, 5, "pps", "bps", "packets per second x bits per second")
                     scatter_plot(features, labels, 3, 7, "ipkt", "pps", "input packets x packets per second")
-                    scatter_plot(features, labels, 4, 5, "ibyt", "bps", "input packets x bits per second")
+                    scatter_plot(features, labels, 4, 5, "ibyt", "bps", "input packets x bits per second")"""
 
                     pattern = dt.find_patterns(features)
                     scatter_plot(pattern, labels, 0, 1, 'x', 'y', "principal component analysis (pca)")
 
                 elif option == 2:
-                    start = time.time()
-
                     kf = ex.k_fold(int(input("split data in: ")), True)
                     print()
 
@@ -165,18 +155,12 @@ while option != 4:
                     param = dt.define_parameters()
                     dt.create_classifiers(param, kf)
 
-                    pred, param, times = dt.execute_classifiers(dataset[0], dataset[1], dataset[2])
+                    pred, param, dates, durations = dt.execute_classifiers(dataset[0], dataset[1], dataset[2])
 
                     for idx in range(len(pred)):
-                        evaluation_metrics(dataset[3], pred[idx], param[idx], methods_names[idx], times[idx],
-                                           dataset_path + result_name)
-
-
-                    end = time.time()
-                    processing_time(start, end, "training model - execute the machine learning algorithms",
-                                    dataset_path + result_name)
-
-                    record_datatime(dataset_path + result_name)
+                        evaluation_metrics(dataset[3], pred[idx], param[idx],
+                                           [dates[idx], methods_names[idx], durations[idx]],
+                                           dataset_path + result_name, idx)
 
                 elif option == 3:
                     break
@@ -184,9 +168,6 @@ while option != 4:
                     print("Invalid option")
 
                 option = menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
-                print()
-
-                option = int(input("choose an option: "))
                 print()
         except ValueError as error:
             print(error, end="\n\n")

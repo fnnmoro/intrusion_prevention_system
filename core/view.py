@@ -1,6 +1,5 @@
 import sys
 import csv
-import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
@@ -99,33 +98,24 @@ def memory_size(object, name):
         print("{0} B".format(b))
 
 
-def evaluation_metrics(test_labels, pred, param, method, time, dst_path):
+def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
     """Prints the evaluation metrics for the machine learning algorithms"""
     try:
         with open(dst_path, mode='a') as file:
-            print("[" + method + "]", end="\n\n", file=file)
-
-            print("precion: ", round(precision_score(test_labels, pred), 3), file=file)
-            print("recall: ", round(recall_score(test_labels, pred), 3), file=file)
-            print("f1-score: ", round(f1_score(test_labels, pred), 3), file=file)
+            csv_file = csv.writer(file)
             conf_matrix = confusion_matrix(test_labels, pred)
-            print(file=file)
 
-            print("confusion_matrix", file=file)
-            print("{0:^10}{1:^10}{2:^10}".format("", "normal", "anomalous"), file=file)
-            for idx, line in enumerate(conf_matrix):
-                if idx == 0:
-                    print("{0:^10}".format("normal"), end='', file=file)
-                else:
-                    print("{0:^10}".format("anomalous"), end='', file=file)
-                for results in line:
-                    print("{0:^10}".format(results), end='', file=file)
-                print(file=file)
-            print(file=file)
+            information.extend([round(precision_score(test_labels, pred), 3),
+                                round(recall_score(test_labels, pred), 3),
+                                round(f1_score(test_labels, pred), 3),
+                                conf_matrix[0][0], conf_matrix[0][1],
+                                conf_matrix[1][0], conf_matrix[1][1],
+                                parm])
 
-            print("parameters: ", param, end="\n\n", file=file)
-            print("processing time: ", time, end="\n\n", file=file)
-            print("----------", end="\n\n", file=file)
+            if idx == 0:
+                csv_file.writerow(["datetime", "method", "duration", "precison", "recall", "f1-score",
+                                   "nn", "na", "an", "aa", "parameters"])
+            csv_file.writerow(information)
 
     except FileNotFoundError as error:
         print(error, end="\n\n")

@@ -10,13 +10,13 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import SGDClassifier, PassiveAggressiveClassifier, Perceptron
-from sklearn.naive_bayes import MultinomialNB, BernoulliNB, GaussianNB
+from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.decomposition import PCA
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import QuantileTransformer, MinMaxScaler, MaxAbsScaler, RobustScaler
+from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
 from view import processing_time, show_directory_content
 from tools import menu
 
@@ -211,6 +211,8 @@ class Gatherer:
                 print()
                 idx = int(input("choose csv file: "))-1
                 print()
+
+                print(csv_path + csv_files[idx], end="\n\n")
             else:
                 csv_path, csv_files = self.directory_content(self.csv_path  + "tmp_flows/", True)
 
@@ -320,7 +322,6 @@ class Formatter:
             entry[7] = ast.literal_eval(entry[7])
         else:
             entry[6:8] = [i.lower() for i in entry[6:8]]
-
 
     @staticmethod
     def format_flag(entry):
@@ -505,7 +506,7 @@ class Extractor:
         return kf
 
     def train_test_split(self, features, labels):
-        dataset = train_test_split(features, labels, test_size=0.20)
+        dataset = train_test_split(features, labels, test_size=0.30)
 
         return dataset
 
@@ -568,11 +569,13 @@ class Detector:
     def execute_classifiers(self, training_features=[], test_features=[], training_labels=[], execute_model=False):
         pred = []
         param = []
-        times = []
+        duration = []
+        date = []
 
         idx = 0
         for clf in self.classifiers:
             start = time.time()
+            date.append(datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"))
 
             if execute_model == False:
                 clf.fit(training_features, training_labels)
@@ -580,7 +583,7 @@ class Detector:
             param.append(clf.best_params_)
 
             end = time.time()
-            times.append(processing_time(start, end, no_output=True))
+            duration.append(processing_time(start, end, no_output=True))
             idx += 1
 
         """for on_clf in self.online_classifiers:
@@ -588,7 +591,7 @@ class Detector:
             pred.append(on_clf.predict(test_features))
             param.append({})"""
 
-        return pred, param, times
+        return pred, param, date, duration
 
     @staticmethod
     def find_patterns(features):
