@@ -1,6 +1,4 @@
-import sys
 import csv
-from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
@@ -55,47 +53,6 @@ def export_flows(flows, dst_path, file_name, header ="", mode='w', sample=-1):
                 count += 1
     except FileNotFoundError as error:
         print(error, end="\n\n")
-
-
-def record_datatime(dst_path=""):
-    try:
-        with open(dst_path, mode='a') as file:
-            print(datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"), end="\n\n", file=file)
-    except FileNotFoundError as error:
-        print(error, end="\n\n")
-
-
-def processing_time(start, end, name="", dst_path="", no_output=False):
-    """Prints the processing time"""
-    time = round(end - start, 7)
-    if no_output == False:
-        try:
-            with open(dst_path, mode='a') as file:
-                    print("{0} time: {1}".format(name, time), end="\n\n", file=file)
-        except FileNotFoundError as error:
-            print(error, end="\n\n")
-    else:
-        return time
-
-
-def memory_size(object, name):
-    """Prints the memory size of the object"""
-
-    b = sys.getsizeof(object)
-
-    print("{0} size: ".format(name), end=' ')
-
-    if b >= 1073741824:
-        gb = round(b / (1024 ** 3), 7)
-        print("{0} GB".format(gb))
-    elif b >= 1048576:
-        mb = round(b / (1024 ** 2), 7)
-        print("{0} MB".format(mb))
-    elif b >= 1024:
-        kb = round(b / 1024, 7)
-        print("{0} KB".format(kb))
-    else:
-        print("{0} B".format(b))
 
 
 def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):

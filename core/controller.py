@@ -1,11 +1,10 @@
 import os
 import time
-from model import Gatherer
-from model import Formatter
-from model import Modifier
-from model import Extractor
-from model import Detector
-from tools import menu
+from model import gatherer, tools
+from model.preprocessing import Formatter
+from model.preprocessing import Modifier
+from model.preprocessing import Extractor
+from model.detection import Detector
 from view import print_flows, export_flows, evaluation_metrics, scatter_plot
 
 dataset_path = "/home/flmoro/research_project/dataset/"
@@ -19,10 +18,10 @@ methods_names = ["decision tree", "gaussian naive bayes", "k-nearest neighbors",
                  "passive aggressive", "multi-layer perceptron"]
 
 print("anomaly detector")
-option = menu(["build the dataset", "train the model", "execute the model", "stop"])
+option = tools.menu(["build the dataset", "train the model", "execute the model", "stop"])
 print()
 
-Gatherer(pcap_path, nfcapd_path, csv_path).check_path_exist()
+tools.check_path_exist(pcap_path, nfcapd_path, csv_path)
 
 dt = Detector()
 
@@ -31,29 +30,42 @@ while option != 4:
     if option == 1:
 
         print("building the dataset", end="\n\n")
-        option = menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
+        option = tools.menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
                        "format and modify the flows", "clean nfcapd files", "merge flows files", "back to main"])
         print()
 
-        gt = Gatherer(pcap_path, nfcapd_path, csv_path)
         result_name = ["", "", ""]
         while option != 7:
             if option == 1:
                 print("splitting file", end="\n\n")
-                gt.split_pcap(int(input("split size: ")))
+
+                # gets the path and the list of files
+                path, files = tools.directory_content(pcap_path)
+
+                gatherer.split_pcap(path, files, int(input("split size: ")))
+
                 print("split file", end="\n\n")
 
             elif option == 2:
                 print("converting pcap to nfcapd", end="\n\n")
+
+                # gets the path and the list of files
+                path, files = tools.directory_content(pcap_path)
+
                 wtime = input("window time: ")
                 result_name[0] = wtime
 
-                gt.convert_pcap_nfcapd(int(wtime))
+                gatherer.convert_pcap_nfcapd(path, files, nfcapd_path, int(wtime))
+
                 print("converted pcap files", end="\n\n")
 
             elif option == 3:
                 print("converting nfcapd to flows")
-                result_name[2] = gt.convert_nfcapd_csv()[0]
+
+                path, files = tools.directory_content(nfcapd_path)
+
+                result_name[2] = gatherer.convert_nfcapd_csv(path, files, csv_path)[0]
+
                 print("converted nfcapd files", end="\n\n")
 
             elif option == 4:
@@ -61,7 +73,9 @@ while option != 4:
                 sample = input("csv sample: ")
                 result_name[1] = sample
 
-                flows = gt.open_csv(sample=int(sample))
+                path, files = tools.directory_content(csv_path)
+
+                flows = gatherer.open_csv(path, files, sample=int(sample))
 
                 ft = Formatter(flows)
                 header, flows = ft.format_flows()
@@ -78,14 +92,18 @@ while option != 4:
                 print("completed file", end="\n\n")
             elif option == 5:
                 print("cleaning nfcapd files", end="\n\n")
-                gt.clean_files()
+
+                tools.clean_files(nfcapd_path, csv_path)
+
                 print("completed cleaning", end="\n\n")
             elif option == 6:
                 print("merging flows", end="\n\n")
                 dataset_name = input("dataset name: ") + ".csv"
                 print()
 
-                flows = gt.open_csv()
+                path, files = tools.directory_content(csv_path)
+
+                flows = gatherer.open_csv(path, files)
 
                 if not os.path.exists(csv_path + dataset_name):
                     export_flows([flows[0]], csv_path, dataset_name, mode='a')
@@ -98,7 +116,7 @@ while option != 4:
                 print("Invalid option")
 
             print("building the dataset", end="\n\n")
-            option = menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
+            option = tools.menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
                            "format and modify the flows", "clean nfcapd files", "merge flows files", "back to main"])
             print()
 
@@ -108,8 +126,9 @@ while option != 4:
         try:
             print("training the model")
 
-            gt = Gatherer(csv_path=csv_path)
-            flows = gt.open_csv()
+            path, files = tools.directory_content(csv_path)
+
+            flows = gatherer.open_csv(path, files)
 
             ft = Formatter(flows)
             flows = ft.format_flows(True)[1]
@@ -119,12 +138,12 @@ while option != 4:
             features = ex.preprocessing_features(features)
             labels = ex.extract_labels()
 
-            option = menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
+            option = tools.menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
             print()
 
             while option != 3:
                 if option == 1:
-                    """scatter_plot(features, labels, 0, 3, "isp", "ipkt", "i source port x input packets")
+                    scatter_plot(features, labels, 0, 3, "isp", "ipkt", "i source port x input packets")
                     scatter_plot(features, labels, 0, 4, "isp", "ibyt", "i source port x input bytes")
                     scatter_plot(features, labels, 0, 8, "isp", "flw", "i source port x flows")
                     scatter_plot(features, labels, 0, 5, "isp", "bps", "i source port x bits per second")
@@ -141,7 +160,7 @@ while option != 4:
                     scatter_plot(features, labels, 3, 4, "ipkt", "ibyt", "input packets x input bytes")
                     scatter_plot(features, labels, 7, 5, "pps", "bps", "packets per second x bits per second")
                     scatter_plot(features, labels, 3, 7, "ipkt", "pps", "input packets x packets per second")
-                    scatter_plot(features, labels, 4, 5, "ibyt", "bps", "input packets x bits per second")"""
+                    scatter_plot(features, labels, 4, 5, "ibyt", "bps", "input packets x bits per second")
 
                     pattern = dt.find_patterns(features)
                     scatter_plot(pattern, labels, 0, 1, 'x', 'y', "principal component analysis (pca)")
@@ -167,7 +186,7 @@ while option != 4:
                 else:
                     print("Invalid option")
 
-                option = menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
+                option = tools.menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
                 print()
         except ValueError as error:
             print(error, end="\n\n")
@@ -175,18 +194,23 @@ while option != 4:
         print("model finished", end="\n\n")
 
     elif option == 3:
-        gt = Gatherer(nfcapd_path=nfcapd_path, csv_path=csv_path)
-        process = gt.nfcapd_collector(60)
+
+        process = gatherer.nfcapd_collector(nfcapd_path, 60)
 
         time.sleep(5)
         try:
             num = 0
             while True:
-                result_name, skip = gt.convert_nfcapd_csv(True)
+                path, files = tools.directory_content(nfcapd_path)
+
+                result_name, skip = gatherer.convert_nfcapd_csv(path, files, csv_path, True)
 
                 if skip == 0:
-                    flows = gt.open_csv(-1, True)
-                    gt.clean_files(True)
+                    path, files = tools.directory_content(csv_path, True)
+
+                    flows = gatherer.open_csv(path, files, -1, True)
+
+                    tools.clean_files(True)
 
                     ft = Formatter(flows)
                     header, flows = ft.format_flows()
@@ -220,5 +244,5 @@ while option != 4:
         print("invalid option")
 
     print("anomaly detector")
-    option = menu(["build the dataset", "train the model", "execute the model", "stop"])
+    option = tools.menu(["build the dataset", "train the model", "execute the model", "stop"])
     print()
