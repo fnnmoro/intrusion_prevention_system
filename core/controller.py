@@ -1,11 +1,12 @@
 import os
 import time
+
 from model import gatherer, tools
 from model.preprocessing import Formatter
 from model.preprocessing import Modifier
 from model.preprocessing import Extractor
 from model.detection import Detector
-from view import print_flows, export_flows, evaluation_metrics, scatter_plot
+from view import export_flows, evaluation_metrics, scatter_plot
 
 dataset_path = "/home/flmoro/research_project/dataset/"
 pcap_path = "/home/flmoro/research_project/dataset/pcap/"
@@ -28,13 +29,12 @@ dt = Detector()
 while option != 4:
 
     if option == 1:
-
         print("building the dataset", end="\n\n")
+
         option = tools.menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
-                       "format and modify the flows", "clean nfcapd files", "merge flows files", "back to main"])
+                       "format and modify the flows", "merge flows files", "clean nfcapd files", "back to main"])
         print()
 
-        result_name = ["", "", ""]
         while option != 7:
             if option == 1:
                 print("splitting file", end="\n\n")
@@ -52,10 +52,7 @@ while option != 4:
                 # gets the path and the list of files
                 path, files = tools.directory_content(pcap_path)
 
-                wtime = input("window time: ")
-                result_name[0] = wtime
-
-                gatherer.convert_pcap_nfcapd(path, files, nfcapd_path, int(wtime))
+                gatherer.convert_pcap_nfcapd(path, files, nfcapd_path)
 
                 print("converted pcap files", end="\n\n")
 
@@ -64,18 +61,18 @@ while option != 4:
 
                 path, files = tools.directory_content(nfcapd_path)
 
-                result_name[2] = gatherer.convert_nfcapd_csv(path, files, csv_path)[0]
+                gatherer.convert_nfcapd_csv(path, files, csv_path)
 
                 print("converted nfcapd files", end="\n\n")
 
             elif option == 4:
                 print("opening, format and modify the file", end="\n\n")
-                sample = input("csv sample: ")
-                result_name[1] = sample
 
-                path, files = tools.directory_content(csv_path)
+                path, files = tools.directory_content(csv_path + "raw_flows/")
 
-                flows = gatherer.open_csv(path, files, sample=int(sample))
+                sample = input("\ncsv sample: ")
+
+                flows, file_name = gatherer.open_csv(path, files, int(sample) + 1)
 
                 ft = Formatter(flows)
                 header, flows = ft.format_flows()
@@ -85,31 +82,40 @@ while option != 4:
                 header, flows = md.aggregate_flows()
                 header, flows = md.create_features()
 
-                print_flows(flows, header, 5)
-                export_flows(flows, csv_path + "flows/", "flows_w" + result_name[0] + "_s" + result_name[1] + "_"
-                             + result_name[2], header)
+                export_flows(flows, csv_path + "flows/", file_name.split(".csv")[0] + "_w60" + "_s" + sample + ".csv", header)
 
                 print("completed file", end="\n\n")
+
             elif option == 5:
+                print("merging flows", end="\n\n")
+
+                dataset_name = input("dataset name: ") + ".csv"
+                print()
+
+                path, files = tools.directory_content(csv_path + "flows/")
+
+                print()
+                start_idx = int(input("choose initial csv file: "))-1
+                final_idx = int(input("choose final csv file: "))-1
+                print()
+
+                for idx in range(start_idx, final_idx + 1):
+                    flows = gatherer.open_csv(path, files[idx], execute_model=True)
+
+                    if idx == start_idx:
+                        export_flows(flows, csv_path, dataset_name, mode='a')
+                    else:
+                        export_flows(flows[1:], csv_path, dataset_name, mode='a')
+
+                print("merged flows", end="\n\n")
+
+            elif option == 6:
                 print("cleaning nfcapd files", end="\n\n")
 
                 tools.clean_files(nfcapd_path, csv_path)
 
                 print("completed cleaning", end="\n\n")
-            elif option == 6:
-                print("merging flows", end="\n\n")
-                dataset_name = input("dataset name: ") + ".csv"
-                print()
 
-                path, files = tools.directory_content(csv_path)
-
-                flows = gatherer.open_csv(path, files)
-
-                if not os.path.exists(csv_path + dataset_name):
-                    export_flows([flows[0]], csv_path, dataset_name, mode='a')
-                export_flows(flows[1:], csv_path, dataset_name, mode='a')
-
-                print("merged flows", end="\n\n")
             elif option == 7:
                 break
             else:
@@ -117,7 +123,7 @@ while option != 4:
 
             print("building the dataset", end="\n\n")
             option = tools.menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
-                           "format and modify the flows", "clean nfcapd files", "merge flows files", "back to main"])
+                           "format and modify the flows", "merge flows files", "clean nfcapd files", "back to main"])
             print()
 
         print("dataset built", end="\n\n")
@@ -128,13 +134,14 @@ while option != 4:
 
             path, files = tools.directory_content(csv_path)
 
-            flows = gatherer.open_csv(path, files)
+            flows = gatherer.open_csv(path, files)[0]
 
             ft = Formatter(flows)
-            flows = ft.format_flows(True)[1]
+            header, flows = ft.format_flows(True)
 
-            ex = Extractor(flows)
-            features = ex.extract_features(8, 16)
+            ex = Extractor(header, flows)
+            features = ex.extract_features(10, 12)
+            header_features = ex.extract_header_features(10, 12)
             features = ex.preprocessing_features(features)
             labels = ex.extract_labels()
 
@@ -143,27 +150,13 @@ while option != 4:
 
             while option != 3:
                 if option == 1:
-                    scatter_plot(features, labels, 0, 3, "isp", "ipkt", "i source port x input packets")
-                    scatter_plot(features, labels, 0, 4, "isp", "ibyt", "i source port x input bytes")
-                    scatter_plot(features, labels, 0, 8, "isp", "flw", "i source port x flows")
-                    scatter_plot(features, labels, 0, 5, "isp", "bps", "i source port x bits per second")
-
-                    scatter_plot(features, labels, 1, 3, "idp", "ipkt", "i destination port x input packets")
-                    scatter_plot(features, labels, 1, 4, "idp", "ibyt", "i destination port x input bytes")
-                    scatter_plot(features, labels, 1, 8, "idp", "flw", "i destination port x flows")
-                    scatter_plot(features, labels, 1, 5, "idp", "bps", "i destination port x bits per second")
-
-                    scatter_plot(features, labels, 2, 3, "td", "ipkt", "time duration x input packets")
-                    scatter_plot(features, labels, 2, 7, "td", "pps", "time duration x packets per second")
-                    scatter_plot(features, labels, 2, 4, "td", "ibyt", "time duration x input bytes")
-                    scatter_plot(features, labels, 2, 5, "td", "bps", "time duration x bits per second")
-                    scatter_plot(features, labels, 3, 4, "ipkt", "ibyt", "input packets x input bytes")
-                    scatter_plot(features, labels, 7, 5, "pps", "bps", "packets per second x bits per second")
-                    scatter_plot(features, labels, 3, 7, "ipkt", "pps", "input packets x packets per second")
-                    scatter_plot(features, labels, 4, 5, "ibyt", "bps", "input packets x bits per second")
+                    for x_column, x_lbl in enumerate(header_features[0]):
+                        for y_column, y_lbl in enumerate(header_features[0]):
+                            if y_column != x_column:
+                                scatter_plot(features, labels, x_column, y_column, x_lbl, y_lbl)
 
                     pattern = dt.find_patterns(features)
-                    scatter_plot(pattern, labels, 0, 1, 'x', 'y', "principal component analysis (pca)")
+                    scatter_plot(pattern, labels, 0, 1, 'x', 'y')
 
                 elif option == 2:
                     kf = ex.k_fold(int(input("split data in: ")), True)
@@ -172,7 +165,7 @@ while option != 4:
                     dataset = ex.train_test_split(features, labels)
 
                     param = dt.define_parameters()
-                    dt.create_classifiers(param, kf)
+                    dt.tuning_hyperparameters(param, kf)
 
                     pred, param, dates, durations = dt.execute_classifiers(dataset[0], dataset[1], dataset[2])
 
@@ -203,7 +196,7 @@ while option != 4:
             while True:
                 path, files = tools.directory_content(nfcapd_path)
 
-                result_name, skip = gatherer.convert_nfcapd_csv(path, files, csv_path, True)
+                skip = gatherer.convert_nfcapd_csv(path, files, csv_path, True)
 
                 if skip == 0:
                     path, files = tools.directory_content(csv_path, True)

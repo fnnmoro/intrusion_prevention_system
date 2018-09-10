@@ -78,7 +78,7 @@ def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
         print(error, end="\n\n")
 
 
-def scatter_plot(features, labels, x_column, y_column, x_lbl="", y_lbl="", title=""):
+def scatter_plot(features, labels, x_column, y_column, x_lbl, y_lbl):
     colors = ["gray" if lbl == 0 else "red" for lbl in labels]
 
     plt.scatter([entry[x_column] for entry in features], [entry[y_column] for entry in features],
@@ -90,7 +90,6 @@ def scatter_plot(features, labels, x_column, y_column, x_lbl="", y_lbl="", title
 
     plt.xlabel(x_lbl)
     plt.ylabel(y_lbl)
-    plt.title(title)
 
     plt.show()
 

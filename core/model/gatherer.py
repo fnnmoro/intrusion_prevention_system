@@ -41,7 +41,7 @@ def split_pcap(pcap_path, pcap_files, size=0):
         print(error, end="\n\n")
 
 
-def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time=0):
+def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time=60):
     try:
         print()
         start_idx = int(input("choose the initial pcap file: "))-1
@@ -92,11 +92,11 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False)
         skip = 1
         if "current" not in nfcapd_files[start_idx]:
             # read the nfcapd files and convert to csv files
-            subprocess.run("nfdump -O tstart -o csv -6 -R {0}{1}:{2} > {3}raw_{4}"
+            subprocess.run("nfdump -O tstart -o csv -6 -R {0}{1}:{2} > {3}{4}"
                            .format(nfcapd_path, nfcapd_files[start_idx], nfcapd_files[final_idx],
                                    csv_path, file_name), shell=True, check=True)
             skip = 0
-        return file_name, skip
+        return skip
     except subprocess.CalledProcessError as error:
         print()
         print(error, end="\n\n")
@@ -111,15 +111,16 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False)
 def open_csv(csv_path, csv_files, sample=-1, execute_model=False):
     """Opens a CSV file containing raw flows"""
     try:
-        idx = 0
         if execute_model == False:
             print()
             idx = int(input("choose csv file: "))-1
             print()
 
-            print(csv_path + csv_files[idx], end="\n\n")
+            csv_files = csv_files[idx]
 
-        with open(csv_path + csv_files[idx], mode='r') as file:
+            print(csv_path + csv_files, end="\n\n")
+
+        with open(csv_path + csv_files, mode='r') as file:
             csv_file = csv.reader(file)
             flows = []
             count = 0
@@ -137,7 +138,7 @@ def open_csv(csv_path, csv_files, sample=-1, execute_model=False):
                 # break if the core was reached
                 else:
                     break
-            return flows
+            return flows, csv_files
     except IndexError as error:
         print()
         print(error, end="\n\n")

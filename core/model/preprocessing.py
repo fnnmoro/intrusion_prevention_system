@@ -188,8 +188,9 @@ class Modifier:
                 # counts the quantity of ports with the same occurences
                 entry[8] = len(sp)
                 entry[9] = len(dp)
+                print(entry[10])
 
-                if not isinstance(entry[10], float):
+                if not isinstance(entry[10], int):
                     entry[10] = entry[10].seconds
                 else:
                     entry[10] = int(entry[10])
@@ -217,8 +218,9 @@ class Modifier:
 class Extractor:
     """Extracts the features and labels"""
 
-    def __init__(self, flows):
+    def __init__(self, header, flows):
         """Initializes the main variables"""
+        self.header = header
         self.flows = flows
 
     def extract_features(self, start, end):
@@ -230,6 +232,16 @@ class Extractor:
             features.append(entry[start:end+1])
 
         return features
+
+    def extract_header_features(self, start, end):
+        """Extracts the features"""
+
+        header_features = []
+
+        for entry in self.header:
+            header_features.append(entry[start:end+1])
+
+        return header_features
 
     def extract_labels(self):
         """Extracts the labels"""
