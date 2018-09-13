@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 from view import show_directory_content
 
+
 def menu(choices):
     for idx, item in enumerate(choices):
         print("{0} - {1}".format(idx+1, item))
@@ -41,14 +42,17 @@ def directory_content(path, execute_model=False):
                     show_directory_content(content, path[-1])
 
                     print()
-                    option = menu(["select this directory", "choose another directory",
-                                   "back to previous directory", "stop"])
+                    option = menu(["select this directory",
+                                   "choose another directory",
+                                   "back to previous directory",
+                                   "stop"])
 
                     if option == 1:
                         break
                     elif option == 2:
                         idx = int(input("directory index: "))
-                        path.append("{0}{1}/".format(path[-1], sorted(content[1])[idx-1]))
+                        path.append("{0}{1}/".format(path[-1],
+                                                     sorted(content[1])[idx-1]))
                     elif option == 3:
                         if path != []:
                             del path[-1]
@@ -88,7 +92,8 @@ def clean_files(nfcapd_path, csv_path, execute_model=False):
 def record_datatime(dst_path=""):
     try:
         with open(dst_path, mode='a') as file:
-            print(datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"), end="\n\n", file=file)
+            print(datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S"),
+                  end="\n\n", file=file)
     except FileNotFoundError as error:
         print(error, end="\n\n")
 
@@ -99,7 +104,8 @@ def processing_time(start, end, name="", dst_path="", no_output=False):
     if no_output == False:
         try:
             with open(dst_path, mode='a') as file:
-                    print("{0} time: {1}".format(name, time), end="\n\n", file=file)
+                    print("{0} time: {1}".format(name, time),
+                          end="\n\n", file=file)
         except FileNotFoundError as error:
             print(error, end="\n\n")
     else:

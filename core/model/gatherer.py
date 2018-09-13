@@ -146,7 +146,8 @@ def open_csv(csv_path, csv_files, sample=-1, execute_model=False):
 
 def nfcapd_collector(nfcapd_path, win_time=0):
     try:
-        process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T", "all", "-b", "127.0.0.1", "-p", "7777",
+        process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T",
+                                    "all", "-b", "127.0.0.1", "-p", "7777",
                                     "-l", nfcapd_path, "-D"])
         return process
     except subprocess.CalledProcessError as error:

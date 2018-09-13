@@ -1,7 +1,10 @@
+import os
 import csv
+from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
-from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import (precision_score, recall_score,
+                             f1_score, confusion_matrix)
 
 
 def print_flows(flows, header="", sample=-1):
@@ -64,13 +67,14 @@ def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
 
             information.extend([round(precision_score(test_labels, pred), 3),
                                 round(recall_score(test_labels, pred), 3),
-                                round(f1_score(test_labels, pred), 3),
+                                str(round(f1_score(test_labels, pred), 3)),
                                 conf_matrix[0][0], conf_matrix[0][1],
                                 conf_matrix[1][0], conf_matrix[1][1],
                                 parm])
 
             if idx == 0:
-                csv_file.writerow(["datetime", "method", "duration", "precison", "recall", "f1-score",
+                csv_file.writerow(["datetime", "method", "duration",
+                                   "precison", "recall", "f1-score",
                                    "nn", "na", "an", "aa", "parameters"])
             csv_file.writerow(information)
 
@@ -81,7 +85,8 @@ def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
 def scatter_plot(features, labels, x_column, y_column, x_lbl, y_lbl):
     colors = ["gray" if lbl == 0 else "red" for lbl in labels]
 
-    plt.scatter([entry[x_column] for entry in features], [entry[y_column] for entry in features],
+    plt.scatter([entry[x_column] for entry in features],
+                [entry[y_column] for entry in features],
                 c=colors, alpha=0.5)
 
     n_flows = ptc.Patch(color='gray', label='normal flows')
@@ -110,3 +115,16 @@ def show_directory_content(content, path):
     for file in sorted(content[2]):
         print("{0:^7} {1:^7} {2:^30}".format(count, "f", file))
         count += 1
+
+
+def checkpoint(point, log_path):
+    with open(log_path, 'a') as log:
+        csv_file = csv.writer(log)
+
+        if log.tell() == 0:
+            csv_file.writerow(["date", "point"])
+
+        csv_file.writerow([datetime.strftime(datetime.now(),
+                                             "%Y-%m-%d %H:%M:%S"),
+                           point])
+

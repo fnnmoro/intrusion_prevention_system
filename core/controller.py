@@ -1,6 +1,4 @@
-import os
 import time
-
 from model import gatherer, tools
 from model.preprocessing import Formatter
 from model.preprocessing import Modifier
@@ -8,18 +6,31 @@ from model.preprocessing import Extractor
 from model.detection import Detector
 from view import export_flows, evaluation_metrics, scatter_plot
 
+
 dataset_path = "/home/flmoro/research_project/dataset/"
 pcap_path = "/home/flmoro/research_project/dataset/pcap/"
 nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
 csv_path = "/home/flmoro/research_project/dataset/csv/"
 
-result_name = "result.csv"
+result_name = "test_result3.csv"
 
-methods_names = ["decision tree", "gaussian naive bayes", "k-nearest neighbors", "support vector machine",
-                 "passive aggressive", "multi-layer perceptron"]
+methods_names = ["decision tree",
+                 "random forest",
+                 "bernoulli naive bayes",
+                 "gaussian naive bayes",
+                 "multinomial naive bayes",
+                 "k-nearest neighbors",
+                 "support vector machine",
+                 "stochastic gradient descent",
+                 "passive aggressive",
+                 "perceptron",
+                 "multi-layer perceptron"]
 
 print("anomaly detector")
-option = tools.menu(["build the dataset", "train the model", "execute the model", "stop"])
+option = tools.menu(["build the dataset",
+                     "train the model",
+                     "execute the model",
+                     "stop"])
 print()
 
 tools.check_path_exist(pcap_path, nfcapd_path, csv_path)
@@ -31,8 +42,13 @@ while option != 4:
     if option == 1:
         print("building the dataset", end="\n\n")
 
-        option = tools.menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
-                       "format and modify the flows", "merge flows files", "clean nfcapd files", "back to main"])
+        option = tools.menu(["split pcap",
+                             "convert pcap to nfcapd",
+                             "convert nfcapd to flows",
+                             "format and modify the flows",
+                             "merge flows files",
+                             "clean nfcapd files",
+                             "back to main"])
         print()
 
         while option != 7:
@@ -72,17 +88,20 @@ while option != 4:
 
                 sample = input("\ncsv sample: ")
 
-                flows, file_name = gatherer.open_csv(path, files, int(sample) + 1)
+                flows, file_name = gatherer.open_csv(path, files, int(sample))
 
                 ft = Formatter(flows)
                 header, flows = ft.format_flows()
 
                 md = Modifier(flows, header)
                 header, flows = md.modify_flows()
-                header, flows = md.aggregate_flows()
+                #header, flows = md.aggregate_flows()
                 header, flows = md.create_features()
 
-                export_flows(flows, csv_path + "flows/", file_name.split(".csv")[0] + "_w60" + "_s" + sample + ".csv", header)
+                export_flows(flows, csv_path + "flows/",
+                             file_name.split(".csv")[0] + "_w60"
+                             + "_s" + sample + ".csv",
+                             header)
 
                 print("completed file", end="\n\n")
 
@@ -100,12 +119,15 @@ while option != 4:
                 print()
 
                 for idx in range(start_idx, final_idx + 1):
-                    flows = gatherer.open_csv(path, files[idx], execute_model=True)
+                    flows = gatherer.open_csv(path, files[idx],
+                                              execute_model=True)[0]
 
                     if idx == start_idx:
-                        export_flows(flows, csv_path, dataset_name, mode='a')
+                        export_flows(flows, csv_path,
+                                     dataset_name, mode='a')
                     else:
-                        export_flows(flows[1:], csv_path, dataset_name, mode='a')
+                        export_flows(flows[1:], csv_path,
+                                     dataset_name, mode='a')
 
                 print("merged flows", end="\n\n")
 
@@ -140,12 +162,14 @@ while option != 4:
             header, flows = ft.format_flows(True)
 
             ex = Extractor(header, flows)
-            features = ex.extract_features(10, 12)
-            header_features = ex.extract_header_features(10, 12)
-            features = ex.preprocessing_features(features)
+            header_features, features = ex.extract_features(10, 12)
             labels = ex.extract_labels()
 
-            option = tools.menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
+            #features = ex.preprocessing_features(features)
+
+            option = tools.menu(["visualize the dataset patterns",
+                                 "execute the machine learning algorithms",
+                                 "back to main"])
             print()
 
             while option != 3:
@@ -153,7 +177,9 @@ while option != 4:
                     for x_column, x_lbl in enumerate(header_features[0]):
                         for y_column, y_lbl in enumerate(header_features[0]):
                             if y_column != x_column:
-                                scatter_plot(features, labels, x_column, y_column, x_lbl, y_lbl)
+                                scatter_plot(features, labels,
+                                             x_column, y_column,
+                                             x_lbl, y_lbl)
 
                     pattern = dt.find_patterns(features)
                     scatter_plot(pattern, labels, 0, 1, 'x', 'y')
@@ -167,11 +193,13 @@ while option != 4:
                     param = dt.define_parameters()
                     dt.tuning_hyperparameters(param, kf)
 
-                    pred, param, dates, durations = dt.execute_classifiers(dataset[0], dataset[1], dataset[2])
+                    pred, param, dates, durations = dt.execute_classifiers(
+                            dataset[0], dataset[1], dataset[2])
 
                     for idx in range(len(pred)):
                         evaluation_metrics(dataset[3], pred[idx], param[idx],
-                                           [dates[idx], methods_names[idx], durations[idx]],
+                                           [dates[idx], methods_names[idx],
+                                            durations[idx]],
                                            dataset_path + result_name, idx)
 
                 elif option == 3:
@@ -179,7 +207,9 @@ while option != 4:
                 else:
                     print("Invalid option")
 
-                option = tools.menu(["visualize the dataset patterns", "execute the machine learning algorithms", "back to main"])
+                option = tools.menu(["visualize the dataset patterns",
+                                     "execute the machine learning algorithms",
+                                     "back to main"])
                 print()
         except ValueError as error:
             print(error, end="\n\n")
@@ -217,7 +247,8 @@ while option != 4:
                     features = ex.extract_features(8, 16)
                     features = ex.preprocessing_features(features)
 
-                    pred = dt.execute_classifiers(test_features=features, execute_model=True)[0]
+                    pred = dt.execute_classifiers(test_features=features,
+                                                  execute_model=True)[0]
 
                     for idx, entry in enumerate(flows):
                         entry[-1] = pred[0][idx]
@@ -237,5 +268,8 @@ while option != 4:
         print("invalid option")
 
     print("anomaly detector")
-    option = tools.menu(["build the dataset", "train the model", "execute the model", "stop"])
+    option = tools.menu(["build the dataset",
+                         "train the model",
+                         "execute the model",
+                         "stop"])
     print()

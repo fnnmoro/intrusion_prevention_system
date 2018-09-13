@@ -61,7 +61,8 @@ class Formatter:
     def change_data_types(entry, training_model=False):
         """Changes the data type according to the type of the feature"""
 
-        entry[0:2] = [datetime.strptime(i, "%Y-%m-%d %H:%M:%S") for i in entry[0:2]]
+        entry[0:2] = [datetime.strptime(i, "%Y-%m-%d %H:%M:%S")
+                      for i in entry[0:2]]
         entry[8:10] = [int(i) for i in entry[8:10]]
         entry[10] = round(float(entry[10]))
         entry[11:] = [int(i) for i in entry[11:]]
@@ -81,9 +82,11 @@ class Formatter:
     @staticmethod
     def replace_missing_features(entry):
         """Replaces the missing features for specific values"""
-        replacement = {0:"0001-01-01 01:01:01", 1:"0001-01-01 01:01:01", 2:"00:00:00:00:00:00",
-                       3:"00:00:00:00:00:00", 4:"000.000.000.000", 5:"000.000.000.000", 6:"nopr",
-                       7:"......", 8:"0", 9:"0", 10:"0.0", 11:"0", 12:"0"}
+        replacement = {0:"0001-01-01 01:01:01", 1:"0001-01-01 01:01:01",
+                       2:"00:00:00:00:00:00", 3:"00:00:00:00:00:00",
+                       4:"000.000.000.000", 5:"000.000.000.000",
+                       6:"nopr", 7:"......", 8:"0", 9:"0",
+                       10:"0.0", 11:"0", 12:"0"}
 
         for idx, feature in enumerate(entry):
             # check if the feature are empty
@@ -96,11 +99,14 @@ class Modifier:
         self.flows = flows
         self.header = header
 
-    def modify_flows(self, execute_model=False):
+    def modify_flows(self, aggregation=False, execute_model=False):
         lbl_num = 2
-        #self.header[0].append("lbl")
-        self.header[0].extend(["flw", "lbl"])
-        self.header[0][7] = "iflg"
+
+        if not aggregation:
+            self.header[0].append("lbl")
+            self.header[0][7] = "iflg"
+        else:
+            self.header[0].extend(["flw", "lbl"])
 
         if execute_model == False:
             lbl_num = int(input("label number: "))
@@ -108,7 +114,8 @@ class Modifier:
 
         for entry in self.flows:
             self.count_flags(entry)
-            entry.append(1)
+            if aggregation:
+                entry.append(1)
             entry.append(lbl_num)
 
         return self.header, self.flows
@@ -173,12 +180,16 @@ class Modifier:
                 # keeps only the ports with unique numbers
                 sp = {entry[8]}
                 dp = {entry[9]}
-                # checks if there are more occurrences in relation to the first one
+                # checks if there are more occurrences in relation to the
+                # first one
                 for tmp_idx, tmp_entry in enumerate(self.flows):
-                    rules1 = [tmp_idx > idx, tmp_entry != [None], count < threshold]
+                    rules1 = [tmp_idx > idx,
+                              tmp_entry != [None],
+                              count < threshold]
 
                     if all(rules1):
-                        rules2 = [entry[0].minute == tmp_entry[0].minute, entry[2:7] == tmp_entry[2:7]]
+                        rules2 = [entry[0].minute == tmp_entry[0].minute,
+                                  entry[2:7] == tmp_entry[2:7]]
                         if all(rules2):
                             self.aggregate_features(entry, tmp_entry, sp, dp)
                             # marks the occurrences already aggregated
@@ -226,22 +237,16 @@ class Extractor:
     def extract_features(self, start, end):
         """Extracts the features"""
 
-        features = []
-
-        for entry in self.flows:
-            features.append(entry[start:end+1])
-
-        return features
-
-    def extract_header_features(self, start, end):
-        """Extracts the features"""
-
         header_features = []
+        features = []
 
         for entry in self.header:
             header_features.append(entry[start:end+1])
 
-        return header_features
+        for entry in self.flows:
+            features.append(entry[start:end+1])
+
+        return header_features, features
 
     def extract_labels(self):
         """Extracts the labels"""
@@ -254,13 +259,13 @@ class Extractor:
         return labels
 
     def preprocessing_features(self, features):
-        ppa = QuantileTransformer(output_distribution='normal')
+        ppa = MinMaxScaler()
+        #ppa = QuantileTransformer(output_distribution='normal')
         std_features = ppa.fit_transform(features)
 
         return std_features
 
-    def k_fold(self, n_splits, shuffle): #, features, labels):
-        """Divides into many sets the features and labels to training and test"""
+    def k_fold(self, n_splits, shuffle):
         kf = KFold(n_splits=n_splits, shuffle=shuffle)
 
         return kf
@@ -269,5 +274,3 @@ class Extractor:
         dataset = train_test_split(features, labels, test_size=0.30)
 
         return dataset
-
-
