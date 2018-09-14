@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}config{% endblock%}
+
+{% block content %}
+    <form method="post" action="{{ url_for('train.wait') }}">
+        <select name="algorithms">
+            {% for alg in algorithms %}
+                <option value="{{ loop.index }}">{{ alg }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Send">
+    </form>
+{% endblock %}
+
