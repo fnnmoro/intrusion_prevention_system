@@ -1,9 +1,6 @@
 # pycharm idea
 .idea
 
-# tests folder
-tests
-
 # virtual environment
 venv
 
