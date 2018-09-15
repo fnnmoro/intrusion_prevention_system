@@ -1,7 +1,13 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+import time
+import warnings
+import pickle
+from flask import Blueprint, request, render_template
 from model import gatherer, tools
 from model.preprocessing import Formatter, Extractor
 from model.detection import Detector
+from view import evaluation_metrics
+
+#warnings.filterwarnings("ignore")
 
 bp = Blueprint('train', __name__, url_prefix='/train')
 
@@ -19,43 +25,65 @@ def config():
                   'perceptron',
                   'multi-layer perceptron']
 
-    return render_template('train/config.html', algorithms=algorithms)
+    features = ['duration', 'packets', 'bytes', 'bits per second',
+                'bits per packets', 'packtes per second']
 
-@bp.route('/training', methods=('POST'))
-def training():
+    preprocessing = ['normal', 'minmax scaler', 'quantile transformer']
+
+    return render_template('train/config.html', algorithms=algorithms,
+                           features=features, preprocessing=preprocessing)
+
+@bp.route('/results', methods=('GET', 'POST'))
+def results():
     if request.method == 'POST':
-        print('noooo')
         path = '/home/flmoro/research_project/dataset/csv/'
-        file = 'flows_w60_s800.csv'
+        file = 'flows_w60_s800_cf.csv'
 
-        flows = gatherer.open_csv(path, file, -1, True)[0]
+        flows = gatherer.open_csv(path, file, int(request.form['sample']),
+                                  True)[0]
 
         ft = Formatter(flows)
         header, flows = ft.format_flows(True)
 
         ex = Extractor(header, flows)
-        features = ex.extract_features(10, 12)[1]
+
+        choice_features = [int(item) for item in
+                           request.form.getlist('features')]
+        header, features = ex.extract_features(choice_features)
         labels = ex.extract_labels()
 
-        # features = ex.preprocessing_features(features)
+        features = ex.preprocessing_features(features,
+                                             int(request.form['preprocessing']))
 
-        kf = ex.k_fold(2, True)
+        kf = ex.k_fold(int(request.form['kfold']), True)
 
-        dataset = ex.train_test_split(features, labels)
+        dataset = ex.train_test_split(features, labels,
+                                      int(request.form['test_size'])/100)
 
         dt = Detector()
 
-        param = dt.define_parameters()
-        dt.tuning_hyperparameters(param, kf)
-    
-        pred, param, dates, durations = dt.execute_classifiers(
-            dataset[0], dataset[1], dataset[2], request.form['algorithms'])
-    
-        """for idx in range(len(pred)):
-            evaluation_metrics(dataset[3], pred[idx], param[idx],
-                               [dates[idx], methods_names[idx],
-                                durations[idx]],
-                               dataset_path + result_name, idx)"""
-        #return redirect(url_for('home'))
+        choice_algorithms = [int(item) for item in
+                             request.form.getlist('algorithms')]
+        num_clf = dt.choose_classifiers(choice_algorithms)
 
-    return redirect(url_for('home'))
+        information = []
+        for idx in range(num_clf):
+            dt.tuning_hyperparameters(kf, idx)
+
+            pred, param, date, dur = dt.execute_classifiers(
+                dataset[0], dataset[1], dataset[2], idx)
+
+            metrics = evaluation_metrics(dataset[3], pred, param,
+                                         [date, dt.methods[idx], dur],
+                                         path + "test.csv", idx)
+
+            information.extend([[dt.methods[idx], date, dur, metrics[3],
+                                 metrics[4], metrics[5],
+                                 ex.methods[int(request.form['preprocessing'])],
+                                 param]])
+
+            pickle.dump(dt, open('detector', 'wb'))
+            pickle.dump([choice_features, int(request.form['preprocessing'])],
+                        open('forms', 'wb'))
+
+        return render_template('train/results.html', information=information)

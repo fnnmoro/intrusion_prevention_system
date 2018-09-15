@@ -18,7 +18,7 @@ class Formatter:
 
         header = []
         for entry in self.flows:
-            if training_model == False:
+            if not training_model:
                 self.delete_features(entry)
                 self.change_columns(entry)
                 # checks if is the header
@@ -67,7 +67,7 @@ class Formatter:
         entry[10] = round(float(entry[10]))
         entry[11:] = [int(i) for i in entry[11:]]
 
-        if training_model == True:
+        if training_model:
             entry[7] = ast.literal_eval(entry[7])
         else:
             entry[6:8] = [i.lower() for i in entry[6:8]]
@@ -108,7 +108,7 @@ class Modifier:
         else:
             self.header[0].extend(["flw", "lbl"])
 
-        if execute_model == False:
+        if not execute_model:
             lbl_num = int(input("label number: "))
             print()
 
@@ -117,6 +117,11 @@ class Modifier:
             if aggregation:
                 entry.append(1)
             entry.append(lbl_num)
+
+        if aggregation:
+            self.aggregate_flows(100)
+
+        self.create_features()
 
         return self.header, self.flows
 
@@ -233,18 +238,31 @@ class Extractor:
         """Initializes the main variables"""
         self.header = header
         self.flows = flows
+        self.preprocessing = [None,
+                              MinMaxScaler(),
+                              QuantileTransformer(output_distribution='normal')]
 
-    def extract_features(self, start, end):
+        self.methods = ['normal', 'minmax scaler', 'quantile transformer']
+
+    def extract_features(self, choices):
         """Extracts the features"""
 
         header_features = []
         features = []
 
         for entry in self.header:
-            header_features.append(entry[start:end+1])
+            tmp = []
+            for idx in choices:
+               tmp.append(entry[idx])
+
+            header_features.append(tmp)
 
         for entry in self.flows:
-            features.append(entry[start:end+1])
+            tmp = []
+            for idx in choices:
+                tmp.append(entry[idx])
+
+            features.append(tmp)
 
         return header_features, features
 
@@ -258,19 +276,20 @@ class Extractor:
 
         return labels
 
-    def preprocessing_features(self, features):
-        ppa = MinMaxScaler()
-        #ppa = QuantileTransformer(output_distribution='normal')
-        std_features = ppa.fit_transform(features)
+    def preprocessing_features(self, features, choice):
+        if choice != 0:
+            ppa = self.preprocessing[choice]
+            std_features = ppa.fit_transform(features)
 
-        return std_features
+            return std_features
+        return features
 
     def k_fold(self, n_splits, shuffle):
         kf = KFold(n_splits=n_splits, shuffle=shuffle)
 
         return kf
 
-    def train_test_split(self, features, labels):
-        dataset = train_test_split(features, labels, test_size=0.30)
+    def train_test_split(self, features, labels, test_size):
+        dataset = train_test_split(features, labels, test_size=test_size)
 
         return dataset

@@ -3,13 +3,42 @@
 {% block title %}config{% endblock%}
 
 {% block content %}
-    <form method="post" action="{{ url_for('train.wait') }}">
-        <select name="algorithms">
-            {% for alg in algorithms %}
-                <option value="{{ loop.index }}">{{ alg }}</option>
+
+    <form id="config" method="post" action="{{ url_for('train.results') }}" onsubmit="training()">
+        <label for="sample">sample</label>
+        <input type="text" name="sample" id="sample"><br>
+
+        <label for="test_size">test size</label>
+        <input type="text" name="test_size" id="test_size"><br>
+
+        <label for="kfold">kfold</label>
+        <input type="text" name="kfold" id="kfold"><br>
+
+        <label for="algorithms">algorithms</label>
+        <select name="algorithms" id="algorithms" size="11" multiple>
+            {% for item in algorithms %}
+                <option value="{{ loop.index-1 }}">{{ item }}</option>
             {% endfor %}
         </select>
-        <input type="submit" value="Send">
+        <br>
+
+        <label for="features">features</label>
+        <select name="features" id="features" size="6" multiple>
+            {% for item in features %}
+                <option value="{{ loop.index+9 }}">{{ item }}</option>
+            {% endfor %}
+        </select><br>
+
+        <label for="preprocessing">preprocessing</label>
+        <select name="preprocessing" id="preprocessing">
+            {% for item in preprocessing %}
+                <option value="{{ loop.index-1 }}">{{ item }}</option>
+            {% endfor %}
+        </select><br>
+
+        <input type="submit" value="send">
     </form>
+
+
 {% endblock %}
 

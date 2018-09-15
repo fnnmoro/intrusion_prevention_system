@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}results{% endblock%}
+
+{% block content %}
+    {% for item in information %}
+        <form method="post" action="{{ url_for('dep.detect') }}">
+             <button name="algorithm" type="submit" value="{{ loop.index-1 }}">{{ item[0] }}</button>
+        </form>
+        <p>date: {{ item[1] }}</p>
+        <p>duration: {{ item[2] }}</p>
+        <p>precision: {{ item[3] }}</p>
+        <p>recall: {{ item[4] }}</p>
+        <p>f1: {{ item[5] }}</p>
+        <p>preprocessing: {{ item[6] }}</p>
+        <p>parameters: {{ item[7] }}</p>
+        <br>
+    {% endfor %}
+{% endblock %}

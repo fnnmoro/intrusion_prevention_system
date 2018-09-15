@@ -78,6 +78,8 @@ def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
                                    "nn", "na", "an", "aa", "parameters"])
             csv_file.writerow(information)
 
+        return information
+
     except FileNotFoundError as error:
         print(error, end="\n\n")
 

@@ -14,18 +14,6 @@ csv_path = "/home/flmoro/research_project/dataset/csv/"
 
 result_name = "test_result3.csv"
 
-methods_names = ["decision tree",
-                 "random forest",
-                 "bernoulli naive bayes",
-                 "gaussian naive bayes",
-                 "multinomial naive bayes",
-                 "k-nearest neighbors",
-                 "support vector machine",
-                 "stochastic gradient descent",
-                 "passive aggressive",
-                 "perceptron",
-                 "multi-layer perceptron"]
-
 print("anomaly detector")
 option = tools.menu(["build the dataset",
                      "train the model",
@@ -95,8 +83,6 @@ while option != 4:
 
                 md = Modifier(flows, header)
                 header, flows = md.modify_flows()
-                #header, flows = md.aggregate_flows()
-                header, flows = md.create_features()
 
                 export_flows(flows, csv_path + "flows/",
                              file_name.split(".csv")[0] + "_w60"
@@ -162,10 +148,10 @@ while option != 4:
             header, flows = ft.format_flows(True)
 
             ex = Extractor(header, flows)
-            header_features, features = ex.extract_features(10, 12)
+            header_features, features = ex.extract_features([10, 15])
             labels = ex.extract_labels()
 
-            #features = ex.preprocessing_features(features)
+            features = ex.preprocessing_features(features, 0)
 
             option = tools.menu(["visualize the dataset patterns",
                                  "execute the machine learning algorithms",
@@ -188,18 +174,18 @@ while option != 4:
                     kf = ex.k_fold(int(input("split data in: ")), True)
                     print()
 
-                    dataset = ex.train_test_split(features, labels)
+                    dataset = ex.train_test_split(features, labels, 0.30)
 
-                    param = dt.define_parameters()
-                    dt.tuning_hyperparameters(param, kf)
+                    num_clf = dt.choose_classifiers([0, 5])
 
-                    pred, param, dates, durations = dt.execute_classifiers(
-                            dataset[0], dataset[1], dataset[2])
+                    for idx in range(num_clf):
+                        dt.tuning_hyperparameters(kf, idx)
 
-                    for idx in range(len(pred)):
-                        evaluation_metrics(dataset[3], pred[idx], param[idx],
-                                           [dates[idx], methods_names[idx],
-                                            durations[idx]],
+                        pred, param, date, duration = dt.execute_classifiers(
+                                dataset[0], dataset[1], dataset[2], idx)
+
+                        _ = evaluation_metrics(dataset[3], pred, param,
+                                           [date, dt.methods[idx], duration],
                                            dataset_path + result_name, idx)
 
                 elif option == 3:
@@ -240,8 +226,6 @@ while option != 4:
 
                     md = Modifier(flows, header)
                     header, flows = md.modify_flows(True)
-                    header, flows = md.aggregate_flows(100)
-                    header, flows = md.create_features()
 
                     ex = Extractor(flows)
                     features = ex.extract_features(8, 16)
