@@ -82,7 +82,8 @@ while option != 4:
                 header, flows = ft.format_flows()
 
                 md = Modifier(flows, header)
-                header, flows = md.modify_flows()
+                header, flows = md.aggregate_flows(100)
+                header, flows = md.create_features()
 
                 export_flows(flows, csv_path + "flows/",
                              file_name.split(".csv")[0] + "_w60"
@@ -225,7 +226,8 @@ while option != 4:
                     header, flows = ft.format_flows()
 
                     md = Modifier(flows, header)
-                    header, flows = md.modify_flows(True)
+                    header, flows = md.aggregate_flows(100)
+                    header, flows = md.create_features()
 
                     ex = Extractor(flows)
                     features = ex.extract_features(8, 16)

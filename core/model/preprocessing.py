@@ -13,8 +13,13 @@ class Formatter:
 
         self.flows = flows
 
-    def format_flows(self, training_model=False):
+    def format_flows(self, training_model=False, execute_model=False):
         """Formats the raw flows into flows to used in machine learning algorithms"""
+        lbl_num = 2
+
+        if not execute_model:
+            lbl_num = int(input("label number: "))
+            print()
 
         header = []
         for entry in self.flows:
@@ -27,13 +32,18 @@ class Formatter:
                 else:
                     self.replace_missing_features(entry)
                     self.change_data_types(entry)
-                    self.format_flag(entry)
+                    self.count_flag(entry)
+                    entry.append(1)
+                    entry.append(lbl_num)
             else:
                 if "ts" in entry[0]:
                     header.append(entry)
                 else:
                     self.change_data_types(entry, True)
         del self.flows[0]
+
+        header[0][7] = "iflg"
+        header[0].extend(["flw", "lbl"])
 
         return header, self.flows
 
@@ -73,11 +83,26 @@ class Formatter:
             entry[6:8] = [i.lower() for i in entry[6:8]]
 
     @staticmethod
-    def format_flag(entry):
+    def count_flag(entry):
         """Changes the flag feature by deleting the dots in the middle of
         the characters"""
 
         entry[7] = list(filter(lambda flg: flg != ".", entry[7]))
+
+        # checks if the protocol that was used is tcp
+        if entry[6] == "tcp":
+            tmp = [0, 0, 0, 0, 0, 0]
+
+            tmp[0] = entry[7].count('u')
+            tmp[1] = entry[7].count('a')
+            tmp[2] = entry[7].count('s')
+            tmp[3] = entry[7].count('f')
+            tmp[4] = entry[7].count('r')
+            tmp[5] = entry[7].count('p')
+
+            entry[7] = tmp
+        else:
+            entry[7] = [0]
 
     @staticmethod
     def replace_missing_features(entry):
@@ -99,78 +124,7 @@ class Modifier:
         self.flows = flows
         self.header = header
 
-    def modify_flows(self, aggregation=False, execute_model=False):
-        lbl_num = 2
-
-        if not aggregation:
-            self.header[0].append("lbl")
-            self.header[0][7] = "iflg"
-        else:
-            self.header[0].extend(["flw", "lbl"])
-
-        if not execute_model:
-            lbl_num = int(input("label number: "))
-            print()
-
-        for entry in self.flows:
-            self.count_flags(entry)
-            if aggregation:
-                entry.append(1)
-            entry.append(lbl_num)
-
-        if aggregation:
-            self.aggregate_flows(100)
-
-        self.create_features()
-
-        return self.header, self.flows
-
-    def create_features(self):
-        """Creates new features"""
-        self.header[0][13:13] = ["bps", "bpp", "pps"]
-
-        for entry in self.flows:
-            # checks if the packet value isn't zero
-
-            if entry[11] != 0:
-                # bits per packet
-                bpp = int(round(((8 * entry[12]) / entry[11]), 0))
-            else:
-                bpp = 0
-
-            # checks if the time duration isn't zero
-            if entry[10] > 0:
-                # bits per second
-                bps = int(round(((8 * entry[12]) / entry[10])))
-                # packet per second
-                pps = int(round(entry[11] / entry[10]))
-            else:
-                bps = 0
-                pps = 0
-
-            entry[13:13] = [bps, bpp, pps]
-
-        return self.header, self.flows
-
-    @staticmethod
-    def count_flags(entry):
-        """Counts the quantity of each TCP flags"""
-        tmp = [0, 0, 0, 0, 0, 0]
-
-        # checks if the protocol that was used is tcp
-        if entry[6] == "tcp":
-            tmp[0] = entry[7].count('u')
-            tmp[1] = entry[7].count('a')
-            tmp[2] = entry[7].count('s')
-            tmp[3] = entry[7].count('f')
-            tmp[4] = entry[7].count('r')
-            tmp[5] = entry[7].count('p')
-
-            entry[7] = tmp
-        else:
-            entry[7] = [0]
-
-    def aggregate_flows(self, threshold=-1):
+    def aggregate_flows(self, threshold):
         """Aggregates the flows according to features of mac, ip and protocol"""
 
         # replaces sp and dp to isp and idp
@@ -204,7 +158,6 @@ class Modifier:
                 # counts the quantity of ports with the same occurences
                 entry[8] = len(sp)
                 entry[9] = len(dp)
-                print(entry[10])
 
                 if not isinstance(entry[10], int):
                     entry[10] = entry[10].seconds
@@ -229,6 +182,33 @@ class Modifier:
         entry[11] += tmp_entry[11]
         entry[12] += tmp_entry[12]
         entry[13] += tmp_entry[13]
+
+    def create_features(self):
+        """Creates new features"""
+        self.header[0][13:13] = ["bps", "bpp", "pps"]
+
+        for entry in self.flows:
+            # checks if the packet value isn't zero
+
+            if entry[11] != 0:
+                # bits per packet
+                bpp = int(round(((8 * entry[12]) / entry[11]), 0))
+            else:
+                bpp = 0
+
+            # checks if the time duration isn't zero
+            if entry[10] > 0:
+                # bits per second
+                bps = int(round(((8 * entry[12]) / entry[10])))
+                # packet per second
+                pps = int(round(entry[11] / entry[10]))
+            else:
+                bps = 0
+                pps = 0
+
+            entry[13:13] = [bps, bpp, pps]
+
+        return self.header, self.flows
 
 
 class Extractor:
