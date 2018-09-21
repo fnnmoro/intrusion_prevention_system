@@ -33,7 +33,8 @@ def config():
     return render_template('train/config.html', algorithms=algorithms,
                            features=features, preprocessing=preprocessing)
 
-@bp.route('/results', methods=('GET', 'POST'))
+
+@bp.route('/results', methods=['GET', 'POST'])
 def results():
     if request.method == 'POST':
         path = '/home/flmoro/research_project/dataset/csv/'
@@ -43,7 +44,7 @@ def results():
                                   True)[0]
 
         ft = Formatter(flows)
-        header, flows = ft.format_flows(True)
+        header, flows = ft.format_flows(2, True)
 
         ex = Extractor(header, flows)
 
@@ -54,8 +55,6 @@ def results():
 
         features = ex.preprocessing_features(features,
                                              int(request.form['preprocessing']))
-
-        kf = ex.k_fold(int(request.form['kfold']), True)
 
         dataset = ex.train_test_split(features, labels,
                                       int(request.form['test_size'])/100)
@@ -68,7 +67,7 @@ def results():
 
         information = []
         for idx in range(num_clf):
-            dt.tuning_hyperparameters(kf, idx)
+            dt.tuning_hyperparameters(int(request.form['kfold']), idx)
 
             pred, param, date, dur = dt.execute_classifiers(
                 dataset[0], dataset[1], dataset[2], idx)

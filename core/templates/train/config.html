@@ -1,10 +1,9 @@
 {% extends 'base.html' %}
 
-{% block title %}config{% endblock%}
+{% block title %}config{% endblock %}
 
 {% block content %}
-
-    <form id="config" method="post" action="{{ url_for('train.results') }}" onsubmit="training()">
+    <form id="config" method="post" action="{{ url_for('train.results') }}" onsubmit="hiddenForm()">
         <label for="sample">sample</label>
         <input type="text" name="sample" id="sample"><br>
 

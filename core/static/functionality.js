@@ -1,5 +1,11 @@
-function training() {
-    var main = document.querySelector("main");
+function hiddenForm() {
+    var p = document.createElement("p")
+    var text = document.createTextNode("training");
 
-    //main.innerHTML= "training";
+    p.appendChild(text);
+    p.setAttribute("id", "msgTraining");
+
+    document.querySelector("main").appendChild(p);
+
+    document.getElementById("config").style.display = "none";
 };
