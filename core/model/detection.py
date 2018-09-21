@@ -10,7 +10,7 @@ from sklearn.naive_bayes import BernoulliNB, GaussianNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import KFold, GridSearchCV
 from .tools import processing_time
 from view import checkpoint
 
@@ -113,10 +113,11 @@ class Detector:
 
         return num_clf
 
-    def tuning_hyperparameters(self, cv, idx):
+    def tuning_hyperparameters(self, n_splits, idx):
         self.classifiers[idx] = GridSearchCV(self.classifiers[idx],
                                              self.param[idx],
-                                             cv=cv, scoring="f1")
+                                             cv=KFold(n_splits, True),
+                                             scoring="f1")
 
     def execute_classifiers(self, training_features, test_features,
                             training_labels, idx, execute_model=False):

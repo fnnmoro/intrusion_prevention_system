@@ -12,7 +12,7 @@ pcap_path = "/home/flmoro/research_project/dataset/pcap/"
 nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
 csv_path = "/home/flmoro/research_project/dataset/csv/"
 
-result_name = "test_result3.csv"
+result_name = "test_result.csv"
 
 print("anomaly detector")
 option = tools.menu(["build the dataset",
@@ -46,7 +46,7 @@ while option != 4:
                 # gets the path and the list of files
                 path, files = tools.directory_content(pcap_path)
 
-                gatherer.split_pcap(path, files, int(input("split size: ")))
+                gatherer.split_pcap(path, files, int(input("\nsplit size: ")))
 
                 print("split file", end="\n\n")
 
@@ -79,11 +79,10 @@ while option != 4:
                 flows, file_name = gatherer.open_csv(path, files, int(sample))
 
                 ft = Formatter(flows)
-                header, flows = ft.format_flows()
+                header, flows = ft.format_flows(int(input("label number: ")))
 
                 md = Modifier(flows, header)
-                header, flows = md.aggregate_flows(100)
-                header, flows = md.create_features()
+                header, flows = md.modify_flows(100)
 
                 export_flows(flows, csv_path + "flows/",
                              file_name.split(".csv")[0] + "_w60"
@@ -146,13 +145,13 @@ while option != 4:
             flows = gatherer.open_csv(path, files)[0]
 
             ft = Formatter(flows)
-            header, flows = ft.format_flows(True)
+            header, flows = ft.format_flows(training_model=True)
 
             ex = Extractor(header, flows)
-            header_features, features = ex.extract_features([10, 15])
+            header_features, features = ex.extract_features(list(range(10, 13)))
             labels = ex.extract_labels()
 
-            features = ex.preprocessing_features(features, 0)
+            #features = ex.preprocessing_features(features, 2)
 
             option = tools.menu(["visualize the dataset patterns",
                                  "execute the machine learning algorithms",
@@ -172,15 +171,12 @@ while option != 4:
                     scatter_plot(pattern, labels, 0, 1, 'x', 'y')
 
                 elif option == 2:
-                    kf = ex.k_fold(int(input("split data in: ")), True)
-                    print()
-
                     dataset = ex.train_test_split(features, labels, 0.30)
 
-                    num_clf = dt.choose_classifiers([0, 5])
+                    num_clf = dt.choose_classifiers(list(range(0, 11)))
 
                     for idx in range(num_clf):
-                        dt.tuning_hyperparameters(kf, idx)
+                        dt.tuning_hyperparameters(2, idx)
 
                         pred, param, date, duration = dt.execute_classifiers(
                                 dataset[0], dataset[1], dataset[2], idx)
@@ -226,8 +222,7 @@ while option != 4:
                     header, flows = ft.format_flows()
 
                     md = Modifier(flows, header)
-                    header, flows = md.aggregate_flows(100)
-                    header, flows = md.create_features()
+                    header, flows = md.modify_flows(100, True)
 
                     ex = Extractor(flows)
                     features = ex.extract_features(8, 16)

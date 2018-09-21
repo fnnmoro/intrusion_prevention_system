@@ -1,7 +1,7 @@
 """This module..."""
 import ast
 from datetime import datetime
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
 
 
@@ -13,13 +13,8 @@ class Formatter:
 
         self.flows = flows
 
-    def format_flows(self, training_model=False, execute_model=False):
+    def format_flows(self, lbl_num=2, training_model=False):
         """Formats the raw flows into flows to used in machine learning algorithms"""
-        lbl_num = 2
-
-        if not execute_model:
-            lbl_num = int(input("label number: "))
-            print()
 
         header = []
         for entry in self.flows:
@@ -42,8 +37,9 @@ class Formatter:
                     self.change_data_types(entry, True)
         del self.flows[0]
 
-        header[0][7] = "iflg"
-        header[0].extend(["flw", "lbl"])
+        if not training_model:
+            header[0][7] = "iflg"
+            header[0].extend(["flw", "lbl"])
 
         return header, self.flows
 
@@ -124,6 +120,13 @@ class Modifier:
         self.flows = flows
         self.header = header
 
+    def modify_flows(self, threshold, aggregate=False):
+        if aggregate:
+            self.aggregate_flows(threshold)
+        self.create_features()
+
+        return self.header, self.flows
+
     def aggregate_flows(self, threshold):
         """Aggregates the flows according to features of mac, ip and protocol"""
 
@@ -158,23 +161,18 @@ class Modifier:
                 # counts the quantity of ports with the same occurences
                 entry[8] = len(sp)
                 entry[9] = len(dp)
-
-                if not isinstance(entry[10], int):
-                    entry[10] = entry[10].seconds
-                else:
-                    entry[10] = int(entry[10])
+                entry[10] = entry[1].second - entry[0].second
 
         # filters only the entries of aggregate flows
         self.flows = list(filter(lambda entry: entry != [None], self.flows))
-
-        return self.header, self.flows
 
     @staticmethod
     def aggregate_features(entry, tmp_entry, sp, dp):
         """Aggregates the features from the first occurrence with the another
         occurrence equal"""
+        if entry[1] < tmp_entry[1]:
+            entry[1] = tmp_entry[1]
 
-        entry[1] = tmp_entry[1]
         entry[7] = [x + y for x, y in zip(entry[7], tmp_entry[7])]
         sp.add(tmp_entry[8])
         dp.add(tmp_entry[9])
@@ -207,8 +205,6 @@ class Modifier:
                 pps = 0
 
             entry[13:13] = [bps, bpp, pps]
-
-        return self.header, self.flows
 
 
 class Extractor:
@@ -258,18 +254,14 @@ class Extractor:
 
     def preprocessing_features(self, features, choice):
         if choice != 0:
-            ppa = self.preprocessing[choice]
-            std_features = ppa.fit_transform(features)
+            method = self.preprocessing[choice]
+            std_features = method.fit_transform(features)
 
             return std_features
         return features
 
-    def k_fold(self, n_splits, shuffle):
-        kf = KFold(n_splits=n_splits, shuffle=shuffle)
-
-        return kf
-
     def train_test_split(self, features, labels, test_size):
-        dataset = train_test_split(features, labels, test_size=test_size)
+        dataset = train_test_split(features, labels,
+                                   test_size=test_size, shuffle=True)
 
         return dataset
