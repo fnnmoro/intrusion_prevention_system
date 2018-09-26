@@ -10,7 +10,7 @@ from sklearn.naive_bayes import BernoulliNB, GaussianNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.decomposition import PCA
-from sklearn.model_selection import KFold, GridSearchCV
+from sklearn.model_selection import GridSearchCV
 from .tools import processing_time
 from view import checkpoint
 
@@ -46,56 +46,57 @@ class Detector:
 
         self.param = [{"criterion": ["gini", "entropy"],
                        "splitter": ["best", "random"],
-                       "max_depth": [2, 5, 10, 20],
+                       "max_depth": [3, 9, 15, 21],
                        "min_samples_split": [2, 5, 10],
-                       "min_samples_leaf": [1, 5, 10]},
+                       "min_samples_leaf": [2, 5, 10],
+                       "max_features": ["sqrt", None],},
 
                       {"n_estimators": [5, 10, 15],
                        "criterion": ["gini", "entropy"],
-                       "max_features": ["auto", "log2", None],
-                       "max_depth": [2, 5, 10, 20],
+                       "max_depth": [3, 9, 15, 21],
                        "min_samples_split": [2, 5, 10],
-                       "min_samples_leaf": [1, 5, 10],
-                       "bootstrap": [True, False]},
+                       "min_samples_leaf": [2, 5, 10],
+                       "max_features": [None, "sqrt"]},
 
-                      {"alpha": [0.0001, 0.01, 0.1],
+                      {"alpha": [0.001, 0.01, 0.1, 1.0],
                        "fit_prior": [True, False]},
 
                       {},
 
-                      {"alpha": [0.0001, 0.01, 0.1],
+                      {"alpha": [0.001, 0.01, 0.1, 1.0],
                        "fit_prior": [True, False]},
 
                       {"n_neighbors": [5, 10, 15],
                        "weights": ["uniform", "distance"],
                        "algorithm": ["ball_tree", "kd_tree", "brute"],
-                       "leaf_size": [1, 15, 30]},
+                       "leaf_size": [10, 20, 30]},
 
-                      [{"kernel": ["linear"],
-                        "C": [0.01, 0.1, 1.0, 10.0]},
-                       {"kernel": ["rbf"],
-                        "C": [0.01, 0.1, 1.0, 10.0],
-                        "gamma": [0.01, 0.1, 1.0, 10.0]}],
+                      {"kernel": ["rbf"],
+                       "C": [0.01, 0.1, 1.0, 10.0, 100.0],
+                       "gamma": [0.0001, 0.001, 0.01, 0.1, 1.0]},
 
-                      {"loss": ["hinge", "modified_huber", "perceptron"],
+                      {"loss": ["hinge", "log", "modified_huber",
+                                "squared_hinge", "perceptron"],
                        "penalty": ["l1", "l2", "elasticnet"],
-                       "max_iter": [int(np.ceil(10 ** 6 / 60398)), 50, 100],
-                       "alpha": [0.0001, 0.01, 0.1],
-                       "learning_rate": ["constant", "optimal"],
-                       "eta0": [0.5, 1.0]},
+                       "alpha": [0.0001, 0.001, 0.01, 0.1],
+                       "fit_intercept": [True, False],
+                       "max_iter": [5, 50, 500, 1000]},
 
-                      {"C": [0.01, 0.1, 1.0, 10.0],
-                       "max_iter": [int(np.ceil(10 ** 6 / 60398)), 50, 100],
+                      {"C": [0.01, 0.1, 1.0, 10.0, 100.0],
+                       "fit_intercept": [True, False],
+                       "max_iter": [5, 50, 500, 1000],
                        "loss": ["hinge"]},
 
-                      {"penalty": ["l1", "l2", "elasticnet"]},
+                      {"penalty": [None, "l1", "l2", "elasticnet"],
+                       "alpha": [0.0001, 0.001, 0.01, 0.1],
+                       "fit_intercept": [True, False],
+                       "max_iter": [5, 50, 500, 1000]},
 
-                      {"hidden_layer_sizes": [(5, 2), (7, 5)],
-                       "activation": ["relu", "tanh", "logistic"],
-                       "solver": ["sgd", "lbfgs", "adam"],
-                       "alpha": [0.0001, 0.01, 0.1],
-                       "max_iter": [int(np.ceil(10 ** 6 / 60398)), 50, 100],
-                       "learning_rate": ["constant", "invscaling", "adaptive"]}]
+                      {"hidden_layer_sizes": [(10,), (100,), (10, 10)],
+                       "activation": ["identity",  "logistic", "tanh", "relu"],
+                       "solver": ["adam", "lbfgs", "sgd"],
+                       "alpha": [0.0001, 0.001, 0.01, 0.1],
+                       "max_iter": [5, 50, 500, 1000]}]
 
     def choose_classifiers(self, choices):
         tmp = [[],[],[]]
@@ -115,9 +116,7 @@ class Detector:
 
     def tuning_hyperparameters(self, n_splits, idx):
         self.classifiers[idx] = GridSearchCV(self.classifiers[idx],
-                                             self.param[idx],
-                                             cv=KFold(n_splits, True),
-                                             scoring="f1")
+                                             self.param[idx], cv=n_splits)
 
     def execute_classifiers(self, training_features, test_features,
                             training_labels, idx, execute_model=False):
@@ -125,16 +124,13 @@ class Detector:
         start = time.time()
         date = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
 
-        if execute_model == False:
+        if not execute_model:
             self.classifiers[idx].fit(training_features, training_labels)
         pred = self.classifiers[idx].predict(test_features)
         param = self.classifiers[idx].best_params_
 
         end = time.time()
         dur = processing_time(start, end, no_output=True)
-
-        checkpoint(self.methods[idx],
-                   "/home/flmoro/research_project/log/checkpoint.csv")
 
         return pred, param, date, dur
 
