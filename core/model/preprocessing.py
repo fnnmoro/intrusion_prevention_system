@@ -1,8 +1,12 @@
 """This module..."""
 import ast
+import time
 from datetime import datetime
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
+from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
+                                   MaxAbsScaler, RobustScaler,
+                                   QuantileTransformer)
+from .tools import processing_time
 
 
 class Formatter:
@@ -14,7 +18,6 @@ class Formatter:
         self.flows = flows
 
     def format_flows(self, lbl_num=2, training_model=False):
-        """Formats the raw flows into flows to used in machine learning algorithms"""
 
         header = []
         for entry in self.flows:
@@ -170,6 +173,7 @@ class Modifier:
     def aggregate_features(entry, tmp_entry, sp, dp):
         """Aggregates the features from the first occurrence with the another
         occurrence equal"""
+
         if entry[1] < tmp_entry[1]:
             entry[1] = tmp_entry[1]
 
@@ -210,30 +214,31 @@ class Modifier:
 class Extractor:
     """Extracts the features and labels"""
 
-    def __init__(self, header, flows):
+    def __init__(self):
         """Initializes the main variables"""
-        self.header = header
-        self.flows = flows
         self.preprocessing = [None,
+                              StandardScaler(),
                               MinMaxScaler(),
+                              MaxAbsScaler(),
+                              RobustScaler(),
                               QuantileTransformer(output_distribution='normal')]
 
         self.methods = ['normal', 'minmax scaler', 'quantile transformer']
 
-    def extract_features(self, choices):
+    def extract_features(self, header, flows, choices):
         """Extracts the features"""
 
         header_features = []
         features = []
 
-        for entry in self.header:
+        for entry in header:
             tmp = []
             for idx in choices:
                tmp.append(entry[idx])
 
             header_features.append(tmp)
 
-        for entry in self.flows:
+        for entry in flows:
             tmp = []
             for idx in choices:
                 tmp.append(entry[idx])
@@ -242,26 +247,27 @@ class Extractor:
 
         return header_features, features
 
-    def extract_labels(self):
+    def extract_labels(self, flows):
         """Extracts the labels"""
 
         labels = []
 
-        for entry in self.flows:
+        for entry in flows:
             labels.append(entry[-1])
 
         return labels
 
-    def preprocessing_features(self, features, choice):
+    def feature_scaling(self, features, choice, execute_model=False):
         if choice != 0:
-            method = self.preprocessing[choice]
-            std_features = method.fit_transform(features)
+            if not execute_model:
+                self.preprocessing = self.preprocessing[choice]
+            std_features = self.preprocessing.fit_transform(features)
 
             return std_features
         return features
 
     def train_test_split(self, features, labels, test_size):
-        dataset = train_test_split(features, labels,
-                                   test_size=test_size, shuffle=True)
+        dataset = train_test_split(features, labels, test_size=test_size,
+                                   stratify=labels)
 
         return dataset
