@@ -23,6 +23,7 @@ print()
 
 tools.check_path_exist(pcap_path, nfcapd_path, csv_path)
 
+ex = Extractor()
 dt = Detector()
 
 while option != 4:
@@ -82,7 +83,7 @@ while option != 4:
                 header, flows = ft.format_flows(int(input("label number: ")))
 
                 md = Modifier(flows, header)
-                header, flows = md.modify_flows(100)
+                header, flows = md.modify_flows(-1)
 
                 export_flows(flows, csv_path + "flows/",
                              file_name.split(".csv")[0] + "_w60"
@@ -130,8 +131,13 @@ while option != 4:
                 print("Invalid option")
 
             print("building the dataset", end="\n\n")
-            option = tools.menu(["split pcap", "convert pcap to nfcapd", "convert nfcapd to flows",
-                           "format and modify the flows", "merge flows files", "clean nfcapd files", "back to main"])
+            option = tools.menu(["split pcap",
+                                 "convert pcap to nfcapd",
+                                 "convert nfcapd to flows",
+                                 "format and modify the flows",
+                                 "merge flows files",
+                                 "clean nfcapd files",
+                                 "back to main"])
             print()
 
         print("dataset built", end="\n\n")
@@ -147,11 +153,11 @@ while option != 4:
             ft = Formatter(flows)
             header, flows = ft.format_flows(training_model=True)
 
-            ex = Extractor(header, flows)
-            header_features, features = ex.extract_features(list(range(10, 13)))
-            labels = ex.extract_labels()
+            header_features, features = ex.extract_features(header, flows,
+                                                            list(range(10, 13)))
+            labels = ex.extract_labels(flows)
 
-            #features = ex.preprocessing_features(features, 2)
+            features = ex.feature_scaling(features, 5)
 
             option = tools.menu(["visualize the dataset patterns",
                                  "execute the machine learning algorithms",
@@ -205,41 +211,45 @@ while option != 4:
 
         time.sleep(5)
         try:
-            num = 0
             while True:
-                path, files = tools.directory_content(nfcapd_path)
+                path, files = tools.directory_content(nfcapd_path, True)
 
                 skip = gatherer.convert_nfcapd_csv(path, files, csv_path, True)
 
                 if skip == 0:
-                    path, files = tools.directory_content(csv_path, True)
+                    path, files = tools.directory_content(csv_path
+                                                          + "tmp_flows/", True)
 
-                    flows = gatherer.open_csv(path, files, -1, True)
+                    flows, file_name = gatherer.open_csv(path, files[0],
+                                                         -1, True)
 
-                    tools.clean_files(True)
+                    tools.clean_files(nfcapd_path, csv_path, True)
 
                     ft = Formatter(flows)
                     header, flows = ft.format_flows()
 
                     md = Modifier(flows, header)
-                    header, flows = md.modify_flows(100, True)
+                    header, flows = md.modify_flows(100)
 
-                    ex = Extractor(flows)
-                    features = ex.extract_features(8, 16)
-                    features = ex.preprocessing_features(features)
+                    header_features, features = ex.extract_features(
+                            header, flows, list(range(10, 13)))
+                    labels = ex.extract_labels(flows)
 
-                    pred = dt.execute_classifiers(test_features=features,
-                                                  execute_model=True)[0]
+                    features = ex.feature_scaling(features, 2, True)
+
+                    _ = dt.choose_classifiers([0])
+
+                    pred, param, date, duration = dt.execute_classifiers(
+                        0, features, 0, 0, True)
 
                     for idx, entry in enumerate(flows):
-                        entry[-1] = pred[0][idx]
+                        entry[-1] = pred[idx]
 
-                    export_flows(flows, csv_path + "flows/", "flows_w" + str(60) + "_"
-                                 + result_name, header)
+                    export_flows(flows, csv_path + "flows/",
+                                 file_name.split(".csv")[0] + "_w60.csv",
+                                 header)
 
-                    print("ok")
-
-                time.sleep(1)
+                time.sleep(2)
         finally:
             process.kill()
 
