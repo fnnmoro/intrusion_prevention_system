@@ -1,5 +1,6 @@
 import os
 import sys
+import csv
 from datetime import datetime
 from view import show_directory_content
 
@@ -64,6 +65,8 @@ def directory_content(path, execute_model=False):
                     print("\nthere isn't content")
                     if path != []:
                         del path[-1]
+            else:
+                break
 
         return path[-1], sorted(content[2])
     except FileNotFoundError as error:
@@ -101,11 +104,13 @@ def record_datatime(dst_path=""):
 def processing_time(start, end, name="", dst_path="", no_output=False):
     """Prints the processing time"""
     time = round(end - start, 7)
-    if no_output == False:
+    if not no_output:
         try:
             with open(dst_path, mode='a') as file:
-                    print("{0} time: {1}".format(name, time),
-                          end="\n\n", file=file)
+                csv_file = csv.writer(file)
+                csv_file.writerow([datetime.strftime(datetime.now(),
+                                                     "%Y-%m-%d %H:%M:%S"),
+                                   time, name])
         except FileNotFoundError as error:
             print(error, end="\n\n")
     else:
