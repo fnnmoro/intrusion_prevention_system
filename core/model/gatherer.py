@@ -1,6 +1,8 @@
 import os
 import csv
+import time
 import subprocess
+from .tools import processing_time
 
 
 def split_pcap(pcap_path, pcap_files, size=0):
@@ -152,7 +154,9 @@ def nfcapd_collector(nfcapd_path, win_time=0):
     try:
         process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T",
                                     "all", "-b", "127.0.0.1", "-p", "7777",
-                                    "-l", nfcapd_path, "-D"])
+                                    "-l", nfcapd_path],
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL)
         return process
     except subprocess.CalledProcessError as error:
         print()
