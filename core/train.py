@@ -2,7 +2,7 @@ import time
 import warnings
 import pickle
 from flask import Blueprint, request, render_template
-from model import gatherer, tools
+from model import gatherer
 from model.preprocessing import Formatter, Extractor
 from model.detection import Detector
 from view import evaluation_metrics
@@ -44,17 +44,18 @@ def results():
                                   True)[0]
 
         ft = Formatter(flows)
-        header, flows = ft.format_flows(2, True)
+        header, flows = ft.format_flows(training_model=True)
 
-        ex = Extractor(header, flows)
+        ex = Extractor()
 
         choice_features = [int(item) for item in
                            request.form.getlist('features')]
-        header, features = ex.extract_features(choice_features)
-        labels = ex.extract_labels()
+        header_features, features = ex.extract_features(header, flows,
+                                                        choice_features)
+        labels = ex.extract_labels(flows)
 
-        features = ex.preprocessing_features(features,
-                                             int(request.form['preprocessing']))
+        features = ex.feature_scaling(features,
+                                      int(request.form['preprocessing']))
 
         dataset = ex.train_test_split(features, labels,
                                       int(request.form['test_size'])/100)
@@ -82,6 +83,7 @@ def results():
                                  param]])
 
             pickle.dump(dt, open('detector', 'wb'))
+            pickle.dump(ex, open('extractor', 'wb'))
             pickle.dump([choice_features, int(request.form['preprocessing'])],
                         open('forms', 'wb'))
 
