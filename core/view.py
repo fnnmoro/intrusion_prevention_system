@@ -3,7 +3,7 @@ import csv
 from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
-from sklearn.metrics import (precision_score, recall_score,
+from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, confusion_matrix)
 
 
@@ -65,17 +65,19 @@ def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
             csv_file = csv.writer(file)
             conf_matrix = confusion_matrix(test_labels, pred)
 
-            information.extend([round(precision_score(test_labels, pred), 3),
+            information.extend([round(accuracy_score(test_labels, pred), 3),
+                                round(precision_score(test_labels, pred), 3),
                                 round(recall_score(test_labels, pred), 3),
-                                str(round(f1_score(test_labels, pred), 3)),
+                                round(f1_score(test_labels, pred), 3),
                                 conf_matrix[0][0], conf_matrix[0][1],
                                 conf_matrix[1][0], conf_matrix[1][1],
                                 parm])
 
             if idx == 0:
                 csv_file.writerow(["datetime", "method", "duration",
-                                   "precison", "recall", "f1-score",
-                                   "nn", "na", "an", "aa", "parameters"])
+                                   "accuracy", "precison", "recall", "f1-score",
+                                   "tn", "fp", "fn", "tp",
+                                   "parameters"])
             csv_file.writerow(information)
 
         return information
