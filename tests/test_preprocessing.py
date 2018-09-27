@@ -112,10 +112,10 @@ class TestExtractor(unittest.TestCase):
         md = Modifier(flows, header)
         header, flows = md.modify_flows(100, True)
 
-        ex = Extractor(header, flows)
-        self.header_features, self.features = ex.extract_features(
+        ex = Extractor()
+        self.header_features, self.features = ex.extract_features(header, flows,
                 list(range(8, 17)))
-        self.labels = ex.extract_labels()
+        self.labels = ex.extract_labels(flows)
 
         # file with the expected result
         path = '/home/flmoro/research_project/anomaly_detector/tests/data/'

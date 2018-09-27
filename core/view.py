@@ -18,7 +18,7 @@ def print_flows(flows, header="", sample=-1):
             print("", end=' ')
             for features in entry:
                 column = str(tmp) + ' ' + features
-                print("{0:^30}".format(column), end=' ')
+                print("{0:^20}".format(column), end=' ')
                 tmp += 1
         print()
 
@@ -26,7 +26,7 @@ def print_flows(flows, header="", sample=-1):
         if count != sample:
             print(count, end=' ')
             for features in entry:
-                print("{0:^30}".format(str(features)), end=' ')
+                print("{0:^20}".format(str(features)), end=' ')
         else:
             break
         count += 1

@@ -132,42 +132,44 @@ class Modifier:
 
     def aggregate_flows(self, threshold):
         """Aggregates the flows according to features of mac, ip and protocol"""
+        tmp_flows = []
 
         # replaces sp and dp to isp and idp
         self.header[0][8] = "isp"
         self.header[0][9] = "idp"
 
-        # aggregates the flows entries in the first occurrence
-        for idx, entry in enumerate(self.flows):
+        while len(self.flows) != 0:
             count = 1
-            # checks if the entry has already been aggregated
-            if entry != [None]:
-                # keeps only the ports with unique numbers
-                sp = {entry[8]}
-                dp = {entry[9]}
-                # checks if there are more occurrences in relation to the
-                # first one
-                for tmp_idx, tmp_entry in enumerate(self.flows):
-                    rules1 = [tmp_idx > idx,
-                              tmp_entry != [None],
-                              count < threshold]
+            entry = self.flows.pop(0)
 
-                    if all(rules1):
-                        rules2 = [entry[0].minute == tmp_entry[0].minute,
-                                  entry[2:7] == tmp_entry[2:7]]
-                        if all(rules2):
-                            self.aggregate_features(entry, tmp_entry, sp, dp)
-                            # marks the occurrences already aggregated
-                            self.flows[tmp_idx] = [None]
+            # keeps only the ports with unique numbers
+            sp = {entry[8]}
+            dp = {entry[9]}
+            # checks if there are more occurrences in relation to the
+            # first one
+            for tmp_idx, tmp_entry in enumerate(self.flows):
+                if count < threshold:
+                    rules2 = [entry[0].minute == tmp_entry[0].minute,
+                              entry[2:7] == tmp_entry[2:7]]
+                    if all(rules2):
+                        self.aggregate_features(entry, tmp_entry, sp, dp)
+                        # marks the occurrences already aggregated
+                        self.flows[tmp_idx] = [None]
 
-                            count += 1
-                # counts the quantity of ports with the same occurences
-                entry[8] = len(sp)
-                entry[9] = len(dp)
-                entry[10] = entry[1].second - entry[0].second
+                        count += 1
+                else:
+                    break
+            # counts the quantity of ports with the same occurences
+            entry[8] = len(sp)
+            entry[9] = len(dp)
+            entry[10] = entry[1].second - entry[0].second
 
-        # filters only the entries of aggregate flows
-        self.flows = list(filter(lambda entry: entry != [None], self.flows))
+            tmp_flows.append(entry)
+
+            # filters only the entries of aggregate flows
+            self.flows = list(filter(lambda entry: entry != [None], self.flows))
+
+        self.flows = tmp_flows
 
     @staticmethod
     def aggregate_features(entry, tmp_entry, sp, dp):
@@ -191,7 +193,6 @@ class Modifier:
 
         for entry in self.flows:
             # checks if the packet value isn't zero
-
             if entry[11] != 0:
                 # bits per packet
                 bpp = int(round(((8 * entry[12]) / entry[11]), 0))
