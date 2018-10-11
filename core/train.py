@@ -28,7 +28,9 @@ def config():
     features = ['duration', 'packets', 'bytes', 'bits per second',
                 'bits per packets', 'packtes per second']
 
-    preprocessing = ['normal', 'minmax scaler', 'quantile transformer']
+    preprocessing = ['normal', 'standard scaler',
+                     'minmax scaler', 'maxabs scaler',
+                     'robust scaler', 'quantile transformer']
 
     return render_template('train/config.html', algorithms=algorithms,
                            features=features, preprocessing=preprocessing)
@@ -78,13 +80,13 @@ def results():
                                          path + "test.csv", idx)
 
             information.extend([[dt.methods[idx], date, dur, metrics[3],
-                                 metrics[4], metrics[5],
+                                 metrics[4], metrics[5], metrics[6],
                                  ex.methods[int(request.form['preprocessing'])],
                                  param]])
 
-            pickle.dump(dt, open('detector', 'wb'))
-            pickle.dump(ex, open('extractor', 'wb'))
+            pickle.dump(dt, open('../objects/dt', 'wb'))
+            pickle.dump(ex, open('../objects/ex', 'wb'))
             pickle.dump([choice_features, int(request.form['preprocessing'])],
-                        open('forms', 'wb'))
+                        open('../objects/forms', 'wb'))
 
         return render_template('train/results.html', information=information)

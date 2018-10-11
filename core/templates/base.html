@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="{{ url_for('static', filename='functionality.js') }}"></script>
+    {% block script %}{% endblock %}
 </head>
 <body>
     <header>

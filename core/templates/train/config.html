@@ -2,6 +2,10 @@
 
 {% block title %}config{% endblock %}
 
+{% block script %}
+    <script src="{{ url_for('static', filename='hide_config.js') }}"></script>
+{% endblock %}
+
 {% block content %}
     <form id="config" method="post" action="{{ url_for('train.results') }}" onsubmit="hiddenForm()">
         <label for="sample">sample</label>
