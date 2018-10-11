@@ -142,11 +142,13 @@ class Detector:
 
         return pattern
 
-    def find_anomalies(self, features, pred):
-        anomalies = []
+    def find_anomalies(self, flows, pred):
+        anomalies = 0
 
-        for idx, lbl in enumerate(pred):
-            if lbl == 1:
-                anomalies.append(features[idx])
+        for idx, entry in enumerate(flows):
+            entry[-1] = pred[idx]
 
-        return anomalies
+            if pred[idx] == 1:
+                anomalies += 1
+
+        return flows, anomalies
