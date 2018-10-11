@@ -149,7 +149,8 @@ class Modifier:
             # first one
             for tmp_idx, tmp_entry in enumerate(self.flows):
                 if count < threshold:
-                    rules2 = [entry[0].minute == tmp_entry[0].minute,
+                    rules2 = [entry[0].hour == tmp_entry[0].hour,
+                              entry[0].minute == tmp_entry[0].minute,
                               entry[2:7] == tmp_entry[2:7]]
                     if all(rules2):
                         self.aggregate_features(entry, tmp_entry, sp, dp)
@@ -166,8 +167,9 @@ class Modifier:
 
             tmp_flows.append(entry)
 
-            # filters only the entries of aggregate flows
-            self.flows = list(filter(lambda entry: entry != [None], self.flows))
+            if count > 1:
+                # filters only the entries of aggregate flows
+                self.flows = list(filter(lambda entry: entry != [None], self.flows))
 
         self.flows = tmp_flows
 
@@ -182,7 +184,7 @@ class Modifier:
         entry[7] = [x + y for x, y in zip(entry[7], tmp_entry[7])]
         sp.add(tmp_entry[8])
         dp.add(tmp_entry[9])
-        entry[10] = tmp_entry[1] - entry[0]
+        entry[10] = entry[1] - entry[0]
         entry[11] += tmp_entry[11]
         entry[12] += tmp_entry[12]
         entry[13] += tmp_entry[13]
@@ -224,7 +226,9 @@ class Extractor:
                               RobustScaler(),
                               QuantileTransformer(output_distribution='normal')]
 
-        self.methods = ['normal', 'minmax scaler', 'quantile transformer']
+        self.methods = ['normal', 'standard scaler',
+                        'minmax scaler', 'maxabs scaler',
+                        'robust scaler', 'quantile transformer']
 
     def extract_features(self, header, flows, choices):
         """Extracts the features"""
