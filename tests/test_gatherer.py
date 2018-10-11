@@ -21,7 +21,7 @@ class TestOpenCSV(unittest.TestCase):
 
     def test_num_entries(self):
         # number of entries
-        self.assertEqual(len(self.flows), 23)
+        self.assertEqual(len(self.flows), 24)
 
 
 if __name__ == '__main__':
