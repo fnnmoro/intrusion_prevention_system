@@ -1,6 +1,7 @@
 import os
 import sys
 import csv
+import time
 from datetime import datetime
 from view import show_directory_content
 
@@ -101,21 +102,26 @@ def record_datatime(dst_path=""):
         print(error, end="\n\n")
 
 
-def processing_time(start, end, name="", dst_path="", no_output=False):
-    """Prints the processing time"""
-    time = round(end - start, 7)
-    if not no_output:
+def processing_time(func):
+    def timer(*args, **kwargs):
+        date = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
+        start = time.time()
+
+        result = func(*args, **kwargs)
+
+        end = time.time()
+        dur = round(end - start, 7)
+
         try:
-            with open(dst_path, mode='a') as file:
+            with open('/home/flmoro/research_project/log/methods_time.csv',
+                      mode='a') as file:
                 csv_file = csv.writer(file)
-                csv_file.writerow([datetime.strftime(datetime.now(),
-                                                     "%Y-%m-%d %H:%M:%S"),
-                                   time, name])
+                csv_file.writerow([date, dur, func.__name__])
         except FileNotFoundError as error:
             print(error, end="\n\n")
-    else:
-        return time
 
+        return result, date, dur
+    return timer
 
 def memory_size(object, name):
     """Prints the memory size of the object"""
