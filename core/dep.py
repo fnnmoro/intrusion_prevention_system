@@ -1,6 +1,6 @@
 import pickle
 from threading import Thread, Event
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session
 import realtime
 
 thread = Thread()
@@ -14,12 +14,13 @@ def detect():
 
     dt = pickle.load(open('../objects/dt', 'rb'))
     ex = pickle.load(open('../objects/ex', 'rb'))
-    forms = pickle.load(open('../objects/forms', 'rb'))
 
     if not thread.isAlive():
         thread = realtime.WorkerThread(dt, ex, thread_stop_event,
                                        [int(request.form['model'])],
-                                       forms)
+                                       session['choice_features'],
+                                       session['preprocessing'],
+                                       session['aggregated'])
         thread.start()
 
     return render_template('dep/detect.html')

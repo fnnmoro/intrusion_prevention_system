@@ -6,10 +6,11 @@ from view import export_flows
 from model.preprocessing import Formatter, Extractor, Modifier
 from threading import Thread
 from core import socketio
-from db import store_flows
+from database import store_flows
 
 class WorkerThread(Thread):
-    def __init__(self, dt, ex, event, model, forms):
+    def __init__(self, dt, ex, event, model,
+                 choice_features, preprocessing, aggregated):
         super().__init__()
         self.thread_stop_event = event
         self.nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
@@ -18,8 +19,9 @@ class WorkerThread(Thread):
         self.dt = dt
         self.ex = ex
         self.model = model
-        self.choice_features = forms[0]
-        self.preprocessing = forms[1]
+        self.choice_features = choice_features
+        self.preprocessing = preprocessing
+        self.aggregated = aggregated
 
 
     def model_execution(self):
@@ -52,22 +54,24 @@ class WorkerThread(Thread):
                     header, flows = ft.format_flows()
 
                     md = Modifier(flows, header)
-                    header, flows = md.modify_flows(100)
+                    header, flows = md.modify_flows(100, self.aggregated)
 
                     header_features, features = self.ex.extract_features(
                         header, flows, self.choice_features)
 
-                    features = self.ex.feature_scaling(features,
-                                                       self.preprocessing, True)
+                    features = self.ex.transform(features,
+                                                 self.preprocessing,
+                                                 True)
 
 
                     print(self.dt.classifiers)
-                    print(self.ex.preprocessing)
+                    print(self.ex.feature_scaling)
 
-                    pred, param, date, duration = self.dt.execute_classifiers(
+                    pred_parm, date, dur = self.dt.execute_classifiers(
                         0, features, 0, 0, True)
 
-                    flows, anomalies = self.dt.find_anomalies(flows, pred)
+                    flows, anomalies = self.dt.find_anomalies(flows,
+                                                              pred_parm[0])
 
                     export_flows(flows, self.csv_path + "flows/",
                                  file_name.split(".csv")[0] + "_w60.csv",
