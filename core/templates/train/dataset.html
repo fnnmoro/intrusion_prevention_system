@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Dataset{% endblock %}
+
+
+{% block content %}
+    <form method="post" action="{{ url_for('train.config') }}">
+        <label>Choose the dataset type:</label>
+        <br>
+        <select name="dataset_type">
+            {% for item in dataset_types %}
+                <option value="{{ loop.index-1 }}">{{ item }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <label>Choose the preprocessing method:</label>
+        <br>
+        <select name="preprocessing">
+            {% for item in preprocessing %}
+                <option value="{{ loop.index-1 }}">{{ item }}</option>
+            {% endfor %}
+        </select>
+
+        <br>
+
+        <input type="submit" value="Next">
+    </form>
+
+{% endblock %}

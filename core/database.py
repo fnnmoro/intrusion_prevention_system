@@ -29,7 +29,7 @@ def store_flows(flows):
     db = sqlite3.connect('../instance/flows.sqlite')
 
     for entry in flows:
-        print(type(entry[7]))
+        entry[7] = str(entry[7])
         db.execute(
             'INSERT INTO flows (ts, te, ismc, odmc, sa, da, pr, iflg, sp, dp, '
             'td, ipkt, ibyt, bps, bpp, pps, flw, lbl) VALUES (?, ?, ?, ?, ?, ?, '
