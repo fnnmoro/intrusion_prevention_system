@@ -1,12 +1,10 @@
 """This module..."""
 import ast
-import time
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    MaxAbsScaler, RobustScaler,
-                                   QuantileTransformer)
-from .tools import processing_time
+                                   QuantileTransformer, Normalizer)
 
 
 class Formatter:
@@ -224,11 +222,13 @@ class Extractor:
                               MinMaxScaler(),
                               MaxAbsScaler(),
                               RobustScaler(),
-                              QuantileTransformer(output_distribution='normal')]
+                              QuantileTransformer(output_distribution='normal'),
+                              Normalizer()]
 
         self.methods = ['normal', 'standard scaler',
                         'minmax scaler', 'maxabs scaler',
-                        'robust scaler', 'quantile transformer']
+                        'robust scaler', 'quantile transformer',
+                        'normalizer']
 
     def extract_features(self, header, flows, choices):
         """Extracts the features"""
@@ -262,7 +262,7 @@ class Extractor:
 
         return labels
 
-    def feature_scaling(self, features, choice, execute_model=False):
+    def transform(self, features, choice, execute_model=False):
         if choice != 0:
             if not execute_model:
                 self.preprocessing = self.preprocessing[choice]

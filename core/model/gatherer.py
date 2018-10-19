@@ -1,8 +1,6 @@
 import os
 import csv
-import time
 import subprocess
-from .tools import processing_time
 
 
 def split_pcap(pcap_path, pcap_files, size=0):

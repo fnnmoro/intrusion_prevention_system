@@ -4,7 +4,7 @@ from model.preprocessing import Formatter
 from model.preprocessing import Modifier
 from model.preprocessing import Extractor
 from model.detection import Detector
-from view import export_flows, evaluation_metrics, scatter_plot
+from view import export_flows, evaluation_metrics, scatter_plot, find_patterns
 
 
 dataset_path = "/home/flmoro/research_project/dataset/"
@@ -83,7 +83,7 @@ while option != 4:
                 header, flows = ft.format_flows(int(input("label number: ")))
 
                 md = Modifier(flows, header)
-                header, flows = md.modify_flows(-1)
+                header, flows = md.modify_flows(100, True)
 
                 export_flows(flows, csv_path + "flows/",
                              file_name.split(".csv")[0] + "_w60"
@@ -157,7 +157,7 @@ while option != 4:
                                                             list(range(10, 13)))
             labels = ex.extract_labels(flows)
 
-            features = ex.feature_scaling(features, 5)
+            features = ex.transform(features, 0)
 
             option = tools.menu(["visualize the dataset patterns",
                                  "execute the machine learning algorithms",
@@ -173,7 +173,7 @@ while option != 4:
                                              x_column, y_column,
                                              x_lbl, y_lbl)
 
-                    pattern = dt.find_patterns(features)
+                    pattern = find_patterns(features)
                     scatter_plot(pattern, labels, 0, 1, 'x', 'y')
 
                 elif option == 2:
@@ -184,11 +184,13 @@ while option != 4:
                     for idx in range(num_clf):
                         dt.tuning_hyperparameters(2, idx)
 
-                        pred, param, date, duration = dt.execute_classifiers(
+                        pred_parm, date, dur = dt.execute_classifiers(
                                 dataset[0], dataset[1], dataset[2], idx)
 
-                        _ = evaluation_metrics(dataset[3], pred, param,
-                                           [date, dt.methods[idx], duration],
+                        evaluation_metrics(dataset[3],
+                                           pred_parm[0],
+                                           pred_parm[1],
+                                           [date, dt.methods[idx], dur],
                                            dataset_path + result_name, idx)
 
                 elif option == 3:
@@ -235,15 +237,15 @@ while option != 4:
                             header, flows, list(range(10, 13)))
                     labels = ex.extract_labels(flows)
 
-                    features = ex.feature_scaling(features, 2, True)
+                    features = ex.transform(features, 2, True)
 
-                    _ = dt.choose_classifiers([0])
+                    dt.choose_classifiers([0])
 
-                    pred, param, date, duration = dt.execute_classifiers(
+                    pred_parm, date, dur = dt.execute_classifiers(
                         0, features, 0, 0, True)
 
                     for idx, entry in enumerate(flows):
-                        entry[-1] = pred[idx]
+                        entry[-1] = pred_parm[0][idx]
 
                     export_flows(flows, csv_path + "flows/",
                                  file_name.split(".csv")[0] + "_w60.csv",

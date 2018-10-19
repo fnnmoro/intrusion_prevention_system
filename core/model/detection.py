@@ -1,18 +1,13 @@
-import time
-import numpy as np
-from datetime import datetime
+from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import (SGDClassifier, PassiveAggressiveClassifier,
-                                  Perceptron)
-from sklearn.naive_bayes import BernoulliNB, GaussianNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.decomposition import PCA
-from sklearn.model_selection import GridSearchCV
+from sklearn.naive_bayes import BernoulliNB, GaussianNB, MultinomialNB
+from sklearn.linear_model import (SGDClassifier, PassiveAggressiveClassifier,
+                                  Perceptron)
 from .tools import processing_time
-from view import checkpoint
 
 
 class Detector:
@@ -118,29 +113,15 @@ class Detector:
         self.classifiers[idx] = GridSearchCV(self.classifiers[idx],
                                              self.param[idx], cv=n_splits)
 
+    @processing_time
     def execute_classifiers(self, training_features, test_features,
                             training_labels, idx, execute_model=False):
-
-        start = time.time()
-        date = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
-
         if not execute_model:
             self.classifiers[idx].fit(training_features, training_labels)
         pred = self.classifiers[idx].predict(test_features)
         param = self.classifiers[idx].best_params_
 
-        end = time.time()
-        dur = processing_time(start, end, no_output=True)
-
-        return pred, param, date, dur
-
-    @staticmethod
-    def find_patterns(features):
-        pca = PCA(n_components=2)
-
-        pattern = pca.fit_transform(features)
-
-        return pattern
+        return pred, param
 
     def find_anomalies(self, flows, pred):
         anomalies = 0
