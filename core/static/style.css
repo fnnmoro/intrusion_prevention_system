@@ -1,2 +1,116 @@
 @charset "utf-8";
 *{margin: 0}
+
+/*body*/
+
+html, body {
+    height: 100%;
+    display: flex;
+    color: dimgray;
+    font-size: 20px;
+    flex-direction: column;
+    font-family: "Economica";
+}
+
+a {
+    color: dimgray;
+    text-decoration: none;
+}
+
+/*header*/
+
+header {
+    flex: none;
+}
+
+nav {
+    width: 100%;
+    text-align: center;
+    display: inline-block;
+    background-color: gainsboro;
+    border-bottom: thin solid dimgray;
+}
+
+nav ul {
+    padding: 0;
+}
+
+nav ul li {
+    padding: 10px;
+    list-style: none;
+    display: inline-block;
+}
+
+nav ul li a:hover {
+    color: red;
+    border-bottom: thin solid red;
+}
+
+/*main*/
+
+main {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+main a {
+    padding: 0px 30px 0px 30px;
+    border-left: thin solid dimgray;
+    border-right: thin solid dimgray;
+}
+
+main a:hover {
+    color: red;
+    border-color: red;
+}
+
+form {
+    padding: 10px;
+    text-align: center;
+}
+
+form label {
+    display: inline-block;
+}
+
+form select {
+    width: 150px;
+    color: dimgray;
+    font-size: 20px;
+    font-family: "Economica";
+    border: thin solid dimgray;
+    text-transform: capitalize;
+    background-color: gainsboro;
+}
+
+form select:hover {
+    color: red;
+    border: thin solid red;
+}
+
+form input {
+    width: 100px;
+    color: dimgray;
+    font-size: 20px;
+    font-family: "Economica";
+    border: thin solid dimgray;
+    background-color: gainsboro;
+}
+
+form input:hover {
+    color: red;
+    border: thin solid red;
+}
+
+/*footer*/
+
+footer {
+    flex: none;
+    font-size: 15px;
+    text-align: center;
+}
+
+

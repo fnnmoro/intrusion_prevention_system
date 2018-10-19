@@ -1,8 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}{% endblock %}</title>
+    <link href='https://fonts.googleapis.com/css?family=Economica' rel='stylesheet'>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block script %}{% endblock %}
 </head>
@@ -10,7 +11,8 @@
     <header>
         <nav>
             <ul>
-                <li><a href="{{ url_for('home') }}">home</a></li>
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('about') }}">About</a></li>
             </ul>
         </nav>
     </header>
@@ -19,6 +21,8 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer>fernando luiz moro 2018</footer>
+    <footer>
+        <p>Fernando Luiz Moro - 2018</p>
+    </footer>
 </body>
 </html>
