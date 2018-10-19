@@ -9,3 +9,7 @@ __pycache__
 
 # tmp
 tmp.py
+
+# instance and objects folders
+instance/
+objects/
