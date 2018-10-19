@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as ptc
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, confusion_matrix)
+from sklearn.decomposition import PCA
 
 
 def print_flows(flows, header="", sample=-1):
@@ -132,3 +133,9 @@ def checkpoint(point, log_path):
                                              "%Y-%m-%d %H:%M:%S"),
                            point])
 
+def find_patterns(features):
+    pca = PCA(n_components=2)
+
+    pattern = pca.fit_transform(features)
+
+    return pattern
