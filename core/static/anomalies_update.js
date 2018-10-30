@@ -4,7 +4,9 @@ $(document).ready(function(){
 
     //receive details from server
     socket.on('mytest', function(msg) {
-        $('#num_anomalies').html(msg["total_anomalies"]);
+        if (msg["total_anomalies"] > 0){
+            $('#num_anomalies').html(msg["total_anomalies"]).css("color", "red");
+        }
 
         $('#num_anomalies').click( function() {
             alert('blacklist');

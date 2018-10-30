@@ -3,7 +3,11 @@
 
 /*body*/
 
-html, body {
+html {
+    height: 100%;
+}
+
+body {
     height: 100%;
     display: flex;
     color: dimgray;
@@ -17,16 +21,18 @@ a {
     text-decoration: none;
 }
 
+p {
+    margin-bottom: 15px;
+}
+
 /*header*/
 
 header {
-    flex: none;
+    width: 100%;
 }
 
 nav {
-    width: 100%;
     text-align: center;
-    display: inline-block;
     background-color: gainsboro;
     border-bottom: thin solid dimgray;
 }
@@ -49,11 +55,12 @@ nav ul li a:hover {
 /*main*/
 
 main {
-    height: 100%;
+    flex-grow: 1;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    overflow: auto;
     align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 main a {
@@ -68,18 +75,35 @@ main a:hover {
 }
 
 form {
-    padding: 10px;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-form label {
-    display: inline-block;
+form p {
+    margin: 15px 0px 2px 0px;
 }
 
-form select {
+form button {
+    border: none;
+    color: dimgray;
+    font-size: 20px;
+    background: none;
+    font-family: "Economica";
+    text-transform: capitalize;
+}
+
+form button:hover {
+    color: red;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+form select, form input {
     width: 150px;
     color: dimgray;
     font-size: 20px;
+    flex-shrink: 0;
     font-family: "Economica";
     border: thin solid dimgray;
     text-transform: capitalize;
@@ -91,24 +115,69 @@ form select:hover {
     border: thin solid red;
 }
 
-form input {
-    width: 100px;
-    color: dimgray;
-    font-size: 20px;
-    font-family: "Economica";
-    border: thin solid dimgray;
-    background-color: gainsboro;
-}
-
 form input:hover {
     color: red;
     border: thin solid red;
 }
 
+form input[type="checkbox"] {
+    display: none;
+}
+
+form input[type="checkbox"]+label {
+    cursor: pointer;
+}
+
+form input[type="checkbox"]+label:hover {
+    color: red;
+}
+
+form input[type="checkbox"]:checked+label {
+    border-bottom: thin solid red;
+}
+
+table {
+    padding: 15px;
+    text-align: center;
+}
+
+th {
+   width: 100px;
+   font-weight: normal;
+   text-transform: capitalize;
+}
+
+td {
+   width: 400px;
+   border-bottom: thin solid dimgray;
+   text-transform: capitalize;
+}
+
+.checkbox {
+    width: 500px;
+    display: flex;
+    flex-wrap: wrap;
+    text-align: center;
+    flex-shrink: 0;
+    justify-content: space-around;
+    border: thin solid dimgray;
+    background-color: gainsboro;
+    text-transform: capitalize;
+}
+
+.box {
+    width: 200px;
+    padding: 10px;
+}
+
+.tables {
+    display: flex;
+    flex-direction: column;
+}
+
 /*footer*/
 
 footer {
-    flex: none;
     font-size: 15px;
     text-align: center;
 }
