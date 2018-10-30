@@ -1,20 +1,28 @@
 {% extends 'base.html' %}
 
-{% block title %}results{% endblock %}
+{% block title %}Results{% endblock %}
 
 {% block content %}
-    {% for item in information %}
-        <form method="post" action="{{ url_for('dep.detect') }}">
-             <button name="model" type="submit" value="{{ loop.index-1 }}">{{ item[0] }}</button>
-        </form>
-        <p>date: {{ item[1] }}</p>
-        <p>duration: {{ item[2] }}</p>
-        <p>accuracy: {{ item[3] }}</p>
-        <p>precision: {{ item[4] }}</p>
-        <p>recall: {{ item[5] }}</p>
-        <p>f1: {{ item[6] }}</p>
-        <p>preprocessing: {{ item[7] }}</p>
-        <p>parameters: {{ item[8] }}</p>
-        <br>
-    {% endfor %}
+    <p>Choose the classifier</p>
+
+    <div class="tables">
+        {% for classifier in information %}
+            <table>
+                <tr>
+                   <th>classifier</th>
+                   <td>
+                        <form method="post" action="{{ url_for('dep.detect') }}">
+                           <button name="model" type="submit" value="{{ loop.index-1 }}">{{ classifier[0] }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% for item in classifier[1:] %}
+                    <tr>
+                        <th>{{ text_info[loop.index-1] }}</th>
+                        <td>{{ item }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
 {% endblock %}
