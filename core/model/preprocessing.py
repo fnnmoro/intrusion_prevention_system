@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    MaxAbsScaler, RobustScaler,
                                    QuantileTransformer, Normalizer)
+from .tools import processing_time_log
 
 
 class Formatter:
@@ -15,6 +16,7 @@ class Formatter:
 
         self.flows = flows
 
+    @processing_time_log
     def format_flows(self, lbl_num=2, training_model=False):
 
         header = []
@@ -128,6 +130,7 @@ class Modifier:
 
         return self.header, self.flows
 
+    @processing_time_log
     def aggregate_flows(self, threshold):
         """Aggregates the flows according to features of mac, ip and protocol"""
         tmp_flows = []
@@ -187,6 +190,7 @@ class Modifier:
         entry[12] += tmp_entry[12]
         entry[13] += tmp_entry[13]
 
+    @processing_time_log
     def create_features(self):
         """Creates new features"""
         self.header[0][13:13] = ["bps", "bpp", "pps"]
@@ -230,6 +234,7 @@ class Extractor:
                         'robust scaler', 'quantile transformer',
                         'normalizer']
 
+    @processing_time_log
     def extract_features(self, header, flows, choices):
         """Extracts the features"""
 
@@ -252,6 +257,7 @@ class Extractor:
 
         return header_features, features
 
+    @processing_time_log
     def extract_labels(self, flows):
         """Extracts the labels"""
 
@@ -262,15 +268,21 @@ class Extractor:
 
         return labels
 
+    @processing_time_log
     def transform(self, features, choice, execute_model=False):
-        if choice != 0:
-            if not execute_model:
-                self.preprocessing = self.preprocessing[choice]
+
+        if not execute_model:
+            self.methods = self.methods[choice]
+            self.preprocessing = self.preprocessing[choice]
+
+        if not choice == 0:
             std_features = self.preprocessing.fit_transform(features)
 
             return std_features
+
         return features
 
+    @processing_time_log
     def train_test_split(self, features, labels, test_size):
         dataset = train_test_split(features, labels, test_size=test_size,
                                    stratify=labels)

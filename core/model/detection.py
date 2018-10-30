@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import BernoulliNB, GaussianNB, MultinomialNB
 from sklearn.linear_model import (SGDClassifier, PassiveAggressiveClassifier,
                                   Perceptron)
-from .tools import processing_time
+from .tools import processing_time_log
 
 
 class Detector:
@@ -63,7 +63,7 @@ class Detector:
 
                       {"n_neighbors": [5, 10, 15],
                        "weights": ["uniform", "distance"],
-                       "algorithm": ["ball_tree", "kd_tree", "brute"],
+                       "algorithm": ["ball_tree", "kd_tree"],
                        "leaf_size": [10, 20, 30]},
 
                       {"kernel": ["rbf"],
@@ -75,23 +75,23 @@ class Detector:
                        "penalty": ["l1", "l2", "elasticnet"],
                        "alpha": [0.0001, 0.001, 0.01, 0.1],
                        "fit_intercept": [True, False],
-                       "max_iter": [5, 50, 500, 1000]},
+                       "max_iter": [50, 100, 200, 500]},
 
                       {"C": [0.01, 0.1, 1.0, 10.0, 100.0],
                        "fit_intercept": [True, False],
-                       "max_iter": [5, 50, 500, 1000],
+                       "max_iter": [50, 100, 200, 500],
                        "loss": ["hinge"]},
 
                       {"penalty": [None, "l1", "l2", "elasticnet"],
                        "alpha": [0.0001, 0.001, 0.01, 0.1],
                        "fit_intercept": [True, False],
-                       "max_iter": [5, 50, 500, 1000]},
+                       "max_iter": [50, 100, 200, 500]},
 
-                      {"hidden_layer_sizes": [(10,), (100,), (10, 10)],
+                      {"hidden_layer_sizes": [(10,), (15, 10), (20,15,10)],
                        "activation": ["identity",  "logistic", "tanh", "relu"],
                        "solver": ["adam", "lbfgs", "sgd"],
                        "alpha": [0.0001, 0.001, 0.01, 0.1],
-                       "max_iter": [5, 50, 500, 1000]}]
+                       "max_iter": [50, 100, 200, 500]}]
 
     def choose_classifiers(self, choices):
         tmp = [[],[],[]]
@@ -113,7 +113,7 @@ class Detector:
         self.classifiers[idx] = GridSearchCV(self.classifiers[idx],
                                              self.param[idx], cv=n_splits)
 
-    @processing_time
+    @processing_time_log
     def execute_classifiers(self, training_features, test_features,
                             training_labels, idx, execute_model=False):
         if not execute_model:

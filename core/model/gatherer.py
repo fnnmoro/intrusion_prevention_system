@@ -1,6 +1,7 @@
 import os
 import csv
 import subprocess
+from .tools import processing_time_log
 
 
 def split_pcap(pcap_path, pcap_files, size=0):
@@ -112,6 +113,7 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False)
         print(error, end="\n\n")
 
 
+@processing_time_log
 def open_csv(csv_path, csv_files, sample=-1, execute_model=False):
     """Opens a CSV file containing raw flows"""
     try:
