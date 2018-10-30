@@ -15,7 +15,7 @@ def menu(choices):
     return choice
 
 
-def check_path_exist(pcap_path, nfcapd_path, csv_path):
+def check_path_exist(pcap_path, nfcapd_path, csv_path, log_path):
     if not os.path.exists(pcap_path):
         os.system("mkdir {0}".format(pcap_path))
 
@@ -28,6 +28,8 @@ def check_path_exist(pcap_path, nfcapd_path, csv_path):
         os.system("mkdir {0}raw_flows/".format(csv_path))
         os.system("mkdir {0}tmp_flows/".format(csv_path))
 
+    if not os.path.exists(log_path):
+        os.system("mkdir {0}".format(log_path))
 
 def directory_content(path, execute_model=False):
     try:
@@ -102,7 +104,7 @@ def record_datatime(dst_path=""):
         print(error, end="\n\n")
 
 
-def processing_time(func):
+def processing_time_log(func):
     def timer(*args, **kwargs):
         date = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
         start = time.time()
@@ -113,15 +115,33 @@ def processing_time(func):
         dur = round(end - start, 7)
 
         try:
-            with open('/home/flmoro/research_project/log/methods_time.csv',
+            with open('/home/flmoro/bsi16/research_project/codes/log/'
+                      'processing_time_log.csv',
                       mode='a') as file:
+
                 csv_file = csv.writer(file)
                 csv_file.writerow([date, dur, func.__name__])
         except FileNotFoundError as error:
             print(error, end="\n\n")
 
-        return result, date, dur
+        if func.__name__ == 'execute_classifiers':
+            return result,date, dur
+        else:
+            return result
     return timer
+
+
+def save_choices_log(choices, log_path):
+    try:
+        with open(log_path + 'save_choices_log.csv', mode='a') as file:
+
+            csv_file = csv.writer(file)
+            csv_file.writerow([datetime.strftime(datetime.now(),
+                                                 "%Y-%m-%d %H:%M:%S"),
+                               choices])
+    except FileNotFoundError as error:
+        print(error, end="\n\n")
+
 
 def memory_size(object, name):
     """Prints the memory size of the object"""
