@@ -26,10 +26,14 @@ def dataset():
 @bp.route('/config', methods=['GET', 'POST'])
 def config():
     if request.method == 'POST':
-        session['path'] = '/home/flmoro/research_project/dataset/csv/'
+        session['path'] = '/home/flmoro/bsi16/research_project/codes/dataset/csv/'
         session['file'] = 'flows_w60_s800_cf.csv'
         session['aggregated'] = False
         session['preprocessing'] = int(request.form['preprocessing'])
+        session['sample'] = int(request.form['sample'])
+        session['test_size'] = int(request.form['test_size'])/100
+        session['folds'] = int(request.form['folds'])
+
 
         algorithms = ['decision tree',
                       'random forest',
@@ -71,7 +75,7 @@ def config():
 def results():
     if request.method == 'POST':
         flows = gatherer.open_csv(session['path'], session['file'],
-                                  int(request.form['sample']),
+                                  session['sample'],
                                   True)[0]
 
         ft = Formatter(flows)
@@ -86,11 +90,9 @@ def results():
                                                         choice_features)
         labels = ex.extract_labels(flows)
 
-
         features = ex.transform(features, session['preprocessing'])
 
-        dataset = ex.train_test_split(features, labels,
-                                      int(request.form['test_size'])/100)
+        dataset = ex.train_test_split(features, labels, session['test_size'])
 
         dt = Detector()
 
@@ -100,7 +102,7 @@ def results():
 
         information = []
         for idx in range(num_clf):
-            dt.tuning_hyperparameters(int(request.form['kfold']), idx)
+            dt.tuning_hyperparameters(session['folds'], idx)
 
             pred_parm, date, dur = dt.execute_classifiers(
                 dataset[0], dataset[1], dataset[2], idx)
@@ -111,11 +113,15 @@ def results():
 
             information.extend([[dt.methods[idx], date, dur, metrics[3],
                                  metrics[4], metrics[5], metrics[6],
-                                 ex.methods[session['preprocessing']],
-                                 pred_parm[1]]])
+                                 ex.methods, pred_parm[1]]])
 
             pickle.dump(dt, open('../objects/dt', 'wb'))
             pickle.dump(ex, open('../objects/ex', 'wb'))
             session['choice_features'] = choice_features
 
-        return render_template('train/results.html', information=information)
+            text_info = ['date', 'duration', 'accuracy',
+                         'precision', 'recall', 'f1-score',
+                         'preprocessing method', 'hyperparameters']
+
+        return render_template('train/results.html', information=information,
+                               text_info=text_info)

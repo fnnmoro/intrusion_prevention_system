@@ -13,8 +13,8 @@ class WorkerThread(Thread):
                  choice_features, preprocessing, aggregated):
         super().__init__()
         self.thread_stop_event = event
-        self.nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
-        self.csv_path = "/home/flmoro/research_project/dataset/csv/"
+        self.nfcapd_path = "/home/flmoro/bsi16/research_project/codes/dataset/nfcapd/"
+        self.csv_path = "/home/flmoro/bsi16/research_project/codes/dataset/csv/"
 
         self.dt = dt
         self.ex = ex
@@ -30,7 +30,7 @@ class WorkerThread(Thread):
 
         process = gatherer.nfcapd_collector(self.nfcapd_path, 60)
 
-        _ = self.dt.choose_classifiers(self.model)
+        self.dt.choose_classifiers(self.model)
 
         time.sleep(2)
         try:
@@ -63,9 +63,8 @@ class WorkerThread(Thread):
                                                  self.preprocessing,
                                                  True)
 
-
                     print(self.dt.classifiers)
-                    print(self.ex.feature_scaling)
+                    print(self.ex.preprocessing)
 
                     pred_parm, date, dur = self.dt.execute_classifiers(
                         0, features, 0, 0, True)
