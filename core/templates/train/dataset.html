@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Dataset{% endblock %}
+
+
+{% block content %}
+    <form method="post" action="{{ url_for('train.config') }}">
+        <p>Choose a dataset type</p>
+        <select name="dataset_type">
+            {% for item in dataset_types %}
+                <option value="{{ loop.index-1 }}">{{ item }}</option>
+            {% endfor %}
+        </select>
+
+        <p>Choose a preprocessing method</p>
+        <select name="preprocessing">
+            {% for item in preprocessing %}
+                <option value="{{ loop.index-1 }}">{{ item }}</option>
+            {% endfor %}
+        </select>
+
+        <p>Define a sample</p>
+        <input type="text" name="sample">
+
+        <p>Define the size of the test set</p>
+        <input type="text" name="test_size">
+
+        <p>Define how many folds the validation set will have</p>
+        <input type="text" name="folds">
+
+        <br>
+        <input type="submit" value="Next">
+    </form>
+{% endblock %}

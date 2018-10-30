@@ -1,8 +1,11 @@
 """This module..."""
 import ast
 from datetime import datetime
-from sklearn.model_selection import KFold, train_test_split
-from sklearn.preprocessing import MinMaxScaler, QuantileTransformer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
+                                   MaxAbsScaler, RobustScaler,
+                                   QuantileTransformer, Normalizer)
+from .tools import processing_time_log
 
 
 class Formatter:
@@ -13,12 +16,12 @@ class Formatter:
 
         self.flows = flows
 
-    def format_flows(self, training_model=False):
-        """Formats the raw flows into flows to used in machine learning algorithms"""
+    @processing_time_log
+    def format_flows(self, lbl_num=2, training_model=False):
 
         header = []
         for entry in self.flows:
-            if training_model == False:
+            if not training_model:
                 self.delete_features(entry)
                 self.change_columns(entry)
                 # checks if is the header
@@ -27,13 +30,19 @@ class Formatter:
                 else:
                     self.replace_missing_features(entry)
                     self.change_data_types(entry)
-                    self.format_flag(entry)
+                    self.count_flag(entry)
+                    entry.append(1)
+                    entry.append(lbl_num)
             else:
                 if "ts" in entry[0]:
                     header.append(entry)
                 else:
                     self.change_data_types(entry, True)
         del self.flows[0]
+
+        if not training_model:
+            header[0][7] = "iflg"
+            header[0].extend(["flw", "lbl"])
 
         return header, self.flows
 
@@ -67,17 +76,32 @@ class Formatter:
         entry[10] = round(float(entry[10]))
         entry[11:] = [int(i) for i in entry[11:]]
 
-        if training_model == True:
+        if training_model:
             entry[7] = ast.literal_eval(entry[7])
         else:
             entry[6:8] = [i.lower() for i in entry[6:8]]
 
     @staticmethod
-    def format_flag(entry):
+    def count_flag(entry):
         """Changes the flag feature by deleting the dots in the middle of
         the characters"""
 
         entry[7] = list(filter(lambda flg: flg != ".", entry[7]))
+
+        # checks if the protocol that was used is tcp
+        if entry[6] == "tcp":
+            tmp = [0, 0, 0, 0, 0, 0]
+
+            tmp[0] = entry[7].count('u')
+            tmp[1] = entry[7].count('a')
+            tmp[2] = entry[7].count('s')
+            tmp[3] = entry[7].count('f')
+            tmp[4] = entry[7].count('r')
+            tmp[5] = entry[7].count('p')
+
+            entry[7] = tmp
+        else:
+            entry[7] = [0]
 
     @staticmethod
     def replace_missing_features(entry):
@@ -99,34 +123,80 @@ class Modifier:
         self.flows = flows
         self.header = header
 
-    def modify_flows(self, aggregation=False, execute_model=False):
-        lbl_num = 2
-
-        if not aggregation:
-            self.header[0].append("lbl")
-            self.header[0][7] = "iflg"
-        else:
-            self.header[0].extend(["flw", "lbl"])
-
-        if execute_model == False:
-            lbl_num = int(input("label number: "))
-            print()
-
-        for entry in self.flows:
-            self.count_flags(entry)
-            if aggregation:
-                entry.append(1)
-            entry.append(lbl_num)
+    def modify_flows(self, threshold, aggregate=False):
+        if aggregate:
+            self.aggregate_flows(threshold)
+        self.create_features()
 
         return self.header, self.flows
 
+    @processing_time_log
+    def aggregate_flows(self, threshold):
+        """Aggregates the flows according to features of mac, ip and protocol"""
+        tmp_flows = []
+
+        # replaces sp and dp to isp and idp
+        self.header[0][8] = "isp"
+        self.header[0][9] = "idp"
+
+        while len(self.flows) != 0:
+            count = 1
+            entry = self.flows.pop(0)
+
+            # keeps only the ports with unique numbers
+            sp = {entry[8]}
+            dp = {entry[9]}
+            # checks if there are more occurrences in relation to the
+            # first one
+            for tmp_idx, tmp_entry in enumerate(self.flows):
+                if count < threshold:
+                    rules2 = [entry[0].hour == tmp_entry[0].hour,
+                              entry[0].minute == tmp_entry[0].minute,
+                              entry[2:7] == tmp_entry[2:7]]
+                    if all(rules2):
+                        self.aggregate_features(entry, tmp_entry, sp, dp)
+                        # marks the occurrences already aggregated
+                        self.flows[tmp_idx] = [None]
+
+                        count += 1
+                else:
+                    break
+            # counts the quantity of ports with the same occurences
+            entry[8] = len(sp)
+            entry[9] = len(dp)
+            entry[10] = entry[1].second - entry[0].second
+
+            tmp_flows.append(entry)
+
+            if count > 1:
+                # filters only the entries of aggregate flows
+                self.flows = list(filter(lambda entry: entry != [None], self.flows))
+
+        self.flows = tmp_flows
+
+    @staticmethod
+    def aggregate_features(entry, tmp_entry, sp, dp):
+        """Aggregates the features from the first occurrence with the another
+        occurrence equal"""
+
+        if entry[1] < tmp_entry[1]:
+            entry[1] = tmp_entry[1]
+
+        entry[7] = [x + y for x, y in zip(entry[7], tmp_entry[7])]
+        sp.add(tmp_entry[8])
+        dp.add(tmp_entry[9])
+        entry[10] = entry[1] - entry[0]
+        entry[11] += tmp_entry[11]
+        entry[12] += tmp_entry[12]
+        entry[13] += tmp_entry[13]
+
+    @processing_time_log
     def create_features(self):
         """Creates new features"""
         self.header[0][13:13] = ["bps", "bpp", "pps"]
 
         for entry in self.flows:
             # checks if the packet value isn't zero
-
             if entry[11] != 0:
                 # bits per packet
                 bpp = int(round(((8 * entry[12]) / entry[11]), 0))
@@ -145,132 +215,76 @@ class Modifier:
 
             entry[13:13] = [bps, bpp, pps]
 
-        return self.header, self.flows
-
-    @staticmethod
-    def count_flags(entry):
-        """Counts the quantity of each TCP flags"""
-        tmp = [0, 0, 0, 0, 0, 0]
-
-        # checks if the protocol that was used is tcp
-        if entry[6] == "tcp":
-            tmp[0] = entry[7].count('u')
-            tmp[1] = entry[7].count('a')
-            tmp[2] = entry[7].count('s')
-            tmp[3] = entry[7].count('f')
-            tmp[4] = entry[7].count('r')
-            tmp[5] = entry[7].count('p')
-
-            entry[7] = tmp
-        else:
-            entry[7] = [0]
-
-    def aggregate_flows(self, threshold=-1):
-        """Aggregates the flows according to features of mac, ip and protocol"""
-
-        # replaces sp and dp to isp and idp
-        self.header[0][8] = "isp"
-        self.header[0][9] = "idp"
-
-        # aggregates the flows entries in the first occurrence
-        for idx, entry in enumerate(self.flows):
-            count = 1
-            # checks if the entry has already been aggregated
-            if entry != [None]:
-                # keeps only the ports with unique numbers
-                sp = {entry[8]}
-                dp = {entry[9]}
-                # checks if there are more occurrences in relation to the
-                # first one
-                for tmp_idx, tmp_entry in enumerate(self.flows):
-                    rules1 = [tmp_idx > idx,
-                              tmp_entry != [None],
-                              count < threshold]
-
-                    if all(rules1):
-                        rules2 = [entry[0].minute == tmp_entry[0].minute,
-                                  entry[2:7] == tmp_entry[2:7]]
-                        if all(rules2):
-                            self.aggregate_features(entry, tmp_entry, sp, dp)
-                            # marks the occurrences already aggregated
-                            self.flows[tmp_idx] = [None]
-
-                            count += 1
-                # counts the quantity of ports with the same occurences
-                entry[8] = len(sp)
-                entry[9] = len(dp)
-                print(entry[10])
-
-                if not isinstance(entry[10], int):
-                    entry[10] = entry[10].seconds
-                else:
-                    entry[10] = int(entry[10])
-
-        # filters only the entries of aggregate flows
-        self.flows = list(filter(lambda entry: entry != [None], self.flows))
-
-        return self.header, self.flows
-
-    @staticmethod
-    def aggregate_features(entry, tmp_entry, sp, dp):
-        """Aggregates the features from the first occurrence with the another
-        occurrence equal"""
-
-        entry[1] = tmp_entry[1]
-        entry[7] = [x + y for x, y in zip(entry[7], tmp_entry[7])]
-        sp.add(tmp_entry[8])
-        dp.add(tmp_entry[9])
-        entry[10] = tmp_entry[1] - entry[0]
-        entry[11] += tmp_entry[11]
-        entry[12] += tmp_entry[12]
-        entry[13] += tmp_entry[13]
-
 
 class Extractor:
     """Extracts the features and labels"""
 
-    def __init__(self, header, flows):
+    def __init__(self):
         """Initializes the main variables"""
-        self.header = header
-        self.flows = flows
+        self.preprocessing = [None,
+                              StandardScaler(),
+                              MinMaxScaler(),
+                              MaxAbsScaler(),
+                              RobustScaler(),
+                              QuantileTransformer(output_distribution='normal'),
+                              Normalizer()]
 
-    def extract_features(self, start, end):
+        self.methods = ['normal', 'standard scaler',
+                        'minmax scaler', 'maxabs scaler',
+                        'robust scaler', 'quantile transformer',
+                        'normalizer']
+
+    @processing_time_log
+    def extract_features(self, header, flows, choices):
         """Extracts the features"""
 
         header_features = []
         features = []
 
-        for entry in self.header:
-            header_features.append(entry[start:end+1])
+        for entry in header:
+            tmp = []
+            for idx in choices:
+               tmp.append(entry[idx])
 
-        for entry in self.flows:
-            features.append(entry[start:end+1])
+            header_features.append(tmp)
+
+        for entry in flows:
+            tmp = []
+            for idx in choices:
+                tmp.append(entry[idx])
+
+            features.append(tmp)
 
         return header_features, features
 
-    def extract_labels(self):
+    @processing_time_log
+    def extract_labels(self, flows):
         """Extracts the labels"""
 
         labels = []
 
-        for entry in self.flows:
+        for entry in flows:
             labels.append(entry[-1])
 
         return labels
 
-    def preprocessing_features(self, features):
-        ppa = MinMaxScaler()
-        #ppa = QuantileTransformer(output_distribution='normal')
-        std_features = ppa.fit_transform(features)
+    @processing_time_log
+    def transform(self, features, choice, execute_model=False):
 
-        return std_features
+        if not execute_model:
+            self.methods = self.methods[choice]
+            self.preprocessing = self.preprocessing[choice]
 
-    def k_fold(self, n_splits, shuffle):
-        kf = KFold(n_splits=n_splits, shuffle=shuffle)
+        if not choice == 0:
+            std_features = self.preprocessing.fit_transform(features)
 
-        return kf
+            return std_features
 
-    def train_test_split(self, features, labels):
-        dataset = train_test_split(features, labels, test_size=0.30)
+        return features
+
+    @processing_time_log
+    def train_test_split(self, features, labels, test_size):
+        dataset = train_test_split(features, labels, test_size=test_size,
+                                   stratify=labels)
 
         return dataset

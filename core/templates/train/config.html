@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Config{% endblock %}
+
+{% block script %}
+    <script src="{{ url_for('static', filename='hide_config.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    <form id="config" method="post" action="{{ url_for('train.results') }}" onsubmit="hiddenForm()">
+        <p>Choose the machine learning algorithms</p>
+        <div class="checkbox">
+            {% for item in algorithms %}
+                <div class="box">
+                    <input id="algorithms{{ loop.index }}" type="checkbox" name="algorithms" value="{{ loop.index-1 }}">
+                    <label for="algorithms{{ loop.index }}">{{ item }}</label>
+                </div>
+            {% endfor %}
+        </div>
+
+        <p>Choose the IP flows features</p>
+
+        <div class="checkbox">
+            {% for item in features %}
+                <div class="box">
+                    <input id="features{{ loop.index }}" type="checkbox" name="features" value="{{ loop.index+features_start }}">
+                    <label for="features{{ loop.index }}">{{ item }}</label>
+                </div>
+            {% endfor %}
+        </div>
+
+        <br>
+        <input type="submit" value="Next">
+    </form>
+{% endblock %}
+

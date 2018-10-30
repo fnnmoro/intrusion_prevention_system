@@ -1,0 +1,185 @@
+@charset "utf-8";
+*{margin: 0}
+
+/*body*/
+
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+    display: flex;
+    color: dimgray;
+    font-size: 20px;
+    flex-direction: column;
+    font-family: "Economica";
+}
+
+a {
+    color: dimgray;
+    text-decoration: none;
+}
+
+p {
+    margin-bottom: 15px;
+}
+
+/*header*/
+
+header {
+    width: 100%;
+}
+
+nav {
+    text-align: center;
+    background-color: gainsboro;
+    border-bottom: thin solid dimgray;
+}
+
+nav ul {
+    padding: 0;
+}
+
+nav ul li {
+    padding: 10px;
+    list-style: none;
+    display: inline-block;
+}
+
+nav ul li a:hover {
+    color: red;
+    border-bottom: thin solid red;
+}
+
+/*main*/
+
+main {
+    flex-grow: 1;
+    display: flex;
+    overflow: auto;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+main a {
+    padding: 0px 30px 0px 30px;
+    border-left: thin solid dimgray;
+    border-right: thin solid dimgray;
+}
+
+main a:hover {
+    color: red;
+    border-color: red;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+form p {
+    margin: 15px 0px 2px 0px;
+}
+
+form button {
+    border: none;
+    color: dimgray;
+    font-size: 20px;
+    background: none;
+    font-family: "Economica";
+    text-transform: capitalize;
+}
+
+form button:hover {
+    color: red;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+form select, form input {
+    width: 150px;
+    color: dimgray;
+    font-size: 20px;
+    flex-shrink: 0;
+    font-family: "Economica";
+    border: thin solid dimgray;
+    text-transform: capitalize;
+    background-color: gainsboro;
+}
+
+form select:hover {
+    color: red;
+    border: thin solid red;
+}
+
+form input:hover {
+    color: red;
+    border: thin solid red;
+}
+
+form input[type="checkbox"] {
+    display: none;
+}
+
+form input[type="checkbox"]+label {
+    cursor: pointer;
+}
+
+form input[type="checkbox"]+label:hover {
+    color: red;
+}
+
+form input[type="checkbox"]:checked+label {
+    border-bottom: thin solid red;
+}
+
+table {
+    padding: 15px;
+    text-align: center;
+}
+
+th {
+   width: 100px;
+   font-weight: normal;
+   text-transform: capitalize;
+}
+
+td {
+   width: 400px;
+   border-bottom: thin solid dimgray;
+   text-transform: capitalize;
+}
+
+.checkbox {
+    width: 500px;
+    display: flex;
+    flex-wrap: wrap;
+    text-align: center;
+    flex-shrink: 0;
+    justify-content: space-around;
+    border: thin solid dimgray;
+    background-color: gainsboro;
+    text-transform: capitalize;
+}
+
+.box {
+    width: 200px;
+    padding: 10px;
+}
+
+.tables {
+    display: flex;
+    flex-direction: column;
+}
+
+/*footer*/
+
+footer {
+    font-size: 15px;
+    text-align: center;
+}
+
+

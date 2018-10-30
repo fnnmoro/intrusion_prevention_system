@@ -1,6 +1,7 @@
 import os
 import csv
 import subprocess
+from .tools import processing_time_log
 
 
 def split_pcap(pcap_path, pcap_files, size=0):
@@ -25,7 +26,8 @@ def split_pcap(pcap_path, pcap_files, size=0):
                 subprocess.run("tcpdump -r {0}{1} -w {0}split/{2} -C {3}"
                                .format(pcap_path, pcap_files[i], file_name, size), shell=True,
                                check=True)
-                print()
+
+                print(pcap_path + pcap_files[i], end="\n\n")
 
             # renames all split pcap files
             for file in sorted(os.listdir(pcap_path + "split/")):
@@ -51,7 +53,7 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time=60):
         # loop to read the pcap files to convert to nfcapd files
         for i in range(start_idx, final_idx+1):
             print()
-            print(pcap_files[i])
+            print(pcap_path + pcap_files[i], end="\n\n")
             subprocess.run("nfpcapd -t {0} -T 10,11,64 -r {1}{2} -l {3}"
                            .format(win_time, pcap_path, pcap_files[i], nfcapd_path), shell=True, check=True)
     except subprocess.CalledProcessError as error:
@@ -91,6 +93,9 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False)
 
         skip = 1
         if "current" not in nfcapd_files[start_idx]:
+            print(nfcapd_path + nfcapd_files[start_idx] + ":"
+                  + nfcapd_files[final_idx], end="\n\n")
+
             # read the nfcapd files and convert to csv files
             subprocess.run("nfdump -O tstart -o csv -6 -R {0}{1}:{2} > {3}{4}"
                            .format(nfcapd_path, nfcapd_files[start_idx], nfcapd_files[final_idx],
@@ -108,6 +113,7 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False)
         print(error, end="\n\n")
 
 
+@processing_time_log
 def open_csv(csv_path, csv_files, sample=-1, execute_model=False):
     """Opens a CSV file containing raw flows"""
     try:
@@ -148,7 +154,9 @@ def nfcapd_collector(nfcapd_path, win_time=0):
     try:
         process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T",
                                     "all", "-b", "127.0.0.1", "-p", "7777",
-                                    "-l", nfcapd_path, "-D"])
+                                    "-l", nfcapd_path],
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL)
         return process
     except subprocess.CalledProcessError as error:
         print()

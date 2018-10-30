@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Results{% endblock %}
+
+{% block content %}
+    <p>Choose the classifier</p>
+
+    <div class="tables">
+        {% for classifier in information %}
+            <table>
+                <tr>
+                   <th>classifier</th>
+                   <td>
+                        <form method="post" action="{{ url_for('dep.detect') }}">
+                           <button name="model" type="submit" value="{{ loop.index-1 }}">{{ classifier[0] }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% for item in classifier[1:] %}
+                    <tr>
+                        <th>{{ text_info[loop.index-1] }}</th>
+                        <td>{{ item }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
+{% endblock %}
