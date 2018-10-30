@@ -5,12 +5,14 @@ from model.preprocessing import Modifier
 from model.preprocessing import Extractor
 from model.detection import Detector
 from view import export_flows, evaluation_metrics, scatter_plot, find_patterns
+from model.tools import save_choices_log
 
 
-dataset_path = "/home/flmoro/research_project/dataset/"
-pcap_path = "/home/flmoro/research_project/dataset/pcap/"
-nfcapd_path = "/home/flmoro/research_project/dataset/nfcapd/"
-csv_path = "/home/flmoro/research_project/dataset/csv/"
+dataset_path = "/home/flmoro/bsi16/research_project/codes/dataset/"
+pcap_path = "/home/flmoro/bsi16/research_project/codes/dataset/pcap/"
+nfcapd_path = "/home/flmoro/bsi16/research_project/codes/dataset/nfcapd/"
+csv_path = "/home/flmoro/bsi16/research_project/codes/dataset/csv/"
+log_path = "/home/flmoro/bsi16/research_project/codes/log/"
 
 result_name = "test_result.csv"
 
@@ -21,7 +23,7 @@ option = tools.menu(["build the dataset",
                      "stop"])
 print()
 
-tools.check_path_exist(pcap_path, nfcapd_path, csv_path)
+tools.check_path_exist(pcap_path, nfcapd_path, csv_path, log_path)
 
 ex = Extractor()
 dt = Detector()
@@ -128,7 +130,7 @@ while option != 4:
             elif option == 7:
                 break
             else:
-                print("Invalid option")
+                print("invalid option")
 
             print("building the dataset", end="\n\n")
             option = tools.menu(["split pcap",
@@ -154,10 +156,16 @@ while option != 4:
             header, flows = ft.format_flows(training_model=True)
 
             header_features, features = ex.extract_features(header, flows,
-                                                            list(range(10, 13)))
+                                                            list(range(10,
+                                                                       13)))
+
+            save_choices_log(header_features[0], log_path)
+
             labels = ex.extract_labels(flows)
 
             features = ex.transform(features, 0)
+
+            save_choices_log([ex.methods], log_path)
 
             option = tools.menu(["visualize the dataset patterns",
                                  "execute the machine learning algorithms",
@@ -181,8 +189,10 @@ while option != 4:
 
                     num_clf = dt.choose_classifiers(list(range(0, 11)))
 
+                    save_choices_log(dt.methods, log_path)
+
                     for idx in range(num_clf):
-                        dt.tuning_hyperparameters(2, idx)
+                        dt.tuning_hyperparameters(5, idx)
 
                         pred_parm, date, dur = dt.execute_classifiers(
                                 dataset[0], dataset[1], dataset[2], idx)
@@ -196,7 +206,7 @@ while option != 4:
                 elif option == 3:
                     break
                 else:
-                    print("Invalid option")
+                    print("invalid option")
 
                 option = tools.menu(["visualize the dataset patterns",
                                      "execute the machine learning algorithms",

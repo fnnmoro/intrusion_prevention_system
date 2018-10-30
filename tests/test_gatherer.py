@@ -7,7 +7,7 @@ from core.model import gatherer
 class TestOpenCSV(unittest.TestCase):
 
     def setUp(self):
-        path = '/home/flmoro/research_project/anomaly_detector/tests/data/'
+        path = '/home/flmoro/bsi16/research_project/codes/anomaly_detector/tests/data/'
         file = 'raw_normal_traffic.csv'
 
         self.flows = gatherer.open_csv(path, file, -1, execute_model=True)[0]

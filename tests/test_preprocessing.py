@@ -10,7 +10,7 @@ from core.model.preprocessing import Formatter, Modifier, Extractor
 class TestFormatter(unittest.TestCase):
 
     def setUp(self):
-        path = '/home/flmoro/research_project/anomaly_detector/tests/data/'
+        path = '/home/flmoro/bsi16/research_project/codes/anomaly_detector/tests/data/'
         file = 'raw_normal_traffic.csv'
 
         # flows to be tested with an existent existing file
@@ -20,7 +20,7 @@ class TestFormatter(unittest.TestCase):
         self.header, self.flows = ft.format_flows(0)
 
         # file with the expected result
-        path = '/home/flmoro/research_project/anomaly_detector/tests/data/'
+        path = '/home/flmoro/bsi16/research_project/codes/anomaly_detector/tests/data/'
         file = 'formatted_normal_traffic.csv'
 
         # flows with the result
@@ -56,7 +56,7 @@ class TestFormatter(unittest.TestCase):
 class TestModifier(unittest.TestCase):
 
     def setUp(self):
-        path = '/home/flmoro/research_project/anomaly_detector/tests/data/'
+        path = '/home/flmoro/bsi16/research_project/codes/anomaly_detector/tests/data/'
         file = 'raw_normal_traffic.csv'
 
         # flows to be tested with an existent existing file
@@ -69,7 +69,7 @@ class TestModifier(unittest.TestCase):
         self.header, self.flows = md.modify_flows(10, True)
 
         # file with the expected result
-        path = '/home/flmoro/research_project/anomaly_detector/tests/data/'
+        path = '/home/flmoro/bsi16/research_project/codes/anomaly_detector/tests/data/'
         file = 'aggregated_normal_traffic.csv'
 
         result_flows = gatherer.open_csv(path, file, -1, True)[0]
@@ -101,7 +101,7 @@ class TestModifier(unittest.TestCase):
 class TestExtractor(unittest.TestCase):
 
     def setUp(self):
-        path = '/home/flmoro/research_project/anomaly_detector/tests/data/'
+        path = '/home/flmoro/bsi16/research_project/codes/anomaly_detector/tests/data/'
         file = 'raw_normal_traffic.csv'
 
         flows = gatherer.open_csv(path, file, -1, True)[0]
@@ -118,7 +118,7 @@ class TestExtractor(unittest.TestCase):
         self.labels = ex.extract_labels(flows)
 
         # file with the expected result
-        path = '/home/flmoro/research_project/anomaly_detector/tests/data/'
+        path = '/home/flmoro/bsi16/research_project/codes/anomaly_detector/tests/data/'
         file = 'aggregated_normal_traffic.csv'
 
         result_flows = gatherer.open_csv(path, file, -1, True)[0]
