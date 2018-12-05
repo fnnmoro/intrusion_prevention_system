@@ -1,127 +1,110 @@
-import time
-import warnings
 import pickle
+import warnings
+from tempfile import mkdtemp
+from shutil import rmtree
 from flask import Blueprint, request, render_template, session
 from model import gatherer
 from model.preprocessing import Formatter, Extractor
 from model.detection import Detector
 from view import evaluation_metrics
+from core import csv_path
+
 
 #warnings.filterwarnings("ignore")
 
 bp = Blueprint('train', __name__, url_prefix='/train')
 
+ex = Extractor()
+dt = Detector()
+files = ['flows_w60_s800_cf.csv', 'flows_w60_s800_af_l100.csv']
+
 @bp.route('/dataset')
 def dataset():
-    dataset_types = ['flows', 'aggregated flows']
-
-    preprocessing = ['normal', 'standard scaler',
-                     'minmax scaler', 'maxabs scaler',
-                     'robust scaler', 'quantile transformer',
-                     'normalizer']
+    dataset_types = ['IP flows', 'aggregated IP flows']
 
     return render_template('train/dataset.html', dataset_types=dataset_types,
-                           preprocessing=preprocessing)
+                           preprocessing=ex.methods)
 
 @bp.route('/config', methods=['GET', 'POST'])
 def config():
     if request.method == 'POST':
-        session['path'] = '/home/flmoro/bsi16/research_project/codes/dataset/csv/'
-        session['file'] = 'flows_w60_s800_cf.csv'
-        session['aggregated'] = False
-        session['preprocessing'] = int(request.form['preprocessing'])
+        features_index = 7
+        session['dataset_type'] = int(request.form['dataset_type'])
         session['sample'] = int(request.form['sample'])
-        session['test_size'] = int(request.form['test_size'])/100
+        session['test_size'] = int(request.form['test_size']) / 100
         session['folds'] = int(request.form['folds'])
 
+        if int(request.form['dataset_type']) == 0:
+            ex.choose_features(0)
+            features_index = 9
 
-        algorithms = ['decision tree',
-                      'random forest',
-                      'bernoulli naive bayes',
-                      'gaussian naive bayes',
-                      'multinomial naive bayes',
-                      'k-nearest neighbors',
-                      'support vector machine',
-                      'stochastic gradient descent',
-                      'passive aggressive',
-                      'perceptron',
-                      'multi-layer perceptron']
+        ex.choose_preprocessing(int(request.form['preprocessing']))
 
-        features = ['duration', 'packets', 'bytes', 'bits per second',
-                    'bits per packets', 'packtes per second']
-
-        features_size = 6
-        features_start = 9
-
-        if int(request.form['dataset_type']) == 1:
-            features = ['source ports', 'destination ports'] + features
-            features.append('flows')
-
-            session['file'] = 'flows_w60_s800_af_l100.csv'
-            session['aggregated'] = True
-
-            features_size = 9
-            features_start = 7
-
-        if session['preprocessing'] in [1, 3, 4]:
-            algorithms.remove('multinomial naive bayes')
-
-        return render_template('train/config.html', algorithms=algorithms,
-                               features=features, features_size=features_size,
-                               features_start=features_start)
+        return render_template('train/config.html',
+                               algorithms=dt.methods,
+                               features=ex.features,
+                               features_index=features_index)
 
 
 @bp.route('/results', methods=['GET', 'POST'])
 def results():
     if request.method == 'POST':
-        flows = gatherer.open_csv(session['path'], session['file'],
+        flows = gatherer.open_csv(csv_path,
+                                  files[session['dataset_type']],
                                   session['sample'],
                                   True)[0]
 
         ft = Formatter(flows)
         header, flows = ft.format_flows(training_model=True)
 
-        ex = Extractor()
-
         choice_features = [int(item) for item in
                            request.form.getlist('features')]
 
         header_features, features = ex.extract_features(header, flows,
                                                         choice_features)
+
         labels = ex.extract_labels(flows)
 
-        features = ex.transform(features, session['preprocessing'])
-
         dataset = ex.train_test_split(features, labels, session['test_size'])
-
-        dt = Detector()
 
         choice_algorithms = [int(item) for item in
                              request.form.getlist('algorithms')]
         num_clf = dt.choose_classifiers(choice_algorithms)
 
         information = []
+        temp_dir = mkdtemp()
         for idx in range(num_clf):
-            dt.tuning_hyperparameters(session['folds'], idx)
+            dt.tuning_hyperparameters(session['folds'],
+                                      idx,
+                                      ex.preprocessing,
+                                      temp_dir)
 
-            pred_parm, date, dur = dt.execute_classifiers(
-                dataset[0], dataset[1], dataset[2], idx)
+            param, train_date, train_dur = dt.training_classifiers(
+                dataset[0], dataset[2], idx)
 
-            metrics = evaluation_metrics(dataset[3], pred_parm[0], pred_parm[1],
-                                         [date, dt.methods[idx], dur],
+            pred, test_date, test_dur = dt.execute_classifiers(
+                dataset[1], idx)
+
+            metrics = evaluation_metrics(dataset[3], param, pred,
+                                         [train_date, test_date, train_dur,
+                                          test_dur, dt.methods[idx]],
                                           session['path'] + "test.csv", idx)
 
-            information.extend([[dt.methods[idx], date, dur, metrics[3],
-                                 metrics[4], metrics[5], metrics[6],
-                                 ex.methods, pred_parm[1]]])
+            information.extend([[dt.methods[idx], train_date, test_date,
+                                 train_dur, test_dur, metrics[5], metrics[6],
+                                 metrics[7], metrics[8],
+                                 ex.methods, param]])
 
             pickle.dump(dt, open('../objects/dt', 'wb'))
             pickle.dump(ex, open('../objects/ex', 'wb'))
             session['choice_features'] = choice_features
 
-            text_info = ['date', 'duration', 'accuracy',
-                         'precision', 'recall', 'f1-score',
+            text_info = ['train date', 'test date',
+                         'train duration', 'test duration',
+                         'accuracy', 'precision', 'recall', 'f1-score',
                          'preprocessing method', 'hyperparameters']
+        rmtree(temp_dir)
 
-        return render_template('train/results.html', information=information,
+        return render_template('train/results.html',
+                               information=information,
                                text_info=text_info)

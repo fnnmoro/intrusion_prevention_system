@@ -23,7 +23,7 @@
         <div class="checkbox">
             {% for item in features %}
                 <div class="box">
-                    <input id="features{{ loop.index }}" type="checkbox" name="features" value="{{ loop.index+features_start }}">
+                    <input id="features{{ loop.index }}" type="checkbox" name="features" value="{{ loop.index+features_index }}">
                     <label for="features{{ loop.index }}">{{ item }}</label>
                 </div>
             {% endfor %}
