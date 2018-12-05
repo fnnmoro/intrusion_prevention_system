@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Blacklist{% endblock%}
+
+{% block content %}
+    <div class="tables">
+        <p>Blacklist</p>
+
+        {% for flow in anomalous_flows %}
+            <table>
+                <tr>
+                   <th>Attacker</th>
+                   <td>
+                        <form method="post" action="{{ url_for('dep.mitigation') }}">
+                           <button name="model" type="submit" value="{{ loop.index-1 }}">{{ flow[0] }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% for feature in flow[1:] %}
+                    <tr>
+                        <th>{{ text_info[loop.index-1] }}</th>
+                        <td>{{ feature }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endfor %}
+    </div>
+{% endblock %}

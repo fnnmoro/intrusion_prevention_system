@@ -9,5 +9,5 @@
 {% endblock %}
 
 {% block content %}
-    <p>Number of anomalous flows detected: <span id="num_anomalies">0</span></p>
+    <p>Number of anomalous flows detected: <span id="num_anomalies" onclick="window.location='{{ url_for('dep.blacklist') }}'">0</span></p>
 {% endblock %}
