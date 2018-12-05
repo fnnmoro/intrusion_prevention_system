@@ -124,8 +124,9 @@ def processing_time_log(func):
         except FileNotFoundError as error:
             print(error, end="\n\n")
 
-        if func.__name__ == 'execute_classifiers':
-            return result,date, dur
+        if func.__name__ == 'training_classifiers' \
+                or func.__name__ == 'execute_classifiers':
+            return result, date, dur
         else:
             return result
     return timer
