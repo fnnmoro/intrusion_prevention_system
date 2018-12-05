@@ -234,6 +234,10 @@ class Extractor:
                         'robust scaler', 'quantile transformer',
                         'normalizer']
 
+        self.features = ['source ports', 'destination ports', 'duration',
+                         'packets', 'bytes', 'bits per second',
+                         'bits per packets', 'packtes per second', 'flows']
+
     @processing_time_log
     def extract_features(self, header, flows, choices):
         """Extracts the features"""
@@ -268,23 +272,29 @@ class Extractor:
 
         return labels
 
-    @processing_time_log
-    def transform(self, features, choice, execute_model=False):
-
+    def choose_preprocessing(self, choice, execute_model=False):
         if not execute_model:
             self.methods = self.methods[choice]
             self.preprocessing = self.preprocessing[choice]
 
-        if not choice == 0:
-            std_features = self.preprocessing.fit_transform(features)
+    def choose_features(self, dataset_type):
+        if dataset_type == 0:
+            del self.features[0:2]
+            del self.features[-1]
 
-            return std_features
 
-        return features
+    @processing_time_log
+    def transform(self, train_features, test_features):
+        scl_train = self.preprocessing.fit_transform(train_features)
+        scl_test = self.preprocessing.transform(test_features)
+
+        return scl_train, scl_test
+
 
     @processing_time_log
     def train_test_split(self, features, labels, test_size):
-        dataset = train_test_split(features, labels, test_size=test_size,
+        dataset = train_test_split(features, labels,
+                                   test_size=test_size,
+                                   random_state=13,
                                    stratify=labels)
-
         return dataset
