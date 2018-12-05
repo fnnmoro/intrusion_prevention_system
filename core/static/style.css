@@ -173,6 +173,11 @@ td {
 .tables {
     display: flex;
     flex-direction: column;
+    text-align: center;
+}
+
+#num_anomalies {
+    cursor: pointer;
 }
 
 /*footer*/
