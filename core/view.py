@@ -59,7 +59,7 @@ def export_flows(flows, dst_path, file_name, header ="", mode='w', sample=-1):
         print(error, end="\n\n")
 
 
-def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
+def evaluation_metrics(test_labels, param, pred, information, dst_path, idx):
     """Prints the evaluation metrics for the machine learning algorithms"""
     try:
         with open(dst_path, mode='a') as file:
@@ -72,10 +72,11 @@ def evaluation_metrics(test_labels, pred, parm, information, dst_path, idx):
                                 round(f1_score(test_labels, pred), 3),
                                 conf_matrix[0][0], conf_matrix[0][1],
                                 conf_matrix[1][0], conf_matrix[1][1],
-                                parm])
+                                param])
 
             if idx == 0:
-                csv_file.writerow(["datetime", "method", "duration",
+                csv_file.writerow(["train_datetime", "test_datetime",
+                                   "train_duration", "test_duration", "method",
                                    "accuracy", "precison", "recall", "f1-score",
                                    "tn", "fp", "fn", "tp",
                                    "parameters"])
