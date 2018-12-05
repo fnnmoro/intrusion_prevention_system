@@ -5,9 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import BernoulliNB, GaussianNB, MultinomialNB
-from sklearn.linear_model import (SGDClassifier, PassiveAggressiveClassifier,
-                                  Perceptron)
+from sklearn.naive_bayes import GaussianNB
 from .tools import processing_time_log
 
 
