@@ -1,3 +1,4 @@
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -17,26 +18,16 @@ class Detector:
         """Initializes the main variables"""
         self.methods = ["decision tree",
                         "random forest",
-                        "bernoulli naive bayes",
                         "gaussian naive bayes",
-                        "multinomial naive bayes",
                         "k-nearest neighbors",
                         "support vector machine",
-                        "stochastic gradient descent",
-                        "passive aggressive",
-                        "perceptron",
                         "multi-layer perceptron"]
 
         self.classifiers = [DecisionTreeClassifier(),
                             RandomForestClassifier(),
-                            BernoulliNB(),
                             GaussianNB(),
-                            MultinomialNB(),
                             KNeighborsClassifier(),
                             SVC(),
-                            SGDClassifier(),
-                            PassiveAggressiveClassifier(),
-                            Perceptron(),
                             MLPClassifier()]
 
         self.param = [{"criterion": ["gini", "entropy"],
@@ -44,7 +35,7 @@ class Detector:
                        "max_depth": [3, 9, 15, 21],
                        "min_samples_split": [2, 5, 10],
                        "min_samples_leaf": [2, 5, 10],
-                       "max_features": ["sqrt", None],},
+                       "max_features": [None, "sqrt"]},
 
                       {"n_estimators": [5, 10, 15],
                        "criterion": ["gini", "entropy"],
@@ -53,39 +44,17 @@ class Detector:
                        "min_samples_leaf": [2, 5, 10],
                        "max_features": [None, "sqrt"]},
 
-                      {"alpha": [0.001, 0.01, 0.1, 1.0],
-                       "fit_prior": [True, False]},
-
-                      {},
-
-                      {"alpha": [0.001, 0.01, 0.1, 1.0],
-                       "fit_prior": [True, False]},
+                      {"var_smoothing": [0.000000001, 0.01, 0.1, 1.0]},
 
                       {"n_neighbors": [5, 10, 15],
                        "weights": ["uniform", "distance"],
                        "algorithm": ["ball_tree", "kd_tree"],
                        "leaf_size": [10, 20, 30]},
 
-                      {"kernel": ["rbf"],
-                       "C": [0.01, 0.1, 1.0, 10.0, 100.0],
-                       "gamma": [0.0001, 0.001, 0.01, 0.1, 1.0]},
-
-                      {"loss": ["hinge", "log", "modified_huber",
-                                "squared_hinge", "perceptron"],
-                       "penalty": ["l1", "l2", "elasticnet"],
-                       "alpha": [0.0001, 0.001, 0.01, 0.1],
-                       "fit_intercept": [True, False],
-                       "max_iter": [50, 100, 200, 500]},
-
-                      {"C": [0.01, 0.1, 1.0, 10.0, 100.0],
-                       "fit_intercept": [True, False],
-                       "max_iter": [50, 100, 200, 500],
-                       "loss": ["hinge"]},
-
-                      {"penalty": [None, "l1", "l2", "elasticnet"],
-                       "alpha": [0.0001, 0.001, 0.01, 0.1],
-                       "fit_intercept": [True, False],
-                       "max_iter": [50, 100, 200, 500]},
+                       {"kernel": ["rbf"],
+                       "C": [0.1, 1.0, 10.0],
+                       "gamma": [0.001, 0.01, 0.1],
+                       "cache_size": [5000.0]},
 
                       {"hidden_layer_sizes": [(10,), (15, 10), (20,15,10)],
                        "activation": ["identity",  "logistic", "tanh", "relu"],
@@ -109,19 +78,35 @@ class Detector:
 
         return num_clf
 
-    def tuning_hyperparameters(self, n_splits, idx):
+    def tuning_hyperparameters(self, n_splits, idx, preprocessing, temp_dir):
+        if preprocessing is not None or 0:
+            # pipeline was used instead of make_pipe due the general step name
+            self.classifiers[idx] = Pipeline([('preprocessing',
+                                               preprocessing),
+                                              ('classifier',
+                                               self.classifiers[idx])],
+                                             temp_dir)
+
+            for key in list(self.param[idx].keys()):
+                self.param[idx][f'classifier__{key}'] = self.param[idx].pop(key)
+
         self.classifiers[idx] = GridSearchCV(self.classifiers[idx],
-                                             self.param[idx], cv=n_splits)
+                                             self.param[idx],
+                                             cv=n_splits)
 
     @processing_time_log
-    def execute_classifiers(self, training_features, test_features,
-                            training_labels, idx, execute_model=False):
-        if not execute_model:
-            self.classifiers[idx].fit(training_features, training_labels)
-        pred = self.classifiers[idx].predict(test_features)
+    def training_classifiers(self, training_features, training_labels, idx):
+
+        self.classifiers[idx].fit(training_features, training_labels)
         param = self.classifiers[idx].best_params_
 
-        return pred, param
+        return param
+
+    @processing_time_log
+    def execute_classifiers(self, test_features, idx):
+        pred = self.classifiers[idx].predict(test_features)
+
+        return pred
 
     def find_anomalies(self, flows, pred):
         anomalies = 0
