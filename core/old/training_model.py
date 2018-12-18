@@ -10,7 +10,7 @@ from view import evaluation_metrics
 
 print("training the model")
 
-result_name = "test_result.csv"
+result_name = "flows_10-15_w60_s100000_k5_result.csv"
 
 ex = Extractor()
 dt = Detector()
@@ -24,7 +24,7 @@ header, flows = ft.format_flows(training_model=True)
 
 header_features, features = ex.extract_features(header,
                                                 flows,
-                                                list(range(10, 15)))
+                                                list(range(10, 16)))
 
 tools.save_choices_log(header_features[0], log_path)
 
@@ -34,7 +34,7 @@ dataset = ex.train_test_split(features, labels, 0.3)
 
 ex.choose_preprocessing(0)
 
-num_clf = dt.choose_classifiers(list(range(0, 11)))
+num_clf = dt.choose_classifiers(list(range(0, 6)))
 
 tools.save_choices_log(dt.methods, log_path)
 tools.save_choices_log([ex.methods], log_path)

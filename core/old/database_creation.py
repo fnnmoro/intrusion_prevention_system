@@ -97,7 +97,7 @@ while option != 7:
     elif option == 6:
         print("cleaning nfcapd files", end="\n\n")
 
-        tools.clean_files(nfcapd_path, csv_path)
+        tools.clean_tmp_files(nfcapd_path, csv_path)
 
         print("completed cleaning", end="\n\n")
 

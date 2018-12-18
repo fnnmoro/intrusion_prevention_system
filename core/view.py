@@ -66,10 +66,10 @@ def evaluation_metrics(test_labels, param, pred, information, dst_path, idx):
             csv_file = csv.writer(file)
             conf_matrix = confusion_matrix(test_labels, pred)
 
-            information.extend([round(accuracy_score(test_labels, pred), 3),
-                                round(precision_score(test_labels, pred), 3),
-                                round(recall_score(test_labels, pred), 3),
-                                round(f1_score(test_labels, pred), 3),
+            information.extend([round(accuracy_score(test_labels, pred), 5),
+                                round(precision_score(test_labels, pred), 5),
+                                round(recall_score(test_labels, pred), 5),
+                                round(f1_score(test_labels, pred), 5),
                                 conf_matrix[0][0], conf_matrix[0][1],
                                 conf_matrix[1][0], conf_matrix[1][1],
                                 param])

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Blacklist{% endblock%}
+
+{% block content %}
+    <div class="tables">
+        <p>Blacklist</p>
+
+        <table>
+            {% for flow in blacklist %}
+                {% for feature in flow[:-1] %}
+                    <tr>
+                        <th>{{ text_info[loop.index-1] }}</th>
+                        <td>{{ feature }}</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                   <th>Rule</th>
+                   <td>
+                        <form method="post" action="{{ url_for('dep.false_positive') }}">
+                           <button name="false_positive" type="submit" value="{{ flow[-1] }}">{{ flow[-1] }}</button>
+                        </form>
+                    </td>
+                </tr>
+                <br><br>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}
