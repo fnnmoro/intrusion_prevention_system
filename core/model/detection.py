@@ -77,13 +77,13 @@ class Detector:
         return num_clf
 
     def tuning_hyperparameters(self, n_splits, idx, preprocessing, temp_dir):
-        if preprocessing is not None or 0:
+        if preprocessing is not None:
             # pipeline was used instead of make_pipe due the general step name
             self.classifiers[idx] = Pipeline([('preprocessing',
                                                preprocessing),
                                               ('classifier',
                                                self.classifiers[idx])],
-                                             temp_dir)
+                                               temp_dir)
 
             for key in list(self.param[idx].keys()):
                 self.param[idx][f'classifier__{key}'] = self.param[idx].pop(key)
@@ -107,12 +107,11 @@ class Detector:
         return pred
 
     def find_anomalies(self, flows, pred):
-        anomalies = 0
+        anomalous_flows = []
 
         for idx, entry in enumerate(flows):
-            entry[-1] = pred[idx]
-
             if pred[idx] == 1:
-                anomalies += 1
+                entry[-1] = pred[idx]
+                anomalous_flows.append(entry)
 
-        return flows, anomalies
+        return anomalous_flows
