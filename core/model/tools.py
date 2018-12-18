@@ -86,14 +86,18 @@ def directory_content(path, execute_model=False):
         print(error, end="\n\n")
 
 
-def clean_files(nfcapd_path, csv_path, execute_model=False):
-    if execute_model == False:
+def clean_tmp_files(nfcapd_path, csv_path, execute_model=False):
+    if not execute_model:
         # remove temporary files from nfcapd path
         os.system("rm {0}nfcapd*".format(nfcapd_path))
     else:
         os.system("rm {0}nfcapd.20*".format(nfcapd_path))
         os.system("mv {0}tmp_flows/* {0}raw_flows".format(csv_path))
 
+def clean_files(nfcapd_path, obj_path):
+        os.system("rm {0}nfcapd.*".format(nfcapd_path))
+        os.system("rm {0}dt".format(obj_path))
+        os.system("rm {0}ex".format(obj_path))
 
 def record_datatime(dst_path=""):
     try:
