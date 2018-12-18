@@ -88,7 +88,7 @@ def results():
             metrics = evaluation_metrics(dataset[3], param, pred,
                                          [train_date, test_date, train_dur,
                                           test_dur, dt.methods[idx]],
-                                          session['path'] + "test.csv", idx)
+                                          csv_path + "test.csv", idx)
 
             information.extend([[dt.methods[idx], train_date, test_date,
                                  train_dur, test_dur, metrics[5], metrics[6],

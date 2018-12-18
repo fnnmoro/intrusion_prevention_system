@@ -63,15 +63,8 @@ main {
     flex-direction: column;
 }
 
-main a {
-    padding: 0px 30px 0px 30px;
-    border-left: thin solid dimgray;
-    border-right: thin solid dimgray;
-}
-
 main a:hover {
     color: red;
-    border-color: red;
 }
 
 form {
@@ -174,6 +167,17 @@ td {
     display: flex;
     flex-direction: column;
     text-align: center;
+}
+
+
+#detect {
+    padding: 0px 30px 0px 30px;
+    border-left: thin solid dimgray;
+    border-right: thin solid dimgray;
+}
+
+#detect:hover {
+    border-color: red;
 }
 
 #num_anomalies {

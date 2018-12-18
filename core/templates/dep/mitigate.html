@@ -1,13 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Blacklist{% endblock%}
+{% block title %}Mitigate{% endblock%}
 
 {% block content %}
     <div class="tables">
         <p>Blacklist</p>
-
-        <table>
-            {% for flow in blacklist %}
+        {% for flow in blacklist %}
+            <table>
                 {% for feature in flow[:-1] %}
                     <tr>
                         <th>{{ text_info[loop.index-1] }}</th>
@@ -15,15 +14,16 @@
                     </tr>
                 {% endfor %}
                 <tr>
-                   <th>Rule</th>
+                   <th>Remove rule</th>
                    <td>
                         <form method="post" action="{{ url_for('dep.false_positive') }}">
                            <button name="false_positive" type="submit" value="{{ flow[-1] }}">{{ flow[-1] }}</button>
                         </form>
                     </td>
                 </tr>
-                <br><br>
-            {% endfor %}
-        </table>
+            </table>
+        {% endfor %}
+    <a href="{{ url_for('dep.detect') }}">Back</a>
     </div>
+
 {% endblock %}
