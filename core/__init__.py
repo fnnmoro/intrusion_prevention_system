@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 from flask_socketio import SocketIO
 from model import tools
 
@@ -9,6 +9,7 @@ pcap_path = "/home/flmoro/bsi16/research_project/codes/dataset/pcap/"
 nfcapd_path = "/home/flmoro/bsi16/research_project/codes/dataset/nfcapd/"
 csv_path = "/home/flmoro/bsi16/research_project/codes/dataset/csv/"
 log_path = "/home/flmoro/bsi16/research_project/codes/log/"
+obj_path = "/home/flmoro/bsi16/research_project/codes/anomaly_detector/objects/"
 
 tools.check_path_exist(pcap_path, nfcapd_path, csv_path, log_path)
 
@@ -24,6 +25,7 @@ socketio = SocketIO(app)
 
 import database
 from core import train, dep
+from core.model.tools import clean_files
 
 database.create_database()
 
@@ -35,6 +37,12 @@ def home():
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+@app.route('/clean')
+def clean():
+    clean_files(nfcapd_path, obj_path)
+
+    return redirect(url_for('home'))
 
 app.register_blueprint(train.bp)
 app.register_blueprint(dep.bp)
