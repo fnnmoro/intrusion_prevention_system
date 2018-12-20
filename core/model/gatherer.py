@@ -25,7 +25,7 @@ def split_pcap(pcap_path, pcap_files, split_size):
         make_dir(f'{pcap_path}/split/')
 
         for pcap_file in pcap_files:
-            # executes tcpdump program to split the pcap files
+            # runs tcpdump program to split the pcap files
             subprocess.run(f'tcpdump -r {pcap_path}/{pcap_file} -w '
                            f'{pcap_path}/split/{pcap_file.split(".pcap")[0]} '
                            f'-C {split_size}',
@@ -49,7 +49,7 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time):
     pcap_path: str
         Absolute pcap path.
     pcap_files: list
-        All pcap files to be split.
+        All pcap files to be converted.
     nfcapd_path: str
         Absolute nfcapd path.
     win_time: int
@@ -64,8 +64,8 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time):
         for pcap_file in pcap_files:
             print(f'{pcap_path}/{pcap_file}', end=f'\n{"-" * 10}\n')
 
-            # executes tcpdump program to split the pcap files
-            subprocess.run(f'nfpcapd -t {win_time} -T 10,11,64 '
+            # runs nfpcapd program to convert pcap files to nfcapd files
+            subprocess.run(f'nfpcapd -t {win_time} -T all '
                            f'-r {pcap_path}/{pcap_file} -l {nfcapd_path}',
                            shell=True, check=True)
 
@@ -73,50 +73,32 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time):
         print('time window size must be greater than 0', end=f'\n{"-" * 10}\n')
 
 
-def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False):
-    try:
-        start_idx = 0
-        final_idx = 0
-        name = "execute"
+def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
+    """Converts nfcapd files to csv files.
 
-        if execute_model == False:
-            csv_path = csv_path + "raw_flows/"
+    Parameters
+    ----------
+    nfcapd_path: str
+        Absolute nfcapd path.
+    nfcapd_files: list
+        All nfcapd files to be split.
+    csv_path: str
+        Absolute csv path.
+    file_name: str
+        Name of csv file."""
 
-            print()
-            start_idx = int(input("choose the initial nfcapd file: "))-1
-            final_idx = int(input("choose the final nfcapd file: "))-1
-            print()
+    file_name = f'{file_name}_' \
+                f'{nfcapd_files[0].split("nfcapd.")[1]}_'\
+                f'{nfcapd_files[-1].split("nfcapd.")[1]}.csv'
 
-            name = input("csv name: ")
-            print()
-        else:
-            csv_path = csv_path + "tmp_flows/"
+    print(f'{nfcapd_path}/{nfcapd_files[0]}:{nfcapd_files[-1]}',
+          end=f'\n{"-" * 10}\n')
 
-        # time to complete the file name
-        start_time = nfcapd_files[start_idx].split("nfcapd.")[1]
-        final_time = nfcapd_files[final_idx].split("nfcapd.")[1]
-        file_name = name + "_" + start_time + "-" + final_time + ".csv"
-
-        skip = 1
-        if "current" not in nfcapd_files[start_idx]:
-            print(nfcapd_path + nfcapd_files[start_idx] + ":"
-                  + nfcapd_files[final_idx], end="\n\n")
-
-            # read the nfcapd files and convert to csv files
-            subprocess.run("nfdump -O tstart -o csv -6 -R {0}{1}:{2} > {3}{4}"
-                           .format(nfcapd_path, nfcapd_files[start_idx], nfcapd_files[final_idx],
-                                   csv_path, file_name), shell=True, check=True)
-            skip = 0
-        return skip
-    except subprocess.CalledProcessError as error:
-        print()
-        print(error, end="\n\n")
-    except ValueError as error:
-        print()
-        print(error, end="\n\n")
-    except IndexError as error:
-        print()
-        print(error, end="\n\n")
+    # runs nfdump program to convert nfcapd files to csv
+    subprocess.run(f'nfdump -O tstart -o csv -6 -R {nfcapd_path}/'
+                   f'{nfcapd_files[0]}:{nfcapd_files[-1]} > '
+                   f'{csv_path}{file_name}',
+                   shell=True, check=True)
 
 
 @processing_time_log
