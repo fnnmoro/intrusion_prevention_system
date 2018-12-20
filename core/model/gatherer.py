@@ -83,9 +83,9 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
     nfcapd_files: list
         All nfcapd files to be split.
     csv_path: str
-        Absolute csv path.
+        Absolute CSV path.
     file_name: str
-        Name of csv file."""
+        Name of CSV file."""
 
     file_name = f'{file_name}_' \
                 f'{nfcapd_files[0].split("nfcapd.")[1]}_'\
@@ -97,55 +97,65 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
     # runs nfdump program to convert nfcapd files to csv
     subprocess.run(f'nfdump -O tstart -o csv -6 -R {nfcapd_path}/'
                    f'{nfcapd_files[0]}:{nfcapd_files[-1]} > '
-                   f'{csv_path}{file_name}',
+                   f'{csv_path}/{file_name}',
                    shell=True, check=True)
 
 
 @processing_time_log
-def open_csv(csv_path, csv_files, sample=-1, execute_model=False):
-    """Opens a CSV file containing raw flows"""
+def open_csv(csv_path, csv_file, sample):
+    """Opens CSV file.
+
+    Parameters
+    ----------
+    csv_path: list
+        Absolute CSV path.
+    csv_file: list
+        CSV file to be open.
+    sample: int
+        Number of sampling lines. -1 for all lines.
+
+    Returns
+    -------
+    list
+        IP flows header.
+    list
+        IP flows."""
+
+    flows = list()
+
+    with open(f'{csv_path}/{csv_file[0]}') as reader:
+        reader = csv.reader(reader)
+        header = next(reader)
+
+        for idx, line in enumerate(reader):
+            # adds lines until sample was reached
+            if idx != sample:
+                flows.append(line)
+            else:
+                break
+        return header, flows
+
+
+def capture_nfcapd(nfcapd_path, win_time):
+    """Captures netflow data and store into nfcapd files.
+
+    Parameters
+    ----------
+    nfcapd_path: list
+        Absolute nfcapd path.
+    win_time: list
+        Size of the window time.
+
+    Returns
+    -------
+    object
+        Popen instance."""
     try:
-        if execute_model == False:
-            print()
-            idx = int(input("choose csv file: "))-1
-            print()
-
-            csv_files = csv_files[idx]
-
-            print(csv_path + csv_files, end="\n\n")
-
-        with open(csv_path + csv_files, mode='r') as file:
-            csv_file = csv.reader(file)
-            flows = []
-            count = 0
-
-            for line in csv_file:
-                # checks if the core number has been reached
-                if count != sample:
-                    # checks if is not the last line
-                    if "Summary" not in line[0]:
-                        flows.append(line)
-                        count += 1
-                    # break if the last line was found
-                    else:
-                        break
-                # break if the core was reached
-                else:
-                    break
-            return flows, csv_files
-    except IndexError as error:
-        print()
-        print(error, end="\n\n")
-
-
-def nfcapd_collector(nfcapd_path, win_time=0):
-    try:
-        process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T",
-                                    "all", "-b", "127.0.0.1", "-p", "7777",
-                                    "-l", nfcapd_path],
-                                   stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.DEVNULL)
+        process = subprocess.Popen(['nfcapd', '-t', str(win_time), '-T',
+                                    'all', '-b', '127.0.0.1', '-p', '7777',
+                                    '-l', nfcapd_path],
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL)
         return process
-    except subprocess.CalledProcessError as error:
-        print()
-        print(error, end="\n\n")
+    except subprocess.CalledProcessError:
+        print('time window size must be greater than 0', end=f'\n{"-" * 10}\n')
