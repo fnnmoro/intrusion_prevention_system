@@ -3,87 +3,165 @@ import sys
 import csv
 import time
 from datetime import datetime
-from view import show_directory_content
 
 
-def menu(choices):
-    for idx, item in enumerate(choices):
-        print("{0} - {1}".format(idx+1, item))
+def menu(options):
+    """Generates the menu options.
 
-    choice = int(input("choose an option: "))
+    Parameters
+    ----------
+    options: list
+        Menu options to be chosen.
+        
+    Returns
+    -------
+    int
+        Chosen option."""
 
-    return choice
+    for idx, item in enumerate(options):
+        print(f'{idx+1} - {item}')
+
+    return int(input('choose an option: '))
 
 
-def check_path_exist(pcap_path, nfcapd_path, csv_path, log_path):
-    if not os.path.exists(pcap_path):
-        os.system("mkdir {0}".format(pcap_path))
+def make_dir(path):
+    """Creates a directory, if it not exists.
 
-    if not os.path.exists(nfcapd_path):
-        os.system("mkdir {0}".format(nfcapd_path))
+    Parameters
+    ----------
+    path: str
+        Absolute path."""
 
-    if not os.path.exists(csv_path):
-        os.system("mkdir {0}".format(csv_path))
-        os.system("mkdir {0}flows/".format(csv_path))
-        os.system("mkdir {0}raw_flows/".format(csv_path))
-        os.system("mkdir {0}tmp_flows/".format(csv_path))
+    if not os.path.exists(path):
+        os.system(f'mkdir {path}')
 
-    if not os.path.exists(log_path):
-        os.system("mkdir {0}".format(log_path))
 
-def directory_content(path, execute_model=False):
-    try:
-        path = [path]
-        content = []
+class DirectoryContents:
+    """Searches for contents in a chosen directory.
+
+    Parameters
+    ----------
+    path: str
+        Absolute path.
+
+    Attributes
+    ----------
+    path: list
+        All absolute path.
+    dir: dict
+        All directories in the current path.
+    files: dict
+        All files in the current path."""
+
+    def __init__(self, path):
+        self.paths = [path]
+        self.dir = dict()
+        self.files = dict()
+
+    def choose_files(self):
+        """Chooses the files in a directory.
+
+        Returns
+        -------
+        list
+            Chosen files and the corresponding path."""
 
         option = 0
-        # loop to explore the directories
+
         while option != 4:
-            content = list(os.walk(path[-1]))[0]
+            # display contentes
+            self.list_contents()
 
-            if execute_model == False:
-                if content[1] != [] or content[2] != []:
-                    show_directory_content(content, path[-1])
+            print(end=f'{"-" * len(self.paths[-1])}\n')
 
-                    print()
-                    option = menu(["select this directory",
-                                   "choose another directory",
-                                   "back to previous directory",
-                                   "stop"])
+            # menu options
+            option = menu(['select this directory',
+                           'choose another directory',
+                           'back to previous directory',
+                           'stop'])
 
-                    if option == 1:
-                        break
-                    elif option == 2:
-                        idx = int(input("directory index: "))
-                        path.append("{0}{1}/".format(path[-1],
-                                                     sorted(content[1])[idx-1]))
-                    elif option == 3:
-                        if path != []:
-                            del path[-1]
-                    elif option == 4:
-                        break
-                    else:
-                        print("invalid option")
-                else:
-                    print("\nthere isn't content")
-                    if path != []:
-                        del path[-1]
+            if option == 1:
+                # chosen files
+                return self.get_files()
+            elif option == 2:
+                self.next_dir()
+                self.clean_contents()
+            elif option == 3:
+                # doesn't allow to go back beyond the first absolute path
+                if len(self.paths) > 1:
+                    del self.paths[-1]
+                    self.clean_contents()
+            elif option == 4:
+                return [list(), list()]
             else:
-                break
+                print(end=f'{"-" * len(self.paths[-1])}\n')
+                print('error: invalid option')
 
-        return path[-1], sorted(content[2])
-    except FileNotFoundError as error:
-        print()
-        print(error, end="\n\n")
-    except TypeError as error:
-        print()
-        print(error, end="\n\n")
-    except IndexError as error:
-        print()
-        print(error, end="\n\n")
-    except ValueError as error:
-        print()
-        print(error, end="\n\n")
+    def list_contents(self):
+        """Displays the directories contents."""
+
+        print(end=f'{"-" * len(self.paths[-1])}\n')
+        print('choose files')
+        print(end=f'{"-" * len(self.paths[-1])}\n')
+        # header
+        print(f'{self.paths[-1]}', end=f'\n{"-" * len(self.paths[-1])}\n')
+        print(f'{"index":^7} {"type":^7} {"content":^30}')
+
+        # lists the directory content
+        for idx, content in enumerate(sorted(os.listdir(self.paths[-1]))):
+            # separates directories from files
+            if os.path.isfile(self.paths[-1] + '/' + content):
+                content_type = 'f'
+                self.files[idx] = content
+            else:
+                content_type = 'd'
+                self.dir[idx] = content
+
+            print(f'{idx+1:^7} {content_type:^7} {content:^30}')
+
+    def get_files(self):
+        """Gets the chosen files.
+
+        Returns
+        -------
+        list
+            Chosen files and the corresponding path."""
+
+        print(end=f'{"-" * len(self.paths[-1])}\n')
+
+        return [self.paths[-1],
+                list(self.files.values())
+                [int(input('choose the initial file: '))-1:
+                 int(input('choose the final file: '))]]
+
+    def next_dir(self):
+        """Goes to next selected directory.
+
+        Raises
+        -------
+        ValueError
+            Entered a value that is not a valid number.
+        KeyError
+            Entered a invalid index key."""
+
+        try:
+            print(end=f'{"-" * len(self.paths[-1])}\n')
+
+            self.paths.append(self.paths[-1]
+                              +'/'
+                              +self.dir[int(input('choose the directory: '))
+                                        -1])
+        except ValueError:
+            print(end=f'{"-" * len(self.paths[-1])}\n')
+            print('error: invalid value')
+        except KeyError:
+            print(end=f'{"-" * len(self.paths[-1])}\n')
+            print('error: invalid index')
+
+    def clean_contents(self):
+        """Cleans the current contents"""
+
+        self.dir, self.files = dict(), dict()
 
 
 def clean_tmp_files(nfcapd_path, csv_path, execute_model=False):
