@@ -21,16 +21,14 @@ def split_pcap(pcap_path, pcap_files, split_size):
     subprocess.CalledProcessError
         Entered a invalid value less or equal to zero."""
 
-    print(end=f'{"-" * 10}\n')
-
     try:
         make_dir(f'{pcap_path}/split/')
 
-        # splits multiple pcap files
         for pcap_file in pcap_files:
             # executes tcpdump program to split the pcap files
-            subprocess.run(f'tcpdump -r {pcap_path}/{pcap_file} -w {pcap_path}/'
-                           f'split/{pcap_file.split(".pcap")[0]} -C {split_size}',
+            subprocess.run(f'tcpdump -r {pcap_path}/{pcap_file} -w '
+                           f'{pcap_path}/split/{pcap_file.split(".pcap")[0]} '
+                           f'-C {split_size}',
                            shell=True, check=True)
 
             print(pcap_path + pcap_file, end=f'\n{"-" * 10}\n')
@@ -40,31 +38,39 @@ def split_pcap(pcap_path, pcap_files, split_size):
             os.rename(f'{pcap_path}/split/{file}',
                       f'{pcap_path}/split/{file}.pcap')
     except subprocess.CalledProcessError:
-        print('size must be greater than 0', end=f'\n{"-" * 10}\n')
+        print('split size must be greater than 0', end=f'\n{"-" * 10}\n')
 
 
-def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time=60):
+def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time):
+    """Converts pcap files to nfcapd files.
+
+    Parameters
+    ----------
+    pcap_path: str
+        Absolute pcap path.
+    pcap_files: list
+        All pcap files to be split.
+    nfcapd_path: str
+        Absolute nfcapd path.
+    win_time: int
+        Size of the window time.
+
+    Raises
+    ----------
+    subprocess.CalledProcessError
+        Entered a invalid value less or equal to zero."""
+
     try:
-        print()
-        start_idx = int(input("choose the initial pcap file: "))-1
-        final_idx = int(input("choose the final pcap file: "))-1
-        print()
+        for pcap_file in pcap_files:
+            print(f'{pcap_path}/{pcap_file}', end=f'\n{"-" * 10}\n')
 
-        # loop to read the pcap files to convert to nfcapd files
-        for i in range(start_idx, final_idx+1):
-            print()
-            print(pcap_path + pcap_files[i], end="\n\n")
-            subprocess.run("nfpcapd -t {0} -T 10,11,64 -r {1}{2} -l {3}"
-                           .format(win_time, pcap_path, pcap_files[i], nfcapd_path), shell=True, check=True)
-    except subprocess.CalledProcessError as error:
-        print()
-        print(error, end="\n\n")
-    except ValueError as error:
-        print()
-        print(error, end="\n\n")
-    except IndexError as error:
-        print()
-        print(error)
+            # executes tcpdump program to split the pcap files
+            subprocess.run(f'nfpcapd -t {win_time} -T 10,11,64 '
+                           f'-r {pcap_path}/{pcap_file} -l {nfcapd_path}',
+                           shell=True, check=True)
+
+    except subprocess.CalledProcessError:
+        print('time window size must be greater than 0', end=f'\n{"-" * 10}\n')
 
 
 def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False):
