@@ -23,13 +23,10 @@ def create_database(db=None):
 
 
 @database_connection
-def insert_flows(flows, features_idx, db=None):
+def insert_flows(flows, db=None):
     for entry in flows:
         entry[5] = str(entry[5])
         entry[-1] = int(entry[-1])
-
-        if features_idx == 8:
-            entry.insert(-1, 1)
 
         db.execute('INSERT INTO flows (ts, te, sa, da, pr, flg, sp, dp, td, '
                    'ipkt, ibyt, bps, bpp, pps, flw, lbl) VALUES (?, ?, ?, ?, '
@@ -43,8 +40,8 @@ def delete_flows(db=None):
 
 @database_connection
 def create_blacklist(db=None):
-    blacklist = db.execute('SELECT sa, da, pr, ts, COUNT(flw) FROM flows '
-                           'GROUP BY sa, da, pr HAVING lbl = 1').fetchall()
+    blacklist = db.execute('SELECT sa, da, pr, ts, COUNT(sa) FROM flows '
+                           'WHERE lbl = 1 GROUP BY sa, da, pr').fetchall()
 
     return blacklist
 
@@ -61,6 +58,10 @@ def select_blacklist(db=None):
                            'FROM blacklist').fetchall()
 
     return blacklist
+
+@database_connection
+def delete_blacklist(db=None):
+    db.execute('DELETE FROM blacklist')
 
 
 @database_connection
