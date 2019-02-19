@@ -1,60 +1,69 @@
 from tempfile import mkdtemp
 from shutil import rmtree
-from core import dataset_path, csv_path, log_path
-from model.preprocessing import Formatter
-from model.preprocessing import Extractor
+from core import paths
 from model.detection import Detector
-from model import gatherer, tools
-from view import evaluation_metrics
+from model.gatherer import open_csv
+from model.preprocess import Extractor
+from model.preprocess import Formatter
+from model.preprocess import Preprocessor
+from model.tools import evaluation_metrics, export_results_csv
+from model.walker import DirectoryContents
 
 
-print("training the model")
+print('training classifier', end=f'\n{"-" * 10}\n')
 
-result_name = "flows_10-15_w60_s100000_k5_result.csv"
+result_name = 'flows_10-15_w60_s100000_k5_result.csv'
+
+dir_cont = DirectoryContents(f'{paths["csv"]}datasets/')
+path, file = dir_cont.choose_files()
+
+if not file:
+    raise IndexError('error: empty file')
+
+print(end=f'{"-" * 10}\n')
+
+header, flows = open_csv(path, file[0])
+
+for entry in flows:
+    Formatter.convert_features(entry, True)
 
 ex = Extractor()
-dt = Detector()
+#setattr(ex, 'features_idx', 6)
+setattr(ex, 'selected_features', [0, 1, 2])
 
-path, files = tools.directory_content(csv_path)
+pre_method = 'normal'
+preprocess = Preprocessor.preprocesses[pre_method]
 
-flows = gatherer.open_csv(path, files)[0]
-
-ft = Formatter(flows)
-header, flows = ft.format_flows(training_model=True)
-
-header_features, features = ex.extract_features(header,
-                                                flows,
-                                                list(range(10, 16)))
-
-tools.save_choices_log(header_features[0], log_path)
-
-labels = ex.extract_labels(flows)
+features, labels = ex.extract_features(flows)
 
 dataset = ex.train_test_split(features, labels, 0.3)
 
-ex.choose_preprocessing(0)
+dt = Detector()
+tmp_dir = mkdtemp()
 
-num_clf = dt.choose_classifiers(list(range(0, 6)))
+for clf in ['decision tree', 'k-nearest neighbors']:
+    dt.tuning_hyperparameters(clf, preprocess, 5, tmp_dir)
 
-tools.save_choices_log(dt.methods, log_path)
-tools.save_choices_log([ex.methods], log_path)
+    param, train_date, train_dur = dt.train_classifier(clf,
+                                                       dataset[0],
+                                                       dataset[2])
 
-temp_dir = mkdtemp()
-for idx in range(num_clf):
-    dt.tuning_hyperparameters(5, idx, ex.preprocessing, temp_dir)
+    pred, test_date, test_dur = dt.execute_classifier(clf, dataset[1])
 
-    param, train_date, train_dur = dt.training_classifiers(
-        dataset[0], dataset[2], idx)
+    results = [clf, train_date, test_date, train_dur, test_dur]
+    results.extend(evaluation_metrics(dataset[3], pred))
+    results.extend([pre_method, param])
 
-    pred, test_date, test_dur = dt.execute_classifiers(
-        dataset[1], idx)
+    text = ['classifier', 'train date', 'test date',
+            'train duration', 'test duration',
+            'accuracy', 'precision', 'recall', 'f1-score',
+            'tue negative', 'false positive',
+            'false negative', 'true positive',
+            'preprocess', 'hyperparameters']
 
-    evaluation_metrics(dataset[3], param, pred,
-                       [train_date, test_date, train_dur,
-                        test_dur, dt.methods[idx]],
-                       dataset_path + result_name, idx)
+    export_results_csv(results, text,
+                       paths['csv'], 'result.csv')
 
-rmtree(temp_dir)
+rmtree(tmp_dir)
 
-
-print("model finished", end="\n\n")
+print('trained classifier', end=f'\n{"-" * 10}\n')
