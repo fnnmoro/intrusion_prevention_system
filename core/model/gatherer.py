@@ -1,7 +1,7 @@
 import os
 import csv
 import subprocess
-from .tools import make_dir, processing_time_log
+from model.tools import make_dir, process_time_log
 
 
 def split_pcap(pcap_path, pcap_files, split_size):
@@ -22,21 +22,21 @@ def split_pcap(pcap_path, pcap_files, split_size):
         Entered a invalid value less or equal to zero."""
 
     try:
-        make_dir(f'{pcap_path}/split/')
+        make_dir(f'{pcap_path}split/')
 
         for pcap_file in pcap_files:
             # runs tcpdump program to split the pcap files
-            subprocess.run(f'tcpdump -r {pcap_path}/{pcap_file} -w '
-                           f'{pcap_path}/split/{pcap_file.split(".pcap")[0]} '
+            subprocess.run(f'tcpdump -r {pcap_path}{pcap_file} -w '
+                           f'{pcap_path}split/{pcap_file.split(".pcap")[0]} '
                            f'-C {split_size}',
                            shell=True, check=True)
 
             print(pcap_path + pcap_file, end=f'\n{"-" * 10}\n')
 
         # renames all split pcap files
-        for file in sorted(os.listdir(f'{pcap_path}/split/')):
-            os.rename(f'{pcap_path}/split/{file}',
-                      f'{pcap_path}/split/{file}.pcap')
+        for file in sorted(os.listdir(f'{pcap_path}split/')):
+            os.rename(f'{pcap_path}split/{file}',
+                      f'{pcap_path}split/{file}.pcap')
     except subprocess.CalledProcessError:
         print('split size must be greater than 0', end=f'\n{"-" * 10}\n')
 
@@ -62,11 +62,11 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time):
 
     try:
         for pcap_file in pcap_files:
-            print(f'{pcap_path}/{pcap_file}', end=f'\n{"-" * 10}\n')
+            print(f'{pcap_path}{pcap_file}', end=f'\n{"-" * 10}\n')
 
             # runs nfpcapd program to convert pcap files to nfcapd files
             subprocess.run(f'nfpcapd -t {win_time} -T all '
-                           f'-r {pcap_path}/{pcap_file} -l {nfcapd_path}',
+                           f'-r {pcap_path}{pcap_file} -l {nfcapd_path}',
                            shell=True, check=True)
 
     except subprocess.CalledProcessError:
@@ -81,7 +81,7 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
     nfcapd_path: str
         Absolute nfcapd path.
     nfcapd_files: list
-        All nfcapd files to be split.
+        All nfcapd files to be converted.
     csv_path: str
         Absolute CSV path.
     file_name: str
@@ -91,18 +91,18 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
                 f'{nfcapd_files[0].split("nfcapd.")[1]}_'\
                 f'{nfcapd_files[-1].split("nfcapd.")[1]}.csv'
 
-    print(f'{nfcapd_path}/{nfcapd_files[0]}:{nfcapd_files[-1]}',
+    print(f'{nfcapd_path}{nfcapd_files[0]}:{nfcapd_files[-1]}',
           end=f'\n{"-" * 10}\n')
 
     # runs nfdump program to convert nfcapd files to csv
-    subprocess.run(f'nfdump -O tstart -o csv -6 -R {nfcapd_path}/'
+    subprocess.run(f'nfdump -O tstart -o csv -6 -R {nfcapd_path}'
                    f'{nfcapd_files[0]}:{nfcapd_files[-1]} > '
-                   f'{csv_path}/{file_name}',
+                   f'{csv_path}{file_name}',
                    shell=True, check=True)
 
 
-@processing_time_log
-def open_csv(csv_path, csv_file, sample):
+@process_time_log
+def open_csv(csv_path, csv_file, sample=-1):
     """Opens CSV file.
 
     Parameters
@@ -123,7 +123,7 @@ def open_csv(csv_path, csv_file, sample):
 
     flows = list()
 
-    with open(f'{csv_path}/{csv_file[0]}') as reader:
+    with open(f'{csv_path}{csv_file}') as reader:
         reader = csv.reader(reader)
         header = next(reader)
 
@@ -150,6 +150,7 @@ def capture_nfcapd(nfcapd_path, win_time):
     -------
     object
         Popen instance."""
+
     try:
         process = subprocess.Popen(['nfcapd', '-t', str(win_time), '-T',
                                     'all', '-b', '127.0.0.1', '-p', '7777',
