@@ -374,11 +374,11 @@ class Preprocessor:
     preprocesses: dict
         Preprocessing methods instances."""
 
-    preprocesses = {'normal': None,
-                    'maxabs scaler': MaxAbsScaler(),
-                    'minmax scaler': MinMaxScaler(),
-                    'standard scaler': RobustScaler(),
-                    'robust scaler': StandardScaler(),
-                    'normalizer': Normalizer(),
-                    'quantile transformer': QuantileTransformer(
+    methods = {'normal': None,
+               'maxabs scaler': MaxAbsScaler(),
+               'minmax scaler': MinMaxScaler(),
+               'standard scaler': RobustScaler(),
+               'robust scaler': StandardScaler(),
+               'normalizer': Normalizer(),
+               'quantile transformer': QuantileTransformer(
                                             output_distribution='normal')}
