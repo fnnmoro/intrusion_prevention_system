@@ -91,7 +91,7 @@ class DirectoryContents:
         # lists the directory content
         for idx, content in enumerate(sorted(os.listdir(self.paths[-1]))):
             # separates directories from files
-            if os.path.isfile(self.paths[-1] + '/' + content):
+            if os.path.isfile(f'{self.paths[-1]}{content}'):
                 content_type = 'f'
                 self.files[idx] = content
             else:
@@ -126,7 +126,6 @@ class DirectoryContents:
 
         try:
             self.paths.append(self.paths[-1]
-                              +'/'
                               +self.dir[int(input('choose the directory: '))
                                         -1])
         except ValueError:
@@ -140,3 +139,16 @@ class DirectoryContents:
         """Cleans the current contents"""
 
         self.dir, self.files = dict(), dict()
+
+
+def get_files(path):
+    files = list()
+
+    # lists the directory content
+    for content in sorted(os.listdir(path)):
+        # get only the files
+        if os.path.isfile(f'{path}{content}'):
+            files.append(content)
+
+    return files
+
