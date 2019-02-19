@@ -32,7 +32,7 @@ ex = Extractor()
 setattr(ex, 'selected_features', [0, 1, 2])
 
 pre_method = 'normal'
-preprocess = Preprocessor.preprocesses[pre_method]
+preprocess = Preprocessor.methods[pre_method]
 
 features, labels = ex.extract_features(flows)
 
