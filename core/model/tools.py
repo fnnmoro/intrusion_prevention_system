@@ -2,8 +2,9 @@ import os
 import csv
 import time
 from datetime import datetime
-from core import paths
-
+from sklearn.metrics import (accuracy_score, precision_score,
+                             recall_score, f1_score,
+                             confusion_matrix)
 
 def make_dir(path):
     """Creates a directory, if it not exists.
@@ -16,8 +17,20 @@ def make_dir(path):
     if not os.path.exists(path):
         os.system(f'mkdir {path}')
 
+def evaluation_metrics(test_labels, pred):
+    conf_matrix = confusion_matrix(test_labels, pred)
 
-def export_flows(header, flows, dst_path, file_name):
+    results = [round(accuracy_score(test_labels, pred), 5),
+               round(precision_score(test_labels, pred), 5),
+               round(recall_score(test_labels, pred), 5),
+               round(f1_score(test_labels, pred), 5),
+               conf_matrix[0][0], conf_matrix[0][1],
+               conf_matrix[1][0], conf_matrix[1][1]]
+
+    return results
+
+
+def export_flows_csv(header, flows, dst_path, file_name):
     """Exports flows to CSV file.
 
     Parameters
@@ -31,13 +44,25 @@ def export_flows(header, flows, dst_path, file_name):
     file_name: str
         Name of CSV file."""
 
-    with open(dst_path + file_name, mode='w') as file:
+    with open(f'{dst_path}{file_name}', mode='a') as file:
         writer = csv.writer(file)
-        writer.writerow(header)
+
+        # writes header once when merge flows
+        if not os.stat(f'{dst_path}{file_name}').st_size:
+            writer.writerow(header)
 
         for entry in flows:
             writer.writerow(entry)
 
+
+def export_results_csv(results, text, dst_path, file_name):
+    with open(f'{dst_path}{file_name}', mode='a') as file:
+        writer = csv.writer(file)
+
+        if not os.stat(f'{dst_path}{file_name}').st_size:
+            writer.writerow(text)
+
+        writer.writerow(results)
 
 def process_time_log(func):
     """Decorator to record the time of a function.
@@ -84,8 +109,8 @@ def process_time_log(func):
         dur = round(end - start, 7)
 
         # log
-        with open(f'{paths["log_path"]}/process_time_log.csv',
-                  mode='a') as file:
+        with open('/home/flmoro/bsi16/research_project/codes/anomaly_detector/'
+                  'log/process_time_log.csv', mode='a') as file:
 
             writer = csv.writer(file)
             writer.writerow([date, dur, func.__name__])
@@ -99,33 +124,6 @@ def process_time_log(func):
     return timer
 
 
-def choices_log(choices):
-    """Records the choices made during the training of the machine learning
-    algorithms.
-
-    Parameters
-    ----------
-    choices: list
-        Choices made during the training."""
-
-    with open(f'{paths["log_path"]}/choices_log.csv', mode='a') as file:
-        writer = csv.writer(file)
-        writer.writerow([datetime.strftime(datetime.now(),
-                                           '%Y-%m-%d %H:%M:%S'), choices])
-
-
-def clean_files(nfcapd_path, csv_path, execute_model=False):
-    if not execute_model:
-        # remove temporary files from nfcapd path
-        os.system("rm {0}nfcapd*".format(nfcapd_path))
-    else:
-        os.system("rm {0}nfcapd.20*".format(nfcapd_path))
-        os.system("mv {0}tmp_flows/* {0}raw_flows".format(csv_path))
-
-
-def clean_objects(nfcapd_path, obj_path):
-        os.system("rm {0}dt".format(obj_path))
-        os.system("rm {0}ex".format(obj_path))
-
-
-
+def clean_files(paths, files):
+    for path, file in zip(paths, files):
+        os.system(f'rm {path}{file}')
