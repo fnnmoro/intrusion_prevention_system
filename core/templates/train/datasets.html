@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Datasets{% endblock %}
+
+
+{% block content %}
+    <form method="post" action="{{ url_for('train.classifiers') }}">
+        <p>Datasets</p>
+        <select name="dataset">
+            {% for dataset in datasets %}
+                <option value="{{ dataset }}">{{ dataset }}</option>
+            {% endfor %}
+        </select>
+
+        <p>Preprocess methods</p>
+        <select name="preprocess">
+            {% for preprocess in preprocesses %}
+                <option value="{{ preprocess }}">{{ preprocess }}</option>
+            {% endfor %}
+        </select>
+
+        <p>Sample size</p>
+        <input type="number" name="sample">
+
+        <p>Test set size</p>
+        <input type="number" name="test_set_size">
+
+        <p>Number of cross-validation folds</p>
+        <input type="number" name="k-folds">
+
+        <br>
+        <input type="submit" value="Next">
+    </form>
+{% endblock %}

@@ -1,15 +1,13 @@
-# pycharm idea
-.idea
-
-# virtual environment
-venv
-
-# pycache
-__pycache__
-
-# tmp
+# files
 tmp.py
 
-# instance and objects folders
+# folders
+csv/
 instance/
-objects/
+log/
+nfcapd/
+obj/
+pcap/
+saves/
+venv/
+__pycache__/

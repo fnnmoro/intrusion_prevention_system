@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    MaxAbsScaler, RobustScaler,
                                    QuantileTransformer, Normalizer)
-from .tools import processing_time_log
+from model.tools import process_time_log
 
 
 class Formatter:
@@ -28,7 +28,7 @@ class Formatter:
         self.header = header
         self.flows = flows
 
-    @processing_time_log
+    @process_time_log
     def format_header(self):
         """Formats the header with specific features and order.
 
@@ -42,7 +42,7 @@ class Formatter:
 
         return self.header
 
-    @processing_time_log
+    @process_time_log
     def format_flows(self):
         """Formats the flows with specific features, order and replace missing
         features.
@@ -163,7 +163,7 @@ class Modifier:
     Parameters
     ----------
     header: list
-        Features description.
+        Formatted features description.
     flows: list
         Formatted flows.
 
@@ -178,14 +178,15 @@ class Modifier:
         self.flows = flows
         self.header = header
 
-    @processing_time_log
+    @process_time_log
     def aggregate_flows(self, threshold):
         """Aggregates formatted flows.
 
         Parameters
         ----------
         threshold: int
-            Aggregation limit.
+            Aggregation limit to prevent that the anomalous flows becoming
+            just one entry.
 
         Returns
         -------
@@ -266,7 +267,7 @@ class Modifier:
         entry[9] += tmp_entry[9]  # ibyt
         entry[10] += tmp_entry[10]  # ipkt
 
-    @processing_time_log
+    @process_time_log
     def create_features(self, label):
         """Creates new features.
 
@@ -305,6 +306,7 @@ class Extractor:
 
     def __init__(self):
         """Initializes the main variables"""
+
         self.preprocessing = [None,
                               StandardScaler(),
                               MinMaxScaler(),
@@ -313,61 +315,44 @@ class Extractor:
                               QuantileTransformer(output_distribution='normal'),
                               Normalizer()]
 
-        self.methods = ['normal', 'standard scaler',
-                        'minmax scaler', 'maxabs scaler',
-                        'robust scaler', 'quantile transformer',
-                        'normalizer']
+        self.preprocessing_name = ['normal', 'standard scaler',
+                                   'minmax scaler', 'maxabs scaler',
+                                   'robust scaler', 'quantile transformer',
+                                   'normalizer']
 
-        self.features = ['source ports', 'destination ports', 'duration',
+        self.features_header = ['source ports', 'destination ports', 'duration',
                          'packets', 'bytes', 'bits per second',
                          'bits per packets', 'packtes per second', 'flows']
 
-    @processing_time_log
-    def extract_features(self, header, flows, choices):
+    @process_time_log
+    def extract_features(self, flows, options):
         """Extracts the features"""
 
-        header_features = []
-        features = []
-
-        for entry in header:
-            tmp = []
-            for idx in choices:
-               tmp.append(entry[idx])
-
-            header_features.append(tmp)
+        features, labels = list(), list()
 
         for entry in flows:
-            tmp = []
-            for idx in choices:
+            tmp = list()
+            for idx in options:
                 tmp.append(entry[idx])
 
             features.append(tmp)
-
-        return header_features, features
-
-    @processing_time_log
-    def extract_labels(self, flows):
-        """Extracts the labels"""
-
-        labels = []
-
-        for entry in flows:
             labels.append(entry[-1])
 
-        return labels
+        return features, labels
+
 
     def choose_preprocessing(self, choice, execute_model=False):
         if not execute_model:
-            self.methods = self.methods[choice]
+            self.preprocessing_name = self.preprocessing_name[choice]
             self.preprocessing = self.preprocessing[choice]
 
     def choose_features(self, dataset_type):
         if dataset_type == 0:
-            del self.features[0:2]
-            del self.features[-1]
+            del self.features_header[0:2]
+            del self.features_header[-1]
 
 
-    @processing_time_log
+    @process_time_log
     def transform(self, train_features, test_features):
         scl_train = self.preprocessing.fit_transform(train_features)
         scl_test = self.preprocessing.transform(test_features)
@@ -375,7 +360,7 @@ class Extractor:
         return scl_train, scl_test
 
 
-    @processing_time_log
+    @process_time_log
     def train_test_split(self, features, labels, test_size):
         dataset = train_test_split(features, labels,
                                    test_size=test_size,
