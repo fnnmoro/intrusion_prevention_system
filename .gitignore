@@ -10,4 +10,5 @@ obj/
 pcap/
 saves/
 venv/
+.idea/
 __pycache__/
