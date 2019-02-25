@@ -1,4 +1,5 @@
-document.addEventListener('DOMContentLoaded', function changeColor() {
+$(document).ready(function changeColor() {
+    // connect to the server
     var socket = io.connect('http://' + document.domain + ':' + location.port + '/dep');
 
     // receive details from server
