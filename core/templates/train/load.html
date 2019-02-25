@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Load{% endblock %}
+
+{% block content %}
+    <p>Load file</p>
+
+    <div class="tables">
+        <table>
+            <tbody>
+                {% for file in files %}
+                    <tr>
+                        <td>
+                            <form method='post' action='{{ url_for("train.results") }}'>
+                                <input class='choose' name='file' type='submit' value='{{ file }}'>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -3,25 +3,27 @@
 {% block title %}Results{% endblock %}
 
 {% block content %}
-    <div class="tables">
-        <p>Choose the classifier</p>
+    <p>Choose the classifier</p>
 
-        {% for classifier in information %}
+    <div class='tables'>
+        {% for results in info %}
             <table>
-                <tr>
-                   <th>classifier</th>
-                   <td>
-                        <form method="post" action="{{ url_for('dep.detect') }}">
-                           <button name="model" type="submit" value="{{ loop.index-1 }}">{{ classifier[0] }}</button>
-                        </form>
-                    </td>
-                </tr>
-                {% for item in classifier[1:] %}
+                <tbody>
                     <tr>
-                        <th>{{ text_info[loop.index-1] }}</th>
-                        <td>{{ item }}</td>
+                       <th>classifier</th>
+                       <td>
+                            <form method='post' action='{{ url_for("dep.detect") }}'>
+                                <input class='choose' name='clf' type='submit' value='{{ results[0] }}'>
+                            </form>
+                        </td>
                     </tr>
-                {% endfor %}
+                    {% for result in results[1:] %}
+                        <tr>
+                            <th>{{ text[1:][loop.index-1] }}</th>
+                            <td>{{ result }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         {% endfor %}
     </div>
