@@ -64,6 +64,7 @@ def export_results_csv(results, text, dst_path, file_name):
 
         writer.writerow(results)
 
+
 def process_time_log(func):
     """Decorator to record the time of a function.
 
