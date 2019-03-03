@@ -110,8 +110,9 @@ def process_time_log(func):
         dur = round(end - start, 7)
 
         # log
-        with open('/home/flmoro/bsi16/research_project/codes/anomaly_detector/'
-                  'log/process_time_log.csv', mode='a') as file:
+        with open('/home/flmoro/bsi16/research_project/anomaly_detection/'
+                  'codes/triple_m_ads/log/process_time_log.csv',
+                  mode='a') as file:
 
             writer = csv.writer(file)
             writer.writerow([date, dur, func.__name__])
