@@ -3,5 +3,10 @@
 {% block title %}Home{% endblock%}
 
 {% block content %}
-    <a id="detect" href="{{ url_for('train.dataset') }}">Detection</a>
+    <p>Detection</p>
+    <br>
+    <div id='option'>
+        <a class='detect' href='{{ url_for("train.datasets") }}'>New</a>
+        <a class='detect' href='{{ url_for("train.load") }}'>Load</a>
+    </div>
 {% endblock %}

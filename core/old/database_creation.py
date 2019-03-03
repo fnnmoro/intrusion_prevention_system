@@ -1,119 +1,148 @@
-from core import pcap_path, nfcapd_path, csv_path
-from model import gatherer, tools
-from model.preprocessing import Formatter
-from model.preprocessing import Modifier
-from view import export_flows
+from core import paths
+from model.gatherer import (split_pcap, convert_pcap_nfcapd,
+                            convert_nfcapd_csv, open_csv)
+from model.preprocess import Formatter
+from model.preprocess import Modifier
+from model.tools import export_flows_csv, clean_files
+from model.walker import menu, DirectoryContents
 
 
-print("building the dataset", end="\n\n")
+print('building the dataset', end=f'\n{"-" * 10}\n')
 
-option = tools.menu(["split pcap",
-                     "convert pcap to nfcapd",
-                     "convert nfcapd to flows",
-                     "format and modify the flows",
-                     "merge flows files",
-                     "clean nfcapd files",
-                     "back to main"])
-print()
+option = menu(['split pcap',
+               'convert pcap to nfcapd',
+               'convert nfcapd to csv',
+               'convert csv to flows',
+               'merge flows',
+               'clean nfcapd',
+               'back to main'])
+print(end=f'{"-" * 10}\n')
 
 while option != 7:
-    if option == 1:
-        print("splitting file", end="\n\n")
+    try:
+        if option == 1:
+            print('splitting file', end=f'\n{"-" * 10}\n')
 
-        # gets the path and the list of files
-        path, files = tools.directory_content(pcap_path)
+            dir_cont = DirectoryContents(paths['pcap'])
+            path, files = dir_cont.choose_files()
 
-        gatherer.split_pcap(path, files, int(input("\nsplit size: ")))
+            if not files:
+                raise IndexError('error: empty file')
 
-        print("split file", end="\n\n")
+            print(end=f'{"-" * 10}\n')
+            split_pcap(path, files, int(input('split size: ')))
 
-    elif option == 2:
-        print("converting pcap to nfcapd", end="\n\n")
+            print('split file', end=f'\n{"-" * 10}\n')
 
-        # gets the path and the list of files
-        path, files = tools.directory_content(pcap_path)
+        elif option == 2:
+            print('converting pcap to nfcapd', end=f'\n{"-" * 10}\n')
 
-        gatherer.convert_pcap_nfcapd(path, files, nfcapd_path)
+            dir_cont = DirectoryContents(paths['pcap'])
+            path, files = dir_cont.choose_files()
 
-        print("converted pcap files", end="\n\n")
+            if not files:
+                raise IndexError('error: empty file')
 
-    elif option == 3:
-        print("converting nfcapd to flows")
+            print(end=f'{"-" * 10}\n')
+            convert_pcap_nfcapd(path, files,
+                                         paths['nfcapd'],
+                                         int(input('time window size: ')))
 
-        path, files = tools.directory_content(nfcapd_path)
+            print('converted pcap files', end=f'\n{"-" * 10}\n')
 
-        gatherer.convert_nfcapd_csv(path, files, csv_path)
+        elif option == 3:
+            print('converting nfcapd to csv', end=f'\n{"-" * 10}\n')
 
-        print("converted nfcapd files", end="\n\n")
+            dir_cont = DirectoryContents(paths['nfcapd'])
+            path, files = dir_cont.choose_files()
 
-    elif option == 4:
-        print("opening, format and modify the file", end="\n\n")
+            if not files:
+                raise IndexError('error: empty file')
 
-        path, files = tools.directory_content(csv_path + "raw_flows/")
+            print(end=f'{"-" * 10}\n')
+            convert_nfcapd_csv(path, files,
+                                        f'{paths["csv"]}tmp_flows',
+                                        input('file name: '))
 
-        sample = input("\ncsv sample: ")
+            print('converted nfcapd files', end=f'\n{"-" * 10}\n')
 
-        flows, file_name = gatherer.open_csv(path, files, int(sample))
+        elif option == 4:
+            print('converting csv to flows', end=f'\n{"-" * 10}\n')
 
-        ft = Formatter(flows)
-        header, flows = ft.format_flows(int(input("label number: ")))
+            dir_cont = DirectoryContents(f'{paths["csv"]}tmp_flows')
+            path, file = dir_cont.choose_files()
 
-        md = Modifier(flows, header)
-        header, flows = md.modify_flows(100, True)
+            if not file:
+                raise IndexError('error: empty file')
 
-        export_flows(flows, csv_path + "flows/",
-                     file_name.split(".csv")[0] + "_w60"
-                     + "_s" + sample + ".csv",
-                     header)
+            print(end=f'{"-" * 10}\n')
 
-        print("completed file", end="\n\n")
+            header, flows = open_csv(path, file[0],
+                                     int(input('sample: ')))
 
-    elif option == 5:
-        print("merging flows", end="\n\n")
+            ft = Formatter(header, flows)
+            header = ft.format_header()
+            flows = ft.format_flows()
 
-        dataset_name = input("dataset name: ") + ".csv"
-        print()
+            md = Modifier(flows, header)
+            #header, flows = md.aggregate_flows(100)
 
-        path, files = tools.directory_content(csv_path + "flows/")
+            print(end=f'{"-" * 10}\n')
+            header, flows = md.create_features(int(input('label: ')))
 
-        print()
-        start_idx = int(input("choose initial csv file: "))-1
-        final_idx = int(input("choose final csv file: "))-1
-        print()
+            export_flows_csv(header, flows,
+                         f'{paths["csv_path"]}flows',
+                         f'{file[0].split(".csv")[0]}_s{len(flows)}'
+                         f'.csv')
 
-        for idx in range(start_idx, final_idx + 1):
-            flows = gatherer.open_csv(path, files[idx],
-                                      execute_model=True)[0]
+            print('converted csv file', end=f'\n{"-" * 10}\n')
 
-            if idx == start_idx:
-                export_flows(flows, csv_path,
-                             dataset_name, mode='a')
-            else:
-                export_flows(flows[1:], csv_path,
-                             dataset_name, mode='a')
+        elif option == 5:
+            print('merging flows', end=f'\n{"-" * 10}\n')
 
-        print("merged flows", end="\n\n")
+            dataset_name = f'{input("dataset name: ")}.csv'
+            print(end=f'{"-" * 10}\n')
 
-    elif option == 6:
-        print("cleaning nfcapd files", end="\n\n")
+            dir_cont = DirectoryContents(f'{paths["csv_path"]}flows')
+            path, files = dir_cont.choose_files()
 
-        tools.clean_tmp_files(nfcapd_path, csv_path)
+            if not files:
+                raise IndexError('error: empty file')
 
-        print("completed cleaning", end="\n\n")
+            print(end=f'{"-" * 10}\n')
 
-    elif option == 7:
-        break
-    else:
-        print("invalid option")
+            for idx, file in enumerate(files):
+                header, flows = open_csv(path, file)
 
-    print("building the dataset", end="\n\n")
-    option = tools.menu(["split pcap",
-                         "convert pcap to nfcapd",
-                         "convert nfcapd to flows",
-                         "format and modify the flows",
-                         "merge flows files",
-                         "clean nfcapd files",
-                         "back to main"])
-    print()
+                export_flows_csv(header, flows,
+                                 f'{paths["csv"]}datasets/',
+                                 f'{dataset_name}')
 
-print("dataset built", end="\n\n")
+            print('merged flows', end=f'\n{"-" * 10}\n')
+
+        elif option == 6:
+            print('cleaning nfcapd files', end=f'\n{"-" * 10}\n')
+
+            clean_files([paths["nfcapd"]])
+
+            print('cleaned nfcapd files', end=f'\n{"-" * 10}\n')
+
+        elif option == 7:
+            break
+        else:
+            print('invalid option', end=f'\n{"-" * 10}\n')
+    except IndexError as error:
+        print(end=f'{"-" * 10}\n')
+        print(error)
+        print(end=f'{"-" * 10}\n')
+
+    option = menu(['split pcap',
+                   'convert pcap to nfcapd',
+                   'convert nfcapd to csv',
+                   'convert csv to flows',
+                   'merge flows',
+                   'clean nfcapd',
+                   'back to main'])
+    print(end=f'{"-" * 10}\n')
+
+print('built dataset', end=f'\n{"-" * 10}\n')

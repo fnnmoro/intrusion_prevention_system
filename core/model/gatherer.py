@@ -1,163 +1,162 @@
 import os
 import csv
 import subprocess
-from .tools import processing_time_log
+from model.tools import make_dir, process_time_log
 
 
-def split_pcap(pcap_path, pcap_files, size=0):
+def split_pcap(pcap_path, pcap_files, split_size):
+    """Splits pcap files according to the chosen size.
+
+    Parameters
+    ----------
+    pcap_path: str
+        Absolute pcap path.
+    pcap_files: list
+        All pcap files to be split.
+    split_size: int
+        Size of the split.
+
+    Raises
+    ----------
+    subprocess.CalledProcessError
+        Entered a invalid value less or equal to zero."""
+
     try:
-        # avoids to split if there isn't necessary
-        if size != 0:
+        make_dir(f'{pcap_path}split/')
 
-            # creates the split temporary folder
-            if not os.path.exists(pcap_path + "split/"):
-                os.system("mkdir {0}split/".format(pcap_path))
+        for pcap_file in pcap_files:
+            # runs tcpdump program to split the pcap files
+            subprocess.run(f'tcpdump -r {pcap_path}{pcap_file} -w '
+                           f'{pcap_path}split/{pcap_file.split(".pcap")[0]} '
+                           f'-C {split_size}',
+                           shell=True, check=True)
 
-            print()
-            start_idx = int(input("choose the initial pcap file: "))-1
-            final_idx = int(input("choose the final pcap file: "))-1
-            print()
+            print(pcap_path + pcap_file, end=f'\n{"-" * 10}\n')
 
-            # loop to split multiple pcap files
-            for i in range(start_idx, final_idx+1):
-                file_name = pcap_files[i].split(".pcap")[0]
-
-                # executes tcpdump program to split the pcap files
-                subprocess.run("tcpdump -r {0}{1} -w {0}split/{2} -C {3}"
-                               .format(pcap_path, pcap_files[i], file_name, size), shell=True,
-                               check=True)
-
-                print(pcap_path + pcap_files[i], end="\n\n")
-
-            # renames all split pcap files
-            for file in sorted(os.listdir(pcap_path + "split/")):
-                os.rename(pcap_path + "split/" + file, "{0}{1}.pcap".format(pcap_path + "split/", file))
-    except subprocess.CalledProcessError as error:
-        print()
-        print(error, end="\n\n")
-    except ValueError as error:
-        print()
-        print(error, end="\n\n")
-    except IndexError as error:
-        print()
-        print(error, end="\n\n")
+        # renames all split pcap files
+        for file in sorted(os.listdir(f'{pcap_path}split/')):
+            os.rename(f'{pcap_path}split/{file}',
+                      f'{pcap_path}split/{file}.pcap')
+    except subprocess.CalledProcessError:
+        print('split size must be greater than 0', end=f'\n{"-" * 10}\n')
 
 
-def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time=60):
+def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time):
+    """Converts pcap files to nfcapd files.
+
+    Parameters
+    ----------
+    pcap_path: str
+        Absolute pcap path.
+    pcap_files: list
+        All pcap files to be converted.
+    nfcapd_path: str
+        Absolute nfcapd path.
+    win_time: int
+        Size of the window time.
+
+    Raises
+    ----------
+    subprocess.CalledProcessError
+        Entered a invalid value less or equal to zero."""
+
     try:
-        print()
-        start_idx = int(input("choose the initial pcap file: "))-1
-        final_idx = int(input("choose the final pcap file: "))-1
-        print()
+        for pcap_file in pcap_files:
+            print(f'{pcap_path}{pcap_file}', end=f'\n{"-" * 10}\n')
 
-        # loop to read the pcap files to convert to nfcapd files
-        for i in range(start_idx, final_idx+1):
-            print()
-            print(pcap_path + pcap_files[i], end="\n\n")
-            subprocess.run("nfpcapd -t {0} -T 10,11,64 -r {1}{2} -l {3}"
-                           .format(win_time, pcap_path, pcap_files[i], nfcapd_path), shell=True, check=True)
-    except subprocess.CalledProcessError as error:
-        print()
-        print(error, end="\n\n")
-    except ValueError as error:
-        print()
-        print(error, end="\n\n")
-    except IndexError as error:
-        print()
-        print(error)
+            # runs nfpcapd program to convert pcap files to nfcapd files
+            subprocess.run(f'nfpcapd -t {win_time} -T all '
+                           f'-r {pcap_path}{pcap_file} -l {nfcapd_path}',
+                           shell=True, check=True)
+
+    except subprocess.CalledProcessError:
+        print('time window size must be greater than 0', end=f'\n{"-" * 10}\n')
 
 
-def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, execute_model=False):
+def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
+    """Converts nfcapd files to csv files.
+
+    Parameters
+    ----------
+    nfcapd_path: str
+        Absolute nfcapd path.
+    nfcapd_files: list
+        All nfcapd files to be converted.
+    csv_path: str
+        Absolute CSV path.
+    file_name: str
+        Name of CSV file."""
+
+    file_name = f'{file_name}_' \
+                f'{nfcapd_files[0].split("nfcapd.")[1]}_'\
+                f'{nfcapd_files[-1].split("nfcapd.")[1]}.csv'
+
+    print(f'{nfcapd_path}{nfcapd_files[0]}:{nfcapd_files[-1]}',
+          end=f'\n{"-" * 10}\n')
+
+    # runs nfdump program to convert nfcapd files to csv
+    subprocess.run(f'nfdump -O tstart -o csv -6 -R {nfcapd_path}'
+                   f'{nfcapd_files[0]}:{nfcapd_files[-1]} > '
+                   f'{csv_path}{file_name}',
+                   shell=True, check=True)
+
+
+@process_time_log
+def open_csv(csv_path, csv_file, sample=-1):
+    """Opens CSV file.
+
+    Parameters
+    ----------
+    csv_path: list
+        Absolute CSV path.
+    csv_file: list
+        CSV file to be open.
+    sample: int
+        Number of sampling lines. -1 for all lines.
+
+    Returns
+    -------
+    list
+        IP flows header.
+    list
+        IP flows."""
+
+    flows = list()
+
+    with open(f'{csv_path}{csv_file}') as reader:
+        reader = csv.reader(reader)
+        header = next(reader)
+
+        for idx, line in enumerate(reader):
+            # adds lines until sample was reached
+            if idx != sample:
+                flows.append(line)
+            else:
+                break
+        return header, flows
+
+
+def capture_nfcapd(nfcapd_path, win_time):
+    """Captures netflow data and store into nfcapd files.
+
+    Parameters
+    ----------
+    nfcapd_path: list
+        Absolute nfcapd path.
+    win_time: list
+        Size of the window time.
+
+    Returns
+    -------
+    object
+        Popen instance."""
+
     try:
-        start_idx = 0
-        final_idx = 0
-        name = "execute"
-
-        if execute_model == False:
-            csv_path = csv_path + "raw_flows/"
-
-            print()
-            start_idx = int(input("choose the initial nfcapd file: "))-1
-            final_idx = int(input("choose the final nfcapd file: "))-1
-            print()
-
-            name = input("csv name: ")
-            print()
-        else:
-            csv_path = csv_path + "tmp_flows/"
-
-        # time to complete the file name
-        start_time = nfcapd_files[start_idx].split("nfcapd.")[1]
-        final_time = nfcapd_files[final_idx].split("nfcapd.")[1]
-        file_name = name + "_" + start_time + "-" + final_time + ".csv"
-
-        skip = 1
-        if "current" not in nfcapd_files[start_idx]:
-            print(nfcapd_path + nfcapd_files[start_idx] + ":"
-                  + nfcapd_files[final_idx], end="\n\n")
-
-            # read the nfcapd files and convert to csv files
-            subprocess.run("nfdump -O tstart -o csv -6 -R {0}{1}:{2} > {3}{4}"
-                           .format(nfcapd_path, nfcapd_files[start_idx], nfcapd_files[final_idx],
-                                   csv_path, file_name), shell=True, check=True)
-            skip = 0
-        return skip
-    except subprocess.CalledProcessError as error:
-        print()
-        print(error, end="\n\n")
-    except ValueError as error:
-        print()
-        print(error, end="\n\n")
-    except IndexError as error:
-        print()
-        print(error, end="\n\n")
-
-
-@processing_time_log
-def open_csv(csv_path, csv_files, sample=-1, execute_model=False):
-    """Opens a CSV file containing raw flows"""
-    try:
-        if execute_model == False:
-            print()
-            idx = int(input("choose csv file: "))-1
-            print()
-
-            csv_files = csv_files[idx]
-
-            print(csv_path + csv_files, end="\n\n")
-
-        with open(csv_path + csv_files, mode='r') as file:
-            csv_file = csv.reader(file)
-            flows = []
-            count = 0
-
-            for line in csv_file:
-                # checks if the core number has been reached
-                if count != sample:
-                    # checks if is not the last line
-                    if "Summary" not in line[0]:
-                        flows.append(line)
-                        count += 1
-                    # break if the last line was found
-                    else:
-                        break
-                # break if the core was reached
-                else:
-                    break
-            return flows, csv_files
-    except IndexError as error:
-        print()
-        print(error, end="\n\n")
-
-
-def nfcapd_collector(nfcapd_path, win_time=0):
-    try:
-        process = subprocess.Popen(["nfcapd", "-t", str(win_time), "-T",
-                                    "all", "-b", "127.0.0.1", "-p", "7777",
-                                    "-l", nfcapd_path],
-                                   stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.DEVNULL)
+        process = subprocess.Popen(['nfcapd', '-t', str(win_time), '-T',
+                                    'all', '-b', '127.0.0.1', '-p', '7777',
+                                    '-l', nfcapd_path],
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL)
         return process
-    except subprocess.CalledProcessError as error:
-        print()
-        print(error, end="\n\n")
+    except subprocess.CalledProcessError:
+        print('time window size must be greater than 0', end=f'\n{"-" * 10}\n')

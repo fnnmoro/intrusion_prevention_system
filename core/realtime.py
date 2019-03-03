@@ -1,86 +1,91 @@
 import time
-from model import gatherer, tools
-from model.preprocessing import Formatter, Modifier
-from model.mitigation import Mitigator
-from threading import Thread
-from core import socketio
-import database
-from core import nfcapd_path, csv_path
 import pickle
+from threading import Thread
+from core import paths, socketio
+from model.gatherer import capture_nfcapd, convert_nfcapd_csv, open_csv
+from model.preprocess import Formatter, Modifier
+from model.mitigation import Mitigator
+from model.tools import clean_files
+from model.walker import get_files
+from model import database
 
 
 class WorkerThread(Thread):
-    def __init__(self, event, model, choice_features, dataset_type):
+    def __init__(self, clf, event):
         super().__init__()
-        self.thread_stop_event = event
-        self.model = model
-        self.choice_features = choice_features
-        self.dataset_type = dataset_type
-        self.dt = pickle.load(open('../objects/dt', 'rb'))
-        self.ex = pickle.load(open('../objects/ex', 'rb'))
+        self.clf = clf
+        self.count = 0
+        self.event = event
+        self.ex = pickle.load(open(f'../obj/ex', 'rb'))
+        self.dt = pickle.load(open(f'../obj/dt', 'rb'))
 
-    def model_execution(self):
-        print('thread execution')
+    def preprocess(self, files):
+        convert_nfcapd_csv(paths['nfcapd'], [files],
+                        f'{paths["csv"]}tmp_flows/',
+                        'execute')
 
-        process = gatherer.nfcapd_collector(nfcapd_path, 60)
+        files = get_files(f'{paths["csv"]}tmp_flows/')
 
-        self.dt.choose_classifiers(self.model)
+        header, flows = open_csv(f'{paths["csv"]}tmp_flows/', files[0])
+
+        clean_files([paths['nfcapd'], f'{paths["csv"]}tmp_flows/'],
+                    ['nfcapd.20*', '*'])
+
+        ft = Formatter(header, flows)
+        header = ft.format_header()
+        flows = ft.format_flows()
+
+        md = Modifier(flows, header)
+
+        if self.ex.features_idx == 6:
+            header, flows = md.aggregate_flows(100)
+        header, flows = md.create_features(2)
+
+        features, label = self.ex.extract_features(flows)
+
+        return features, flows
+
+    def mitigation(self, pred):
+        if 1 in pred:
+            blacklist = None
+            while not blacklist:
+                blacklist = database.create_blacklist()
+                time.sleep(2)
+
+            mtg = Mitigator(self.count, blacklist)
+            mtg.insert_rule()
+            self.count += getattr(mtg, 'count')
+
+            socketio.emit('detect',
+                          {'anomalous_flows': database.sum_anomalous_flows()},
+                           namespace='/dep')
+
+        database.delete_flows()
+
+    def execution(self):
+        process = capture_nfcapd(paths['nfcapd'], 60)
 
         time.sleep(2)
         try:
-            while not self.thread_stop_event.isSet():
-                path, files = tools.directory_content(nfcapd_path, True)
+            while not self.event.isSet():
+                files = get_files(paths['nfcapd'])
 
-                skip = gatherer.convert_nfcapd_csv(path, files, csv_path, True)
+                try:
+                    if not 'current' in files[0]:
+                        features, flows = self.preprocess(files[0])
 
-                if skip == 0:
-                    path, files = tools.directory_content(csv_path
-                                                          + "tmp_flows/",
-                                                          True)
+                        pred, date, dur = self.dt.execute_classifier(self.clf,
+                                                                     features)
 
-                    flows, file_name = gatherer.open_csv(path, files[0],
-                                                         -1, True)
+                        flows = self.dt.add_predictions(flows, pred)
+                        database.insert_flows(flows)
 
-                    tools.clean_tmp_files(nfcapd_path, csv_path, True)
-
-                    ft = Formatter(flows)
-                    header, flows = ft.format_flows()
-
-                    md = Modifier(flows, header)
-                    header, flows = md.modify_flows(100, self.dataset_type)
-
-                    header_features, features = self.ex.extract_features(
-                        header, flows, self.choice_features)
-
-                    pred, test_date, test_dur = self.dt.execute_classifiers(
-                        features, 0)
-
-                    anomalous_flows = self.dt.find_anomalies(flows, pred)
-
-                    if anomalous_flows:
-                        database.tmp_flows(anomalous_flows)
-
-                        blacklist = database.get_anomalous_flows()
-
-                        mitigation = Mitigator(blacklist)
-                        mitigation.insert_rule()
-
-                    socketio.emit('mytest',
-                                  {'total_anomalies':
-                                    database.get_num_anomalous_flows()},
-                                  namespace='/test')
-
-                    database.delete_tmp_flows()
-
-                time.sleep(2)
+                        self.mitigation(pred)
+                    time.sleep(2)
+                except IndexError:
+                    continue
         finally:
             process.kill()
 
     def run(self):
-        self.model_execution()
-
-    """def join(self, timeout=None):
-        self.thread_stop_event.set()
-        super(WorkerThread, self).join(timeout)"""
-
-
+        self.execution()

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Classifiers{% endblock %}
+
+{% block script %}
+    <script src='{{ url_for("static", filename="content.js") }}'></script>
+{% endblock %}
+
+{% block content %}
+    <form id='config' method='post' action='{{ url_for("train.results") }}' onsubmit='hiddenForm()'>
+        <p>Machine learning classifiers</p>
+        <div class='checkbox'>
+            {% for clf in classifiers %}
+                <div class='box'>
+                    <input id='classifiers{{ loop.index }}' type='checkbox' name='classifiers' value='{{ clf }}'>
+                    <label for='classifiers{{ loop.index }}'>{{ clf }}</label>
+                </div>
+            {% endfor %}
+        </div>
+
+        <p>IP flows features</p>
+
+        <div class='checkbox'>
+            {% for name in features_name %}
+                <div class='box'>
+                    <input id='features_name{{ loop.index }}' type='checkbox' name='features_name' value='{{ loop.index-1 }}'>
+                    <label for='features_name{{ loop.index }}'>{{ name }}</label>
+                </div>
+            {% endfor %}
+        </div>
+
+        <br>
+        <input type='submit' value='Next'>
+    </form>
+{% endblock %}
+
