@@ -5,6 +5,13 @@
 {% block content %}
     <p>Choose the classifier</p>
 
+    {% set text = ['classifier', 'train date', 'test date',
+                   'train duration', 'test duration',
+                   'accuracy', 'precision', 'recall', 'f1-score',
+                   'tue negative', 'false positive',
+                   'false negative', 'true positive',
+                   'preprocess', 'hyperparameters'] %}
+
     <div class='tables'>
         {% for results in info %}
             <table>
