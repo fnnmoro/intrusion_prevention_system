@@ -1,5 +1,6 @@
 from threading import Thread, Event
-from flask import (request, redirect, render_template, url_for, Blueprint)
+from flask import (request, redirect, render_template,
+                   url_for, session, Blueprint)
 from core import socketio
 from model import database
 from realtime import WorkerThread
@@ -17,7 +18,7 @@ def detect():
     anomalous_flows = 0
 
     if not thread.isAlive():
-        thread = WorkerThread(request.form['clf'], event)
+        thread = WorkerThread(request.form['clf'], event, session['obj_date'])
         thread.start()
     else:
         anomalous_flows = database.sum_anomalous_flows()
