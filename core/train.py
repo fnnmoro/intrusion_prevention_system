@@ -35,10 +35,6 @@ def classifiers():
     if request.method == 'POST':
         global flows
 
-        features_name = ['duration', 'bytes', 'packets',
-                         'bytes per second', 'bytes per packets',
-                         'packtes per second']
-
         header, flows = open_csv(f'{paths["csv"]}datasets/',
                                  request.form['dataset'],
                                  int(request.form['sample']))
@@ -46,9 +42,9 @@ def classifiers():
         for entry in flows:
             Formatter.convert_features(entry, True)
 
+        change_features_name = False
         if 'flw' in header:
-            features_name[0:0] = ['source ports', 'destination ports']
-            features_name.append('flows')
+            change_features_name = True
             setattr(ex, 'features_idx', 6)
 
         session['test_set_size'] = int(request.form['test_set_size'])/100
@@ -58,7 +54,7 @@ def classifiers():
         return render_template('train/classifiers.html',
                                classifiers=list(getattr(dt,
                                                         'classifiers').keys()),
-                               features_name=features_name)
+                               change_features_name=change_features_name)
 
 
 @bp.route('/results', methods=['GET', 'POST'])
