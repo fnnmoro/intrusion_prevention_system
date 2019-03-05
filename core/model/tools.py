@@ -17,6 +17,7 @@ def make_dir(path):
     if not os.path.exists(path):
         os.system(f'mkdir {path}')
 
+
 def evaluation_metrics(test_labels, pred):
     conf_matrix = confusion_matrix(test_labels, pred)
 
