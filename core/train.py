@@ -60,13 +60,6 @@ def classifiers():
 @bp.route('/results', methods=['GET', 'POST'])
 def results():
     if request.method == 'POST':
-        text = ['classifier', 'train date', 'test date',
-                'train duration', 'test duration',
-                'accuracy', 'precision', 'recall', 'f1-score',
-                'tue negative', 'false positive',
-                'false negative', 'true positive',
-                'preprocess', 'hyperparameters']
-
         if request.referrer.split('/')[-1] == 'classifiers':
             setattr(ex, 'selected_features', [int(idx) for idx in
                                               request.form
@@ -112,4 +105,4 @@ def results():
             info = obj[2]
 
         return render_template('train/results.html',
-                               text=text, info=info)
+                               info=info)
