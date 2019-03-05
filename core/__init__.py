@@ -36,7 +36,7 @@ def about():
 @app.route('/clean')
 def clean():
     delete_blacklist()
-    clean_files([paths['nfcapd'], paths['obj']], ['*', '*'])
+    clean_files([paths['nfcapd']], ['*'])
 
     return redirect(url_for('home'))
 

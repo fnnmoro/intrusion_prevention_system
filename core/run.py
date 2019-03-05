@@ -9,4 +9,4 @@ if __name__ == '__main__':
         socketio.run(app)
     finally:
         delete_blacklist()
-        clean_files([paths['nfcapd'], paths['obj']], ['*', '*'])
+        clean_files([paths['nfcapd']], ['*'])
