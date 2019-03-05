@@ -21,6 +21,14 @@
         <p>IP flows features</p>
 
         <div class='checkbox'>
+            {% set features_name = ['duration', 'bytes', 'packets', 'bytes per second', 'bytes per packets', 'packtes per second'] %}
+
+            {% if change_features_name %}
+                {% do features_name.insert(0, 'source ports') %}
+                {% do features_name.insert(1, 'destination ports') %}
+                {% do features_name.append('flows') %}
+            {% endif %}
+
             {% for name in features_name %}
                 <div class='box'>
                     <input id='features_name{{ loop.index }}' type='checkbox' name='features_name' value='{{ loop.index-1 }}'>
@@ -33,4 +41,3 @@
         <input type='submit' value='Next'>
     </form>
 {% endblock %}
-
