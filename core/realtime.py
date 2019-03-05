@@ -1,7 +1,8 @@
 import time
 import pickle
 from threading import Thread
-from core import paths, socketio
+from core import socketio
+from path import paths
 from model.gatherer import capture_nfcapd, convert_nfcapd_csv, open_csv
 from model.preprocess import Formatter, Modifier
 from model.mitigation import Mitigator

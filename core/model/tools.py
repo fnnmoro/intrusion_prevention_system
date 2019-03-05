@@ -5,6 +5,7 @@ from datetime import datetime
 from sklearn.metrics import (accuracy_score, precision_score,
                              recall_score, f1_score,
                              confusion_matrix)
+from core.path import paths
 
 def make_dir(path):
     """Creates a directory, if it not exists.
@@ -111,10 +112,7 @@ def process_time_log(func):
         dur = round(end - start, 7)
 
         # log
-        with open('/home/flmoro/bsi16/research_project/anomaly_detection/'
-                  'codes/triple_m_ads/log/process_time_log.csv',
-                  mode='a') as file:
-
+        with open(f'{paths["log"]}process_time_log.csv', mode='a') as file:
             writer = csv.writer(file)
             writer.writerow([date, dur, func.__name__])
 

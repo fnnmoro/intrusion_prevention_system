@@ -1,16 +1,9 @@
 import os
 from flask import Flask, redirect, render_template, url_for
 from flask_socketio import SocketIO
+from path import paths
 from model.tools import make_dir
 
-base_path = '/home/flmoro/bsi16/research_project/anomaly_detection/' \
-            'codes/triple_m_ads/'
-paths = {'pcap': f'{base_path}' + 'pcap/',
-         'nfcapd': f'{base_path}' + 'nfcapd/',
-         'csv': f'{base_path}' + 'csv/',
-         'obj': f'{base_path}' + 'obj/',
-         'saves': f'{base_path}' + 'saves/',
-         'log': f'{base_path}' + 'log/'}
 
 for path in paths.values():
     make_dir(path)
@@ -50,6 +43,3 @@ def clean():
 
 app.register_blueprint(train.bp)
 app.register_blueprint(dep.bp)
-
-
-

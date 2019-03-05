@@ -3,7 +3,7 @@ from datetime import datetime
 from tempfile import mkdtemp
 from shutil import rmtree
 from flask import (request, render_template, session, Blueprint)
-from core import paths
+from path import paths
 from model.detection import Detector
 from model.gatherer import open_csv
 from model.preprocess import Extractor, Formatter, Preprocessor

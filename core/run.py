@@ -1,9 +1,8 @@
 from core import app
 from core import socketio
-from core import paths
 from core.model.database import delete_blacklist
 from core.model.tools import clean_files
-
+from path import paths
 
 if __name__ == '__main__':
     try:
