@@ -12,13 +12,12 @@ from model import database
 
 
 class WorkerThread(Thread):
-    def __init__(self, clf, event):
+    def __init__(self, clf, event, obj_date):
         super().__init__()
         self.clf = clf
         self.count = 0
         self.event = event
-        self.ex = pickle.load(open(f'obj/ex', 'rb'))
-        self.dt = pickle.load(open(f'obj/dt', 'rb'))
+        self.obj = pickle.load(open(f'saves/obj_{obj_date}', 'rb'))[:2]
 
     def preprocess(self, files):
         convert_nfcapd_csv(paths['nfcapd'], [files],
@@ -38,11 +37,11 @@ class WorkerThread(Thread):
 
         md = Modifier(flows, header)
 
-        if self.ex.features_idx == 6:
+        if self.obj[0].features_idx == 6:
             header, flows = md.aggregate_flows(100)
         header, flows = md.create_features(2)
 
-        features, label = self.ex.extract_features(flows)
+        features, label = self.obj[0].extract_features(flows)
 
         return features, flows
 
@@ -75,10 +74,11 @@ class WorkerThread(Thread):
                     if not 'current' in files[0]:
                         features, flows = self.preprocess(files[0])
 
-                        pred, date, dur = self.dt.execute_classifier(self.clf,
-                                                                     features)
+                        pred, date, dur = (self.obj[1]
+                                               .execute_classifier(self.clf,
+                                                                   features))
 
-                        flows = self.dt.add_predictions(flows, pred)
+                        flows = self.obj[1].add_predictions(flows, pred)
                         database.insert_flows(flows)
 
                         self.mitigation(pred)
