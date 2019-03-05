@@ -92,12 +92,9 @@ def results():
                 info.append(results)
 
             rmtree(tmp_dir)
-            pickle.dump(ex, open('obj/ex', 'wb'))
-            pickle.dump(dt, open('obj/dt', 'wb'))
+            session['obj_date'] = datetime.now().strftime("%Y%m%d_%H%M%S")
             pickle.dump([ex, dt, info],
-                        open(f'saves/obj_'
-                             f'{datetime.now().strftime("%Y%m%d_%H%M%S")}',
-                             'wb'))
+                        open(f'saves/obj_{session["obj_date"]}', 'wb'))
         else:
             obj = pickle.load(open(f'saves/{request.form["file"]}', 'rb'))
             pickle.dump(obj[0], open('obj/ex', 'wb'))
