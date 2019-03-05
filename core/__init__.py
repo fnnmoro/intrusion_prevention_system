@@ -13,8 +13,8 @@ app.config.from_mapping(SECRET_KEY='h7cn#403mks-',
                         DATABASE=os.path.join(app.instance_path,
                                               'network_data.db'),
                         DEBUG=True)
-
 app.config.from_pyfile('config.py', silent=True)
+app.jinja_env.add_extension('jinja2.ext.do')
 
 socketio = SocketIO(app)
 
