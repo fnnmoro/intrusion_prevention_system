@@ -17,8 +17,8 @@ class WorkerThread(Thread):
         self.clf = clf
         self.count = 0
         self.event = event
-        self.ex = pickle.load(open(f'../obj/ex', 'rb'))
-        self.dt = pickle.load(open(f'../obj/dt', 'rb'))
+        self.ex = pickle.load(open(f'obj/ex', 'rb'))
+        self.dt = pickle.load(open(f'obj/dt', 'rb'))
 
     def preprocess(self, files):
         convert_nfcapd_csv(paths['nfcapd'], [files],

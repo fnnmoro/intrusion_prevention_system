@@ -98,21 +98,21 @@ def results():
                                                                   dataset[1])
 
                 results = ([clf, train_date, test_date, train_dur, test_dur]
-                           + evaluation_metrics(dataset[3], pred)
-                           + [session['preprocess'], param])
+                            + evaluation_metrics(dataset[3], pred)
+                            + [session['preprocess'], param])
                 info.append(results)
 
             rmtree(tmp_dir)
-            pickle.dump(ex, open('../obj/ex', 'wb'))
-            pickle.dump(dt, open('../obj/dt', 'wb'))
+            pickle.dump(ex, open('obj/ex', 'wb'))
+            pickle.dump(dt, open('obj/dt', 'wb'))
             pickle.dump([ex, dt, info],
-                        open(f'../saves/obj_'
+                        open(f'saves/obj_'
                              f'{datetime.now().strftime("%Y%m%d_%H%M%S")}',
                              'wb'))
         else:
-            obj = pickle.load(open(f'../saves/{request.form["file"]}', 'rb'))
-            pickle.dump(obj[0], open('../obj/ex', 'wb'))
-            pickle.dump(obj[1], open('../obj/dt', 'wb'))
+            obj = pickle.load(open(f'saves/{request.form["file"]}', 'rb'))
+            pickle.dump(obj[0], open('obj/ex', 'wb'))
+            pickle.dump(obj[1], open('obj/dt', 'wb'))
             info = obj[2]
 
         return render_template('train/results.html',
