@@ -5,21 +5,26 @@ from model.tools import make_dir, process_time_log
 
 
 def split_pcap(pcap_path, pcap_files, split_size):
-    """Splits pcap files according to the chosen size.
+    """Splits pcap files according to a chosen size.
+
+    To perform subsequent actions,larger pcap files must be split.
+
+    It will be created inside the pcap folder a new folder with the split pcap
+    files.
 
     Parameters
     ----------
     pcap_path: str
         Absolute pcap path.
     pcap_files: list
-        All pcap files to be split.
+        All or one pcap file to be split.
     split_size: int
-        Size of the split.
+        Size of the split. The units are milions of bytes (1000000 bytes).
 
     Raises
     ----------
     subprocess.CalledProcessError
-        Entered a invalid value less or equal to zero."""
+        Entered a invalid value less or equal to zero in the split size."""
 
     try:
         make_dir(f'{pcap_path}split/')
@@ -31,7 +36,7 @@ def split_pcap(pcap_path, pcap_files, split_size):
                            f'-C {split_size}',
                            shell=True, check=True)
 
-            print(pcap_path + pcap_file, end=f'\n{"-" * 10}\n')
+            print(end=f'{"-" * 10}\n')
 
         # renames all split pcap files
         for file in sorted(os.listdir(f'{pcap_path}split/')):
@@ -41,40 +46,46 @@ def split_pcap(pcap_path, pcap_files, split_size):
         print('split size must be greater than 0', end=f'\n{"-" * 10}\n')
 
 
-def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, win_time):
-    """Converts pcap files to nfcapd files.
+def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, time_interval):
+    """Converts pcap files to nfcapd files according to a time interval.
+
+    The nfcapd files created will be stored in the nfcapd folder.
 
     Parameters
     ----------
     pcap_path: str
         Absolute pcap path.
     pcap_files: list
-        All pcap files to be converted.
+        All or one pcap files to be converted.
     nfcapd_path: str
-        Absolute nfcapd path.
-    win_time: int
-        Size of the window time.
+        Absolute nfcapd path to store the generated files.
+    time_interval: int
+        Duration of the time interval in seconds to rotate files.
 
     Raises
     ----------
     subprocess.CalledProcessError
-        Entered a invalid value less or equal to zero."""
+        Entered a invalid value less or equal to zero in time interval."""
 
     try:
         for pcap_file in pcap_files:
             print(f'{pcap_path}{pcap_file}', end=f'\n{"-" * 10}\n')
 
             # runs nfpcapd program to convert pcap files to nfcapd files
-            subprocess.run(f'nfpcapd -t {win_time} -T all '
+            subprocess.run(f'nfpcapd -t {time_interval} -T all '
                            f'-r {pcap_path}{pcap_file} -l {nfcapd_path}',
                            shell=True, check=True)
 
     except subprocess.CalledProcessError:
-        print('time window size must be greater than 0', end=f'\n{"-" * 10}\n')
+        print('the duration of the time interval must be greater than 0',
+        end=f'\n{"-" * 10}\n')
 
 
 def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
-    """Converts nfcapd files to csv files.
+    """Converts nfcapd files to csv file.
+
+    The csv file will be created based on one or multiple nfcapd files and will
+    be stored in the csv folder.
 
     Parameters
     ----------
@@ -102,8 +113,10 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
 
 
 @process_time_log
-def open_csv(csv_path, csv_file, sample=-1):
+def open_csv(csv_path, csv_file, sample_size=-1):
     """Opens CSV file.
+
+    The CSV file must contain IP flows with header.
 
     Parameters
     ----------
@@ -111,40 +124,41 @@ def open_csv(csv_path, csv_file, sample=-1):
         Absolute CSV path.
     csv_file: list
         CSV file to be open.
-    sample: int
-        Number of sampling lines. -1 for all lines.
+    sample_size: int
+        Sample size. -1 for all lines.
 
     Returns
     -------
     list
-        IP flows header.
-    list
-        IP flows."""
+        Header and IP flows"""
 
     flows = list()
 
-    with open(f'{csv_path}{csv_file}') as reader:
-        reader = csv.reader(reader)
+    with open(f'{csv_path}{csv_file}') as file:
+        reader = csv.reader(file)
         header = next(reader)
 
         for idx, line in enumerate(reader):
             # adds lines until sample was reached
-            if idx != sample:
+            if idx != sample_size:
                 flows.append(line)
             else:
                 break
-        return header, flows
+    return header, flows
 
 
-def capture_nfcapd(nfcapd_path, win_time):
-    """Captures netflow data and store into nfcapd files.
+def capture_nfcapd(nfcapd_path, time_interval):
+    """Captures netflow data from the network according to a time interval and
+    store into nfcapd files.
+
+    The generated nfcapd files will be stored in the nfcapd folder.
 
     Parameters
     ----------
     nfcapd_path: list
         Absolute nfcapd path.
-    win_time: list
-        Size of the window time.
+    time_interval: list
+        Duration of the time interval in seconds to rotate files.
 
     Returns
     -------
@@ -159,4 +173,5 @@ def capture_nfcapd(nfcapd_path, win_time):
                                     stderr=subprocess.DEVNULL)
         return process
     except subprocess.CalledProcessError:
-        print('time window size must be greater than 0', end=f'\n{"-" * 10}\n')
+        print('the duration of the time interval must be greater than 0',
+        end=f'\n{"-" * 10}\n')
