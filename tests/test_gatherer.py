@@ -19,6 +19,9 @@ pcap_path = f'{base_path}pcap/'
 nfcapd_path = f'{base_path}nfcapd/'
 csv_path = f'{base_path}csv/'
 
+# file used in the tests
+pcap_file = get_files(pcap_path)
+
 
 # unit tests
 class TestSplitPcap(unittest.TestCase):
@@ -28,11 +31,10 @@ class TestSplitPcap(unittest.TestCase):
     def setUpClass(cls):
         """Initiates the parameters to feed the test function"""
 
-        cls.pcap_file = 'normal_traffic1_0.pcap'
         cls.split_size = 300
 
         # function to be tested
-        split_pcap(pcap_path, [cls.pcap_file], cls.split_size)
+        split_pcap(pcap_path, pcap_file, cls.split_size)
 
     @classmethod
     def tearDownClass(cls):
@@ -67,10 +69,8 @@ class TestConvertPcapNfcapd(unittest.TestCase):
     def setUpClass(cls):
         """Initiates the parameters to feed the test function"""
 
-        pcap_file = 'normal_traffic1_0.pcap'
-
         # function to be tested
-        convert_pcap_nfcapd(pcap_path, [pcap_file], nfcapd_path, 60)
+        convert_pcap_nfcapd(pcap_path, pcap_file, nfcapd_path, 60)
 
     @classmethod
     def tearDownClass(cls):
@@ -106,9 +106,7 @@ class TestConvertNfcapdCSV(unittest.TestCase):
         """Initiates the parameters to feed the test function and previous
         function to generated the necessary files"""
 
-        pcap_file = 'normal_traffic1_0.pcap'
-
-        convert_pcap_nfcapd(pcap_path, [pcap_file], nfcapd_path, 60)
+        convert_pcap_nfcapd(pcap_path, pcap_file, nfcapd_path, 60)
 
         nfcapd_files = get_files(nfcapd_path)
 
@@ -150,9 +148,7 @@ class TestOpenCSV(unittest.TestCase):
         """Initiates the parameters to feed the test function and previous
         functions to generated the necessary files"""
 
-        pcap_file = 'normal_traffic1_0.pcap'
-
-        convert_pcap_nfcapd(pcap_path, [pcap_file], nfcapd_path, 60)
+        convert_pcap_nfcapd(pcap_path, pcap_file, nfcapd_path, 60)
 
         nfcapd_files = get_files(nfcapd_path)
 
