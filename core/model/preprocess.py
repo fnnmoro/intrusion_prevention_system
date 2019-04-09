@@ -6,81 +6,19 @@ from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    QuantileTransformer, Normalizer)
 from model.tools import process_time_log
 
-class Extractor:
-    """Extracts features from flows and split the dataset into appropriate
-    sets to training the model.
-
-    Attributes
-    ----------
-    features_idx: int
-        Index used according the chosen dataset.
-    selected_features: list
-        List of all chosen features."""
-
-    def __init__(self):
-        self.features_idx = 8
-        self.selected_features = list()
-
-    @process_time_log
-    def extract_features(self, flows):
-        """Extracts features and labels from flows.
-
-        Parameters
-        ----------
-        flows: list
-            Formatted and modified flows.
-
-        Returns
-        -------
-        list
-            Features and labels to be split into appropriate sets."""
-
-        features, labels = list(), list()
-
-        for entry in flows:
-            tmp = list()
-            for idx in self.selected_features:
-                tmp.append(entry[self.features_idx:][idx])
-
-            features.append(tmp)
-            labels.append(entry[-1])
-
-        return features, labels
-
-    @process_time_log
-    def train_test_split(self, features, labels, test_size):
-        """Splits the features and labels into training and test sets.
-
-        Parameters
-        ----------
-        features: list
-            Features of each flows.
-        labels: list
-            Labels of each flows.
-        test_size: float
-            Size of the test set.
-
-        Returns
-        -------
-        list
-            Dataset containing the training and test sets."""
-
-        dataset = train_test_split(features, labels,
-                                   test_size=test_size,
-                                   random_state=13,
-                                   stratify=labels)
-        return dataset
-
 
 class Formatter:
-    """Formats the raw flows to be used by machine learning algorithms.
+    """Formats the IP flows to be used by machine learning algorithms.
+
+    The formatted IP flows can be used in the Modifier class to aggregate or
+    created new features.
 
     Parameters
     ----------
     header: list
         Features description.
     flows: list
-        Raw flows.
+        IP flows.
 
     Attributes
     ----------
@@ -95,7 +33,7 @@ class Formatter:
 
     @process_time_log
     def format_header(self):
-        """Formats the header with specific features and order.
+        """Format the header.
 
         Returns
         -------
@@ -109,15 +47,14 @@ class Formatter:
 
     @process_time_log
     def format_flows(self):
-        """Formats the flows with specific features, order and replace missing
-        features.
+        """Formats the flows to be used in the machine learning algorithms.
 
         Returns
         -------
         list
             Formatted flows."""
 
-        # summary
+        # deletes the summary lines
         del self.flows[-3:]
 
         for entry in self.flows:
@@ -131,15 +68,17 @@ class Formatter:
 
     @staticmethod
     def delete_features(entry):
-        """Deletes non-significant features.
+        """Deletes non-discriminative features.
 
         Parameters
         ----------
         entry: list
-            Flow entry."""
+            IP flow entry."""
 
-        del entry[9:11]  # fwd and stos
-        del entry[11:]  # from opkt to the end
+        # fwd and stos
+        del entry[9:11]
+        # from opkt to the end
+        del entry[11:]
 
     @staticmethod
     def sort_features(entry):
@@ -148,14 +87,10 @@ class Formatter:
         Parameters
         ----------
         entry: list
-            Flow entry."""
+            IP flow entry."""
 
-        # entry with the new order
-        tmp = [entry[idx] for idx in [0, 1, 3, 4, 7, 8, 5, 6, 2, 9, 10]]
-
-        # updates each element of the existing entry
-        for idx, feature in enumerate(tmp):
-            entry[idx] = feature
+        # updates existing entry with the new order
+        entry[:] = [entry[idx] for idx in [0, 1, 3, 4, 7, 8, 5, 6, 2, 9, 10]]
 
     @staticmethod
     def replace_features(entry):
@@ -164,18 +99,17 @@ class Formatter:
         Parameters
         ----------
         entry: list
-            Flow entry."""
+            IP flow entry."""
 
-        # default values
-        missing = {0: '0001-01-01 01:01:01', 1: '0001-01-01 01:01:01',
-                   2: '000.000.000.000', 3: '000.000.000.000',
-                   4: 'nopr', 5: '......', 6: '0', 7: '0',
-                   8: '0.0', 9: '0', 10: '0'}
+        default_values = {0: '0001-01-01 01:01:01', 1: '0001-01-01 01:01:01',
+                          2: '000.000.000.000', 3: '000.000.000.000',
+                          4: 'nopr', 5: '......', 6: '0', 7: '0',
+                          8: '0', 9: '0', 10: '0'}
 
         for idx, feature in enumerate(entry):
             # checks missing features
             if not feature:
-                entry[idx] = missing[idx]
+                entry[idx] = default_values[idx]
 
     @staticmethod
     def convert_features(entry, train=False):
@@ -184,19 +118,26 @@ class Formatter:
         Parameters
         ----------
         entry: list
-            Flow entry.
+            IP flow entry.
         train: bool
-            Boolean value to flag if the program is in train mode"""
+            Boolean value to flag if the program is in train mode."""
 
+        # ts, te
         entry[0:2] = [datetime.strptime(i, '%Y-%m-%d %H:%M:%S')
-                      for i in entry[0:2]]  # ts, te
-        entry[4] = entry[4].lower()  # pr
-        entry[6:8] = [int(i) for i in entry[6:8]]  # sp, dp
-        entry[8] = round(float(entry[8]))  # td
-        entry[9:] = [int(i) for i in entry[9:]]  # ibyt to the end
+                      for i in entry[0:2]]
+        # pr
+        entry[4] = entry[4].lower()
+        # sp, dp
+        entry[6:8] = [int(i) for i in entry[6:8]]
+        # td
+        entry[8] = round(float(entry[8]))
+        # ibyt to the end
+        entry[9:] = [int(i) for i in entry[9:]]
 
+        # checks if is in the train mode to convert properly
         if train:
-            entry[5] = ast.literal_eval(entry[5])  # flg
+            # flg
+            entry[5] = ast.literal_eval(entry[5])
         else:
             entry[5] = entry[5].lower()
 
@@ -207,13 +148,12 @@ class Formatter:
         Parameters
         ----------
         entry: list
-            Flow entry."""
+            IP flow entry."""
 
         # checks if is the tcp protocol
         if entry[4] == 'tcp':
             # flags order
             flags = ['u', 'a', 's', 'f', 'r', 'p']
-
             # filters only the flags
             entry[5] = [flag for flag in entry[5] if flag != '.']
             # creates a new list with the flags order and the count of them
@@ -364,6 +304,71 @@ class Modifier:
         self.header.append('lbl')
 
         return self.header, self.flows
+
+
+class Extractor:
+    """Extracts features from flows and split the dataset into appropriate
+    sets to training the model.
+
+    Attributes
+    ----------
+    features_idx: int
+        Index used according the chosen dataset.
+    selected_features: list
+        List of all chosen features."""
+
+    def __init__(self):
+        self.features_idx = 8
+        self.selected_features = list()
+
+    @process_time_log
+    def extract_features(self, flows):
+        """Extracts features and labels from flows.
+
+        Parameters
+        ----------
+        flows: list
+            Formatted and modified flows.
+
+        Returns
+        -------
+        list
+            Features and labels to be split into appropriate sets."""
+
+        features, labels = list(), list()
+
+        for entry in flows:
+            tmp = list()
+            for idx in self.selected_features:
+                tmp.append(entry[self.features_idx:][idx])
+            features.append(tmp)
+            labels.append(entry[-1])
+
+        return features, labels
+
+    @process_time_log
+    def train_test_split(self, features, labels, test_size):
+        """Splits the features and labels into training and test sets.
+
+        Parameters
+        ----------
+        features: list
+            Features of each flows.
+        labels: list
+            Labels of each flows.
+        test_size: float
+            Size of the test set.
+
+        Returns
+        -------
+        list
+            Dataset containing the training and test sets."""
+
+        dataset = train_test_split(features, labels,
+                                   test_size=test_size,
+                                   random_state=13,
+                                   stratify=labels)
+        return dataset
 
 
 class Preprocessor:
