@@ -22,10 +22,10 @@ class Formatter:
 
     Attributes
     ----------
-    header: list
+    self.header: list
         Formatted features description.
-    flows: list
-        Formatted flows."""
+    self.flows: list
+        Formatted IP flows."""
 
     def __init__(self, header, flows):
         self.header = header
@@ -47,12 +47,12 @@ class Formatter:
 
     @process_time_log
     def format_flows(self):
-        """Formats the flows to be used in the machine learning algorithms.
+        """Formats the flows to be used by the machine learning algorithms.
 
         Returns
         -------
         list
-            Formatted flows."""
+            Formatted IP flows."""
 
         # deletes the summary lines
         del self.flows[-3:]
@@ -120,7 +120,7 @@ class Formatter:
         entry: list
             IP flow entry.
         train: bool
-            Boolean value to flag if the program is in train mode."""
+            Value to flag if the program is in train mode."""
 
         # ts, te
         entry[0:2] = [datetime.strptime(i, '%Y-%m-%d %H:%M:%S')
@@ -163,21 +163,22 @@ class Formatter:
 
 
 class Modifier:
-    """Modifies the formatted flows to create more discriminating features.
+    """Modifies the formatted IP flows to aggregate and create more
+    discriminating features to be used by the machine learning algorithms.
 
     Parameters
     ----------
     header: list
         Formatted features description.
     flows: list
-        Formatted flows.
+        Formatted IP flows.
 
     Attributes
     ----------
-    header: list
+    self.header: list
         Modified features description.
-    flows: list
-        Modified flows."""
+    self.flows: list
+        Modified IP flows."""
 
     def __init__(self, flows, header):
         self.flows = flows
@@ -185,96 +186,110 @@ class Modifier:
 
     @process_time_log
     def aggregate_flows(self, threshold):
-        """Aggregates formatted flows.
+        """Aggregates formatted IP flows according to a established threshold.
+
+        The flows are aggregated considering the same start hour and minute,
+        source address, destination address and protocol.
+
+        The threshold is useful when the flows to be aggregate are anomalous,
+        like a DoS attack.
 
         Parameters
         ----------
         threshold: int
-            Aggregation limit to prevent that the anomalous flows becoming
-            just one entry.
+            Aggregation threshold to prevent that mulitple entries become just
+            one.
 
         Returns
         -------
-        list
-            Modified header and flows"""
+        self.header: list
+            Modified features description.
+        self.flows: list
+            Modified IP flows."""
 
-        # temporary aggregated flows
-        tmp_flows = list()
+        # aggregated flows
+        aggregated_flows = list()
 
         while self.flows:
-            # compares the value with the defined threshold
+            # separates the first flow that will be matched against the others
+            base_entry = self.flows.pop(0)
+
+            # keeps only the unique ports
+            sp = {base_entry[6]}
+            dp = {base_entry[7]}
+
+            # compares the value with the established threshold
+            # 1 is used instead of 0 because a flow is separated first
             count = 1
-
-            # separates the first entry that will be matched
-            entry = self.flows.pop(0)
-
-            # keeps only the ports with unique numbers
-            sp = {entry[6]}
-            dp = {entry[7]}
-
-            # compares the first entry with the rest of the flows
-            for tmp_idx, tmp_entry in enumerate(self.flows):
+            # compares the first flows with the rest of the flows
+            for idx, entry in enumerate(self.flows):
                 # checks if the threshold was reached
                 if count < threshold:
-                    # default rules
-                    rules = [entry[0].hour == tmp_entry[0].hour,
-                             entry[0].minute == tmp_entry[0].minute,
-                             entry[2:5] == tmp_entry[2:5]]
+                    # default rules for aggregation
+                    rules = [base_entry[0].hour == entry[0].hour,
+                             base_entry[0].minute == entry[0].minute,
+                             base_entry[2:5] == entry[2:5]]
 
-                    # searches for matching entry
                     if all(rules):
-                        self.aggregate_features(entry, tmp_entry)
-                        sp.add(tmp_entry[6])
-                        dp.add(tmp_entry[7])
+                        self.aggregate_features(base_entry, entry)
+                        sp.add(entry[6])
+                        dp.add(entry[7])
 
-                        # marks the aggregated entry
-                        self.flows[tmp_idx] = [None]
+                        # marks the flow that was aggregated
+                        self.flows[idx] = [None]
                         count += 1
                 else:
                     break
 
-            # counts the quantity of ports
-            entry[6] = len(sp)
-            entry[7] = len(dp)
-            # time duration
-            entry[8] = entry[1].second - entry[0].second
+            # counts the quantity of unique ports
+            base_entry[6] = len(sp)
+            base_entry[7] = len(dp)
+            # time duration recalculed
+            base_entry[8] = base_entry[1].second - base_entry[0].second
             # number of aggregated flows
-            entry.append(count)
-
-            tmp_flows.append(entry)
+            base_entry.append(count)
+            aggregated_flows.append(base_entry)
 
             # checks if aggregation happened
             if count > 1:
-                # filters only the aggregated entries
+                # filters only the not aggregated flows
                 self.flows = [entry for entry in self.flows if entry != [None]]
 
-        self.flows = tmp_flows
+        self.flows = aggregated_flows
         self.header.append('flw')
 
         return self.header, self.flows
 
     @staticmethod
-    def aggregate_features(entry, tmp_entry):
-        """Aggregates features.
+    def aggregate_features(base_entry, entry):
+        """Aggregates features of the current entry in the base entry.
 
         Parameters
         ----------
+        base_entry: list
+            Aggregated entry.
         entry: list
-            Aggregated flow entry.
-        tmp_entry: list
-            Flow entry to aggregate."""
+            Current entry to aggregate."""
 
         # important conditional because some entries are out of order
-        if entry[1] < tmp_entry[1]:
-            entry[1] = tmp_entry[1]  # te
-        entry[5] = [x + y for x, y in zip(entry[5], tmp_entry[5])]  # flg
-        entry[8] = entry[1] - entry[0]  # td
-        entry[9] += tmp_entry[9]  # ibyt
-        entry[10] += tmp_entry[10]  # ipkt
+        if base_entry[1] < entry[1]:
+            # te
+            base_entry[1] = entry[1]
+        # flg
+        base_entry[5] = [x + y for x, y in zip(base_entry[5], entry[5])]
+        # td
+        base_entry[8] = base_entry[1] - base_entry[0]
+        # byt
+        base_entry[9] += entry[9]
+        # pkt
+        base_entry[10] += entry[10]
 
     @process_time_log
     def create_features(self, label):
-        """Creates new features.
+        """Creates new features based on bytes, packtes and flow duration.
+
+        When aggregation is done first, the flows are aggregated to later
+        compute the new features.
 
         Parameters
         ----------
@@ -307,19 +322,18 @@ class Modifier:
 
 
 class Extractor:
-    """Extracts features from flows and split the dataset into appropriate
-    sets to training the model.
+    """Extracts features to be used by the machine learning algorithms.
 
     Attributes
     ----------
-    features_idx: int
-        Index used according the chosen dataset.
-    selected_features: list
-        List of all chosen features."""
+    self.features_idx: int
+        Features index used according to the chosen dataset.
+    self.selected_features: list
+        Chosen features to be used by the machine learning algorithms."""
 
-    def __init__(self):
-        self.features_idx = 8
-        self.selected_features = list()
+    def __init__(self, features_idx, selected_features):
+        self.features_idx = features_idx
+        self.selected_features = selected_features
 
     @process_time_log
     def extract_features(self, flows):
@@ -346,38 +360,14 @@ class Extractor:
 
         return features, labels
 
-    @process_time_log
-    def train_test_split(self, features, labels, test_size):
-        """Splits the features and labels into training and test sets.
-
-        Parameters
-        ----------
-        features: list
-            Features of each flows.
-        labels: list
-            Labels of each flows.
-        test_size: float
-            Size of the test set.
-
-        Returns
-        -------
-        list
-            Dataset containing the training and test sets."""
-
-        dataset = train_test_split(features, labels,
-                                   test_size=test_size,
-                                   random_state=13,
-                                   stratify=labels)
-        return dataset
-
 
 class Preprocessor:
-    """Preprocessing methods to be used in the detection instance.
+    """Preprocessing methods to be used by detection instance.
 
     Attributes
     ----------
-    preprocesses: dict
-        Preprocessing methods instances."""
+    methods: dict
+        Constructors of the preprocessing methods."""
 
     methods = {'normal': None,
                'maxabs scaler': MaxAbsScaler(),
