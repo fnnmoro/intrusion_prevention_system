@@ -1,0 +1,8 @@
+base_path = '/home/flmoro/bsi16/research_project/anomaly_detection/' \
+            'codes/triple_m_ads/'
+
+folders_path = {'pcap': f'{base_path}' + 'pcap/',
+                'nfcapd': f'{base_path}' + 'nfcapd/',
+                'csv': f'{base_path}' + 'csv/',
+                'saves': f'{base_path}' + 'saves/',
+                'log': f'{base_path}' + 'log/'}
