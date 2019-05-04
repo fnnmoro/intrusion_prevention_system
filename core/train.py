@@ -3,6 +3,7 @@ from datetime import datetime
 from tempfile import mkdtemp
 from shutil import rmtree
 from flask import (request, render_template, session, Blueprint)
+from sklearn.model_selection import train_test_split
 from path import paths
 from model.detection import Detector
 from model.gatherer import open_csv
@@ -11,7 +12,7 @@ from model.tools import evaluation_metrics
 from model.walker import get_files
 
 
-ex = Extractor()
+ex = Extractor(8, list())
 dt = Detector()
 flows = None
 
@@ -67,8 +68,10 @@ def results():
 
             features, labels = ex.extract_features(flows)
 
-            dataset = ex.train_test_split(features, labels,
-                                          session['test_set_size'])
+            dataset = train_test_split(features, labels,
+                                       test_size=session['test_set_size'],
+                                       random_state=13,
+                                       stratify=labels)
 
             info = list()
             tmp_dir = mkdtemp()
