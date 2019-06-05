@@ -17,7 +17,7 @@ def split_pcap(pcap_path, pcap_files, split_size):
     pcap_path: str
         Absolute pcap path.
     pcap_files: list
-        All or one pcap file to be split.
+        One or many pcap file to be split.
     split_size: int
         Size of the split. The units are milions of bytes (1000000 bytes).
 
@@ -27,21 +27,22 @@ def split_pcap(pcap_path, pcap_files, split_size):
         Entered a invalid value less or equal to zero in the split size."""
 
     try:
-        make_dir(f'{pcap_path}split/')
+        dir = f'split_{pcap_files[0].split("_")[0]}/'
+        make_dir(f'{pcap_path}{dir}')
 
         for pcap_file in pcap_files:
             # runs tcpdump program to split the pcap files
             subprocess.run(f'tcpdump -r {pcap_path}{pcap_file} -w '
-                           f'{pcap_path}split/{pcap_file.split(".pcap")[0]} '
+                           f'{pcap_path}{dir}{pcap_file.split(".pcap")[0]} '
                            f'-C {split_size}',
                            shell=True, check=True)
 
             print(end=f'{"-" * 10}\n')
 
         # renames all split pcap files
-        for file in sorted(os.listdir(f'{pcap_path}split/')):
-            os.rename(f'{pcap_path}split/{file}',
-                      f'{pcap_path}split/{file}.pcap')
+        for file in sorted(os.listdir(f'{pcap_path}{dir}')):
+            os.rename(f'{pcap_path}{dir}{file}',
+                      f'{pcap_path}{dir}/{file}.pcap')
     except subprocess.CalledProcessError:
         print('split size must be greater than 0', end=f'\n{"-" * 10}\n')
 
@@ -56,7 +57,7 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, time_interval):
     pcap_path: str
         Absolute pcap path.
     pcap_files: list
-        All or one pcap files to be converted.
+        One or many pcap files to be converted.
     nfcapd_path: str
         Absolute nfcapd path to store the generated files.
     time_interval: int
@@ -92,7 +93,7 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
     nfcapd_path: str
         Absolute nfcapd path.
     nfcapd_files: list
-        All nfcapd files to be converted.
+        One or many nfcapd files to be converted.
     csv_path: str
         Absolute CSV path.
     file_name: str
