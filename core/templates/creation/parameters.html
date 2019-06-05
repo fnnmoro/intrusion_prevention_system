@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}Parameters{% endblock %}
+
+{% block content %}
+    <form id='loading' method='post' action='{{ url_for(url) }}' onsubmit='hiddenForm()'>
+        {% for parameter in parameters %}
+            <p>{{ parameter['name'] }}</p>
+            <input type='{{ parameter["type"] }}' name='{{ "_".join(parameter["name"].split()).lower() }}'>
+        {% endfor %}
+        <br>
+        <input type='submit' value='Next'>
+    </form>
+{% endblock %}
