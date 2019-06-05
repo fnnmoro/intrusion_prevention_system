@@ -125,6 +125,21 @@ def process_time_log(func):
     return timer
 
 
-def clean_files(paths, files):
-    for path, file in zip(paths, files):
-        os.system(f'rm {path}{file}')
+def get_content(path):
+    dirs = list()
+    files = list()
+
+    # lists the directory content
+    for content in sorted(os.listdir(path)):
+        # gets the paths
+        if os.path.isdir(f'{path}{content}'):
+            dirs.append(content)
+        # gets the files
+        else:
+            files.append(content)
+
+    return dirs, files
+
+
+def clean_files(path, file):
+    os.system(f'rm {path}{file}')
