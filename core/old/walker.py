@@ -1,5 +1,6 @@
 import os
 
+
 def menu(options):
     """Generates the menu options.
 
@@ -142,13 +143,16 @@ class DirectoryContents:
 
 
 def get_files(path):
+    dirs = list()
     files = list()
 
     # lists the directory content
     for content in sorted(os.listdir(path)):
-        # get only the files
-        if os.path.isfile(f'{path}{content}'):
+        # gets the directories
+        if os.path.isdir(f'{path}{content}'):
+            dirs.append(content)
+        # gets the files
+        else:
             files.append(content)
 
-    return files
-
+    return dirs, files
