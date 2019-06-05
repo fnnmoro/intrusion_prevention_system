@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Content{% endblock %}
+
+{% block script %}
+    <script src='{{ url_for("static", filename="content.js") }}'></script>
+{% endblock %}
+
+{% block content %}
+    <p>{{ relative_path }}</p>
+    {% if inner_dirs %}
+    <p>Directories</p>
+        <div class='checkbox'>
+            {% for inner_dir in inner_dirs %}
+                <a class='box' href='{{ url_for("creation.content", function=function, dir=inner_dir) }}'>{{ inner_dir }}</a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No directories</p>
+    {% endif %}
+    <br>
+    {% if files %}
+        <p>Files</p>
+        <form method="post" action='{{ url_for("creation.parameters", function=function, dir=dir) }}'">
+        <div class='checkbox'>
+            {% for file in files %}
+                <div class='box'>
+                    <input id='files{{ loop.index }}' type='checkbox' name='files' value='{{ file }}'>
+                    <label for="files{{ loop.index }}">{{ file }}</label>
+                </div>
+            {% endfor %}
+        </div>
+        <br>
+        <input type='submit' value='Next'>
+        </form>
+    {% else %}
+        <p>No files</p>
+    {% endif %}
+{% endblock %}
