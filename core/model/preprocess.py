@@ -180,9 +180,9 @@ class Modifier:
     self.flows: list
         Modified IP flows."""
 
-    def __init__(self, flows, header):
-        self.flows = flows
+    def __init__(self, header, flows):
         self.header = header
+        self.flows = flows
 
     @process_time_log
     def aggregate_flows(self, threshold):
