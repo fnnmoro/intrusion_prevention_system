@@ -78,13 +78,12 @@ form p {
 }
 
 form select, form input {
-    width: 150px;
     color: dimgray;
     font-size: 20px;
     flex-shrink: 0;
+    text-align: center;
     font-family: "Economica";
     border: thin solid dimgray;
-    text-transform: capitalize;
     background-color: gainsboro;
 }
 
@@ -123,17 +122,15 @@ table {
 th {
    width: 100px;
    font-weight: normal;
-   text-transform: capitalize;
 }
 
 td {
    align: center;
    border-bottom: thin solid dimgray;
-   text-transform: capitalize;
 }
 
 .checkbox {
-    width: 500px;
+    max-width: 500px;
     display: flex;
     flex-wrap: wrap;
     text-align: center;
@@ -141,12 +138,10 @@ td {
     justify-content: space-around;
     border: thin solid dimgray;
     background-color: gainsboro;
-    text-transform: capitalize;
 }
 
 .box {
-    width: 200px;
-    padding: 10px;
+    padding: 20px;
 }
 
 .tables {
@@ -161,7 +156,6 @@ td {
     font-size: 20px;
     background: none;
     font-family: "Economica";
-    text-transform: capitalize;
 }
 
 .choose:hover {
@@ -171,18 +165,18 @@ td {
     flex-shrink: 0;
 }
 
-.detect {
+.main_choose {
     margin: 30px;
     padding: 0px 30px 0px 30px;
     border-left: thin solid dimgray;
     border-right: thin solid dimgray;
 }
 
-.detect:hover {
+.main_choose:hover {
     border-color: red;
 }
 
-#option {
+.option {
     display: flex;
     flex-direction: row;
     text-align: center;
@@ -198,5 +192,3 @@ footer {
     font-size: 15px;
     text-align: center;
 }
-
-
