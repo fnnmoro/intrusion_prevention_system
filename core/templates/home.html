@@ -3,10 +3,20 @@
 {% block title %}Home{% endblock%}
 
 {% block content %}
-    <p>Detection</p>
+    <p>Anomaly detection</p>
     <br>
-    <div id='option'>
-        <a class='detect' href='{{ url_for("train.datasets") }}'>New</a>
-        <a class='detect' href='{{ url_for("train.load") }}'>Load</a>
+    <div class='option'>
+        <a class='main_choose' href='{{ url_for("train.datasets") }}'>New</a>
+        <a class='main_choose' href='{{ url_for("train.load") }}'>Load</a>
+    </div>
+    <br>
+    <p>Dataset creation</p>
+    <br>
+    <div class='option'>
+        <a class='main_choose' href='{{ url_for("creation.content", function="split_pcap", dir="pcap") }}'>Split pcap</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="convert_pcap_nfcapd", dir="pcap") }}'>Convert pcap to nfcapd</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="convert_nfcapd_csv", dir="nfcapd") }}'>Convert nfcapd to csv</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="convert_csv_flows", dir="csv") }}'>Convert csv to flows</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="merge_flows", dir="csv") }}'>Merge flows</a>
     </div>
 {% endblock %}
