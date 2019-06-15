@@ -8,13 +8,14 @@
 
 {% block content %}
     <p>{{ relative_path }}</p>
+    <br>
     {% if inner_dirs %}
-    <p>Directories</p>
-        <div class='checkbox'>
-            {% for inner_dir in inner_dirs %}
-                <a class='box' href='{{ url_for("creation.content", function=function, dir=inner_dir) }}'>{{ inner_dir }}</a>
-            {% endfor %}
-        </div>
+        <p>Directories</p>
+            <div class='checkbox'>
+                {% for inner_dir in inner_dirs %}
+                    <a class='box' href='{{ url_for("creation.content", function=function, dir=inner_dir) }}'>{{ inner_dir }}</a>
+                {% endfor %}
+            </div>
     {% else %}
         <p>No directories</p>
     {% endif %}
