@@ -14,27 +14,24 @@ bp = Blueprint('creation', __name__, url_prefix='/creation')
 def content(function, dir):
     # clears the path history if the dir received is from the main options
     if dir in ['pcap', 'nfcapd', 'csv']:
-        session['path_history'] = {'root': root}
+        path_history = {'root': root}
+    else:
+        path_history = session['path_history']
 
     # checks if the folder was already opened
-    if dir in session['path_history'].keys():
-        full_path = (session['path_history']['root']
-                     + session['path_history'][dir])
-    # creates a new path
-    else:
-        session['path_history'][dir] = f'{dir}/'
-        full_path = (session['path_history']['root']
-                     + session['path_history'][dir])
+    if not dir in path_history.keys():
+        path_history[dir] = f'{dir}/'
+    # creates the full path
+    full_path = path_history['root'] + path_history[dir]
 
     # gets dir content
     inner_dirs, files = get_content(full_path)
 
     # creates the path of the inner dirs
     for inner_dir in inner_dirs:
-        session['path_history'][inner_dir] = (f'{session["path_history"][dir]}'
-                                              f'{inner_dir}/')
+        path_history[inner_dir] = f'{path_history[dir]}{inner_dir}/'
 
-    session['path_history'] = session['path_history']
+    session['path_history'] = path_history
 
     return render_template('creation/content.html',
                            dir=dir,
