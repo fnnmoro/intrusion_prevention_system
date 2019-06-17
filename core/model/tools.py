@@ -20,16 +20,43 @@ def make_dir(path):
 
 
 def evaluation_metrics(test_labels, pred):
-    conf_matrix = confusion_matrix(test_labels, pred)
+    """Computes the evaluation metrics for a given prediction.
 
-    results = [round(accuracy_score(test_labels, pred), 5),
-               round(precision_score(test_labels, pred), 5),
-               round(recall_score(test_labels, pred), 5),
-               round(f1_score(test_labels, pred), 5),
-               conf_matrix[0][0], conf_matrix[0][1],
-               conf_matrix[1][0], conf_matrix[1][1]]
+    Parameters
+    ----------
+    test_labels: list
+        Test labels that represent the correct answer for the predictions.
+    pred: list
+        Prediction made by a machine learning model."""
 
-    return results
+    tn, fp, fn, tp = confusion_matrix(test_labels, pred).ravel()
+
+    result = {
+        'as': {'name': 'Accuracy score',
+               'result': round(accuracy_score(test_labels, pred), 5)},
+
+        'ps': {'name': 'Precision score',
+               'result': round(precision_score(test_labels, pred), 5)},
+
+        'rs': {'name': 'Recall score',
+               'result': round(recall_score(test_labels, pred), 5)},
+
+        'fs': {'name': 'F1-score',
+               'result': round(f1_score(test_labels, pred), 5)},
+
+        'tn': {'name': 'True negative',
+               'result': tn},
+
+        'fp': {'name': 'False positive',
+               'result': fp},
+
+        'fn': {'name': 'False negative',
+               'result': fn},
+
+        'tp': {'name': 'True positive',
+               'result': tp}}
+
+    return result
 
 
 def export_flows_csv(header, flows, dst_path, file_name):
@@ -57,23 +84,13 @@ def export_flows_csv(header, flows, dst_path, file_name):
             writer.writerow(entry)
 
 
-def export_results_csv(results, text, dst_path, file_name):
-    with open(f'{dst_path}{file_name}', mode='a') as file:
-        writer = csv.writer(file)
-
-        if not os.stat(f'{dst_path}{file_name}').st_size:
-            writer.writerow(text)
-
-        writer.writerow(results)
-
-
 def process_time_log(func):
     """Decorator to record the time of a function.
 
     Parameters
     ----------
     func: func
-        Function.
+        Function to calculate the processing time.
 
     Returns
     -------
@@ -126,6 +143,13 @@ def process_time_log(func):
 
 
 def get_content(path):
+    """Gets the content of a directory.
+
+    Parameters
+    ----------
+    path: str
+        The absolute path of a directory."""
+
     dirs = list()
     files = list()
 
@@ -142,4 +166,13 @@ def get_content(path):
 
 
 def clean_files(path, file):
+    """Cleans the files of a directory.
+
+    Parameters
+    ----------
+    path: str
+        The absolute path of a directory.
+    file: str
+        File name to be cleaned."""
+
     os.system(f'rm {path}{file}')
