@@ -1,6 +1,7 @@
-from tempfile import mkdtemp
 from shutil import rmtree
-from core import paths
+from tempfile import mkdtemp
+from sklearn.model_selection import train_test_split
+from core.paths import paths
 from model.detection import Detector
 from model.gatherer import open_csv
 from model.preprocess import Extractor
@@ -12,7 +13,7 @@ from model.walker import DirectoryContents
 
 print('training classifier', end=f'\n{"-" * 10}\n')
 
-result_name = 'flows_10-15_w60_s100000_k5_result.csv'
+result_name = 'test'
 
 dir_cont = DirectoryContents(f'{paths["csv"]}datasets/')
 path, file = dir_cont.choose_files()
@@ -24,19 +25,26 @@ print(end=f'{"-" * 10}\n')
 
 header, flows = open_csv(path, file[0])
 
+# old dataset
+tmp = list()
+for flow in flows:
+    new.append(flow[0:2]+flow[4:])
+flows = tmp
+
 for entry in flows:
     Formatter.convert_features(entry, True)
 
-ex = Extractor()
-#setattr(ex, 'features_idx', 6)
-setattr(ex, 'selected_features', [0, 1, 2])
+ex = Extractor(3, [0, 1, 2, 3, 4])
 
 pre_method = 'normal'
 preprocess = Preprocessor.methods[pre_method]
 
 features, labels = ex.extract_features(flows)
 
-dataset = ex.train_test_split(features, labels, 0.3)
+dataset = train_test_split(features, labels,
+                           test_size=0.3,
+                           random_state=13,
+                           stratify=labels)
 
 dt = Detector()
 tmp_dir = mkdtemp()
