@@ -1,14 +1,5 @@
-# files
-tmp.py
-
-# folders
-csv/
-instance/
-log/
-nfcapd/
-obj/
-pcap/
-saves/
-venv/
-.idea/
+# python cache directories
 __pycache__/
+
+# virtual environment directory
+venv/
