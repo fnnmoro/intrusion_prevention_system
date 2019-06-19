@@ -33,13 +33,6 @@ def about():
     return render_template('about.html')
 
 
-@app.route('/clean')
-def clean():
-    delete_blacklist()
-    clean_files(paths['nfcapd'], '*')
-
-    return redirect(url_for('home'))
-
 app.register_blueprint(train.bp)
 app.register_blueprint(dep.bp)
 app.register_blueprint(creation.bp)
