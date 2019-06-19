@@ -2,11 +2,10 @@ import os
 from flask import Flask, redirect, render_template, url_for
 from flask_socketio import SocketIO
 from path import paths
-from model.tools import make_dir
-
+from model import tools
 
 for path in paths.values():
-    make_dir(path)
+    tools.make_dir(path)
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_mapping(SECRET_KEY='h7cn#403mks-',
@@ -18,9 +17,10 @@ app.jinja_env.add_extension('jinja2.ext.do')
 
 socketio = SocketIO(app)
 
-from core import train, dep
+from core import train, dep, creation
 from model.database import delete_blacklist
 from model.tools import clean_files
+
 
 @app.route('/')
 @app.route('/home')
@@ -36,10 +36,10 @@ def about():
 @app.route('/clean')
 def clean():
     delete_blacklist()
-    clean_files([paths['nfcapd']], ['*'])
+    clean_files(paths['nfcapd'], '*')
 
     return redirect(url_for('home'))
 
-
 app.register_blueprint(train.bp)
 app.register_blueprint(dep.bp)
+app.register_blueprint(creation.bp)
