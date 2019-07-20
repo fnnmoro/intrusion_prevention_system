@@ -7,4 +7,5 @@ paths = {'csv': f'{root}' + 'csv/',
          'log': f'{root}' + 'log/',
          'nfcapd': f'{root}' + 'nfcapd/',
          'pcap': f'{root}' + 'pcap/',
-         'saves': f'{root}' + 'saves/'}
+         'saves': f'{root}' + 'saves/',
+         'test': f'{root}' + 'test/'}
