@@ -1,15 +1,18 @@
 from threading import Thread, Event
-from flask import (request, redirect, render_template,
-                   url_for, session, Blueprint)
-from core import socketio
-from model import database
+
+from flask import (Blueprint, redirect, request,
+                   render_template, session, url_for)
+
+from app import socketio
+from app import database
+from app.core.mitigation import Mitigator
 from realtime import WorkerThread
-from model.mitigation import Mitigator
+
 
 thread = Thread()
 event = Event()
 
-bp = Blueprint('dep', __name__, url_prefix='/dep')
+bp = Blueprint('dep', __name__)
 
 
 @bp.route('/detect', methods=['GET', 'POST'])
