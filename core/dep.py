@@ -18,7 +18,7 @@ def detect():
     anomalous_flows = 0
 
     if not thread.isAlive():
-        thread = WorkerThread(request.form['clf'], event, session['obj_date'])
+        thread = WorkerThread(request.form['clf'], event, session['obj_name'])
         thread.start()
     else:
         anomalous_flows = database.sum_anomalous_flows()
@@ -46,6 +46,6 @@ def false_positive():
         database.delete_false_positive(request.form['false_positive'])
 
         mtg = Mitigator()
-        mtg.delete_rule(request.form['false_positive'])
+        mtg.delete_flow_rule(request.form['false_positive'])
 
     return redirect(url_for('dep.mitigate'))
