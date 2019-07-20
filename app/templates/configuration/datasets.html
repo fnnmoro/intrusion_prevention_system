@@ -3,7 +3,7 @@
 {% block title %}Datasets{% endblock %}
 
 {% block content %}
-    <form method='post' action='{{ url_for("train.classifiers") }}'>
+    <form method='post' action='{{ url_for("configuration.classifiers") }}'>
         <p>Datasets</p>
         <select name='dataset'>
             {% for name in datasets_names %}
