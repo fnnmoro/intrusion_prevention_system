@@ -5,30 +5,27 @@
 {% block content %}
     <p>Choose the classifier</p>
 
-    {% set text = ['classifier', 'train date', 'test date',
-                   'train duration', 'test duration',
-                   'accuracy', 'precision', 'recall', 'f1-score',
-                   'tue negative', 'false positive',
-                   'false negative', 'true positive',
-                   'preprocess', 'hyperparameters'] %}
-
     <div class='tables'>
-        {% for results in info %}
+        {% for result in results %}
             <table>
                 <tbody>
                     <tr>
-                       <th>classifier</th>
+                       <th>{{ result['clf']['name'] }}</th>
                        <td>
                             <form method='post' action='{{ url_for("dep.detect") }}'>
-                                <input class='choose' name='clf' type='submit' value='{{ results[0] }}'>
+                                <input name='clf' type='hidden' value='{{ result["clf"]["result"][0] }}'>
+                                <input class='choose' name='clf_name' type='submit' value='{{ result["clf"]["result"][1] }}'>
                             </form>
                         </td>
                     </tr>
-                    {% for result in results[1:] %}
-                        <tr>
-                            <th>{{ text[1:][loop.index-1] }}</th>
-                            <td>{{ result }}</td>
-                        </tr>
+
+                    {% for key in result %}
+                        {% if key != 'clf' %}
+                            <tr>
+                                <th>{{ result[key]['name'] }}</th>
+                                <td>{{ result[key]['result'] }}</td>
+                            </tr>
+                        {% endif %}
                     {% endfor %}
                 </tbody>
             </table>
