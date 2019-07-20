@@ -1,12 +1,13 @@
-from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
-from model.tools import process_time_log
+from sklearn.tree import DecisionTreeClassifier
+
+from app.core.tools import process_time_log
 
 
 class Detector:
