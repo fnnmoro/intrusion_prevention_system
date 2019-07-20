@@ -6,40 +6,39 @@ from path import paths
 from model.gatherer import capture_nfcapd, convert_nfcapd_csv, open_csv
 from model.preprocess import Formatter, Modifier
 from model.mitigation import Mitigator
-from model.tools import clean_files
-from model.walker import get_files
+from model.tools import clean_files, get_content
 from model import database
 
 
 class WorkerThread(Thread):
-    def __init__(self, clf, event, obj_date):
+    def __init__(self, clf, event, obj_name):
         super().__init__()
         self.clf = clf
         self.count = 0
         self.event = event
-        self.obj = pickle.load(open(f'saves/obj_{obj_date}', 'rb'))[:2]
+        self.obj = pickle.load(open(f'{paths["saves"]}{obj_name}', 'rb'))[:2]
 
     def preprocess(self, files):
         convert_nfcapd_csv(paths['nfcapd'], [files],
-                        f'{paths["csv"]}tmp_flows/',
-                        'execute')
+                           f'{paths["tmp"]}',
+                           'execute')
 
-        files = get_files(f'{paths["csv"]}tmp_flows/')
+        files = get_content(f'{paths["tmp"]}')[1]
 
-        header, flows = open_csv(f'{paths["csv"]}tmp_flows/', files[0])
+        header, flows = open_csv(f'{paths["tmp"]}', files[0])
 
-        clean_files([paths['nfcapd'], f'{paths["csv"]}tmp_flows/'],
-                    ['nfcapd.20*', '*'])
+        clean_files(paths['nfcapd'], 'nfcapd.20*')
+        clean_files(f'{paths["tmp"]}', '*')
 
-        ft = Formatter(header, flows)
-        header = ft.format_header()
-        flows = ft.format_flows()
+        formatter = Formatter(header, flows)
+        header = formatter.format_header()
+        flows = formatter.format_flows()
 
-        md = Modifier(flows, header)
+        modifier = Modifier(flows, header)
 
-        if self.obj[0].features_idx == 6:
-            header, flows = md.aggregate_flows(100)
-        header, flows = md.create_features(2)
+        if self.obj[0].start_idx == 6:
+            header, flows = modifier.aggregate_flows(100)
+        header, flows = modifier.create_features(2)
 
         features, label = self.obj[0].extract_features(flows)
 
@@ -53,7 +52,7 @@ class WorkerThread(Thread):
                 time.sleep(2)
 
             mtg = Mitigator(self.count, blacklist)
-            mtg.insert_rule()
+            mtg.insert_flow_rules()
             self.count += getattr(mtg, 'count')
 
             socketio.emit('detect',
@@ -68,7 +67,7 @@ class WorkerThread(Thread):
         time.sleep(2)
         try:
             while not self.event.isSet():
-                files = get_files(paths['nfcapd'])
+                files = get_content(paths['nfcapd'])[1]
 
                 try:
                     if not 'current' in files[0]:
