@@ -4,6 +4,7 @@ from flask import (Blueprint, redirect, request,
 from app.core import gatherer
 from app.core.preprocess import Formatter, Modifier
 from app.core.tools import export_flows_csv, clean_files, get_content
+from app.path import paths, root
 
 
 bp = Blueprint('creation', __name__)
