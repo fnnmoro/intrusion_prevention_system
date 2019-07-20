@@ -1,38 +1,26 @@
 import os
-from flask import Flask, redirect, render_template, url_for
+
+from flask import Flask, render_template
 from flask_socketio import SocketIO
-from path import paths
-from model import tools
 
-for path in paths.values():
-    tools.make_dir(path)
+from config import Config
 
-app = Flask(__name__, instance_relative_config=True)
-app.config.from_mapping(SECRET_KEY='h7cn#403mks-',
-                        DATABASE=os.path.join(app.instance_path,
-                                              'network_data.db'),
-                        DEBUG=True)
-app.config.from_pyfile('config.py', silent=True)
+
+app = Flask(__name__)#, instance_relative_config=True)
+app.config.from_object(Config)
 app.jinja_env.add_extension('jinja2.ext.do')
 
 socketio = SocketIO(app)
 
-from core import train, dep, creation
-from model.database import delete_blacklist
-from model.tools import clean_files
+from app.path import paths
+from app.core import tools
+from app.routes import creation, root, train
 
 
-@app.route('/')
-@app.route('/home')
-def home():
-    return render_template('home.html')
+for path in paths.values():
+    tools.make_dir(path)
 
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
-
-app.register_blueprint(train.bp)
-app.register_blueprint(dep.bp)
-app.register_blueprint(creation.bp)
+app.register_blueprint(root.bp)
+app.register_blueprint(creation.bp, url_prefix='/creation')
+app.register_blueprint(train.bp, url_prefix='/train')
+#app.register_blueprint(dep.bp)
