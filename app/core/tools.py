@@ -1,12 +1,12 @@
-import os
 import csv
+import os
 import time
 from datetime import datetime
 
 from sklearn.metrics import (accuracy_score, precision_score,
                              recall_score, f1_score,
                              confusion_matrix)
-                             
+
 from app.path import paths
 
 def make_dir(path):
