@@ -3,18 +3,18 @@
 {% block title %}Datasets{% endblock %}
 
 {% block content %}
-    <form method='post' action='{{ url_for("train.classifiers") }}'>
+    <form method='post' action='{{ url_for("configuration.classifiers") }}'>
         <p>Datasets</p>
         <select name='dataset'>
-            {% for dataset in datasets %}
-                <option value='{{ dataset }}'>{{ dataset }}</option>
+            {% for name in datasets_names %}
+                <option value='{{ datasets[loop.index0] }}'>{{ name }}</option>
             {% endfor %}
         </select>
 
         <p>Preprocess methods</p>
-        <select name='preprocess'>
-            {% for preprocess in preprocesses %}
-                <option value='{{ preprocess }}'>{{ preprocess }}</option>
+        <select name='preprocess_key'>
+            {% for key in preprocess_methods %}
+                <option value='{{ key }}'>{{ preprocess_methods[key]['name'] }}</option>
             {% endfor %}
         </select>
 
@@ -22,7 +22,7 @@
         <input type='number' name='sample'>
 
         <p>Test set size</p>
-        <input type='number' name='test_set_size'>
+        <input type='number' name='test_size'>
 
         <p>Number of cross-validation folds</p>
         <input type='number' name='k-folds'>

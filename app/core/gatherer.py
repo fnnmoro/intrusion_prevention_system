@@ -1,7 +1,8 @@
-import os
 import csv
+import os
 import subprocess
-from model.tools import make_dir, process_time_log
+
+from app.core.tools import make_dir, process_time_log
 
 
 def split_pcap(pcap_path, pcap_files, split_size):
@@ -148,7 +149,7 @@ def open_csv(csv_path, csv_file, sample_size=-1):
     return header, flows
 
 
-def capture_nfcapd(nfcapd_path, time_interval):
+def capture_nfcapd(nfcapd_path, win_time):
     """Captures netflow data from the network according to a time interval and
     store into nfcapd files.
 

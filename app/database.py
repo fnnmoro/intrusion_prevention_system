@@ -1,5 +1,6 @@
 import sqlite3
-from core import app
+
+from app import app
 
 
 def database_connection(func):

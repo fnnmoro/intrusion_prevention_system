@@ -1,10 +1,12 @@
 import ast
 from datetime import datetime
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    MaxAbsScaler, RobustScaler,
                                    QuantileTransformer, Normalizer)
-from model.tools import process_time_log
+                                   
+from app.core.tools import process_time_log
 
 
 class Formatter:

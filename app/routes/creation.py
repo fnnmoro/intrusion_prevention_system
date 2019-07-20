@@ -1,14 +1,13 @@
-from flask import (request, redirect, render_template,
-                   url_for, session, Blueprint)
-from model import gatherer, tools
-from model.preprocess import Formatter, Modifier
-from model import preprocess
-from model.tools import export_flows_csv, get_content, clean_files
-from path import root, paths
+from flask import (Blueprint, redirect, request,
+                   render_template, session, url_for)
+
+from app.core import gatherer
+from app.core.preprocess import Formatter, Modifier
+from app.core.tools import export_flows_csv, clean_files, get_content
+from app.paths import paths, root
 
 
-bp = Blueprint('creation', __name__, url_prefix='/creation')
-
+bp = Blueprint('creation', __name__)
 
 @bp.route('/<function>/<dir>/')
 def content(function, dir):
