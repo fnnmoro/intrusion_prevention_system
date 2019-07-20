@@ -1,7 +1,7 @@
 from app import app, socketio
 from app import database as db
 from app.core import tools
-from app.path import paths
+from app.paths import paths
 
 
 if __name__ == '__main__':
