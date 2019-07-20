@@ -1,19 +1,21 @@
 import pickle
 from datetime import datetime
-from tempfile import mkdtemp
 from shutil import rmtree
-from flask import (request, render_template, session, Blueprint)
+from tempfile import mkdtemp
+
+from flask import Blueprint, request, render_template, session
 from sklearn.model_selection import train_test_split
-from path import paths
-from model.detection import Detector
-from model.gatherer import open_csv
-from model.preprocess import Extractor, Formatter, Preprocessor
-from model.tools import evaluation_metrics, get_content
+
+from app.path import paths
+from app.core import gatherer
+from app.core.detection import Detector
+from app.core.preprocess import Extractor, Formatter, Preprocessor
+from app.core.tools import evaluation_metrics, get_content
 
 
 flows = list()
 
-bp = Blueprint('train', __name__, url_prefix='/train')
+bp = Blueprint('train', __name__)
 
 
 @bp.route('/load')
@@ -40,9 +42,9 @@ def datasets():
 def classifiers():
     global flows
     if request.method == 'POST':
-        header, flows = open_csv(f'{paths["csv"]}datasets/',
-                                 request.form['dataset'],
-                                 int(request.form['sample']))
+        header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/',
+                                          request.form['dataset'],
+                                          int(request.form['sample']))
 
         for entry in flows:
             Formatter.convert_features(entry, True)
