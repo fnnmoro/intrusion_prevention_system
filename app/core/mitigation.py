@@ -110,7 +110,7 @@ class Mitigator(StaticFlowPusher):
     self.blacklist: list
         Anomalous flows to be blocked."""
 
-    def __init__(self, count=0, blacklist):
+    def __init__(self, blacklist, count=0):
         super().__init__()
         self.count = count
         self.blacklist = blacklist
