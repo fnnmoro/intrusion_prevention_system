@@ -149,7 +149,7 @@ def open_csv(csv_path, csv_file, sample_size=-1):
     return header, flows
 
 
-def capture_nfcapd(nfcapd_path, time_interval):
+def capture_nfcapd(nfcapd_path, win_time):
     """Captures netflow data from the network according to a time interval and
     store into nfcapd files.
 
