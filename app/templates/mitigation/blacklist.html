@@ -18,14 +18,14 @@
                     <tr>
                        <th>Remove rule</th>
                        <td>
-                            <form method='post' action='{{ url_for("dep.false_positive") }}'>
-                                 <input class='choose' name='false_positive' type='submit' value='{{ flow[-1] }}'>
+                            <form method='post' action='{{ url_for("mitigation.remove_anomaly") }}'>
+                                 <input class='choose' name='false_anomaly' type='submit' value='{{ flow[-1] }}'>
                             </form>
                         </td>
                     </tr>
                 </tbody>
             </table>
         {% endfor %}
-        <a href='{{ url_for("dep.detect") }}'>Back</a>
+        <a href='{{ url_for("detection.realtime") }}'>Back</a>
     </div>
 {% endblock %}

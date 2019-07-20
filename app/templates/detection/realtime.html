@@ -9,5 +9,5 @@
 {% endblock %}
 
 {% block content %}
-    <p>Anomalous flows detected: <span id='anomalies' onclick='window.location="{{ url_for("dep.mitigate") }}"'>{{ anomalous_flows }}</span></p>
+    <p>Anomalous flows detected: <span id='anomalies' onclick='window.location="{{ url_for("mitigation.blacklist") }}"'>{{ anomalous_flows }}</span></p>
 {% endblock %}

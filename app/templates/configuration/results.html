@@ -12,7 +12,7 @@
                     <tr>
                        <th>{{ result['clf']['name'] }}</th>
                        <td>
-                            <form method='post' action='{{ url_for("dep.detect") }}'>
+                            <form method='post' action='{{ url_for("detection.realtime") }}'>
                                 <input name='clf' type='hidden' value='{{ result["clf"]["result"][0] }}'>
                                 <input class='choose' name='clf_name' type='submit' value='{{ result["clf"]["result"][1] }}'>
                             </form>
