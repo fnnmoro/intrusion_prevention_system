@@ -1,6 +1,7 @@
 import json
 from http import client
-from model import database
+
+from app import database
 
 
 class StaticFlowPusher:
