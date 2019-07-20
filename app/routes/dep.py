@@ -6,7 +6,7 @@ from flask import (Blueprint, redirect, request,
 from app import socketio
 from app import database
 from app.core.mitigation import Mitigator
-from realtime import WorkerThread
+from app.realtime import WorkerThread
 
 
 thread = Thread()
