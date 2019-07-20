@@ -2,12 +2,13 @@ import pickle
 import time
 from threading import Thread
 
-from app import database, socketio
+from app import socketio
+from app import database as db
 from app.core import gatherer, tools
 from app.core import tools
 from app.core.mitigation import Mitigator
 from app.core.preprocess import Formatter, Modifier
-from app.path import paths
+from app.paths import paths
 
 
 class WorkerThread(Thread):
@@ -20,15 +21,15 @@ class WorkerThread(Thread):
 
     def preprocess(self, files):
         gatherer.convert_nfcapd_csv(paths['nfcapd'], [files],
-                                    f'{paths["tmp"]}',
+                                    f'{paths["csv"]}tmp/',
                                     'execute')
 
-        files = tools.get_content(f'{paths["tmp"]}')[1]
+        files = tools.get_content(f'{paths["csv"]}tmp/')[1]
 
-        header, flows = gatherer.open_csv(f'{paths["tmp"]}', files[0])
+        header, flows = gatherer.open_csv(f'{paths["csv"]}tmp/', files[0])
 
         tools.clean_files(paths['nfcapd'], 'nfcapd.20*')
-        tools.clean_files(f'{paths["tmp"]}', '*')
+        tools.clean_files(f'{paths["csv"]}tmp/', '*')
 
         formatter = Formatter(header, flows)
         header = formatter.format_header()
@@ -36,7 +37,7 @@ class WorkerThread(Thread):
 
         modifier = Modifier(flows, header)
 
-        if self.obj[0].start_idx == 6:
+        if self.obj[0].start_index == 6:
             header, flows = modifier.aggregate_flows(100)
         header, flows = modifier.create_features(2)
 
@@ -48,18 +49,18 @@ class WorkerThread(Thread):
         if 1 in pred:
             blacklist = None
             while not blacklist:
-                blacklist = database.create_blacklist()
+                blacklist = db.create_blacklist()
                 time.sleep(2)
 
             mtg = Mitigator(blacklist, self.count)
             mtg.insert_flow_rules()
             self.count += getattr(mtg, 'count')
 
-            socketio.emit('detect',
+            socketio.emit('realtime',
                           {'anomalous_flows': database.sum_anomalous_flows()},
-                           namespace='/dep')
+                           namespace='/detection')
 
-        database.delete_flows()
+        db.delete_flows()
 
     def execution(self):
         process = gatherer.capture_nfcapd(paths['nfcapd'], 60)
@@ -78,7 +79,7 @@ class WorkerThread(Thread):
                                                                    features))
 
                         flows = self.obj[1].add_predictions(flows, pred)
-                        database.insert_flows(flows)
+                        db.insert_flows(flows)
 
                         self.mitigation(pred)
                     time.sleep(2)

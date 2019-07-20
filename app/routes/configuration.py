@@ -6,7 +6,7 @@ from tempfile import mkdtemp
 from flask import Blueprint, request, render_template, session
 from sklearn.model_selection import train_test_split
 
-from app.path import paths
+from app.paths import paths
 from app.core import gatherer
 from app.core.detection import Detector
 from app.core.preprocess import Extractor, Formatter, Preprocessor
