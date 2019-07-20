@@ -1,5 +1,7 @@
-root = ('/home/flmoro/bsi16/research_project/anomaly_detection/'
-        'codes/triple_m_ads/data/')
+import os
+
+
+root = f'{os.path.abspath(os.path.dirname("anomaly_detection_system"))}/data/'
 
 paths = {'csv': f'{root}' + 'csv/',
          'log': f'{root}' + 'log/',
