@@ -2,10 +2,12 @@ import os
 import csv
 import time
 from datetime import datetime
+
 from sklearn.metrics import (accuracy_score, precision_score,
                              recall_score, f1_score,
                              confusion_matrix)
-from core.path import paths
+                             
+from app.path import paths
 
 def make_dir(path):
     """Creates a directory, if it not exists.
