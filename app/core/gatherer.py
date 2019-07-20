@@ -1,7 +1,8 @@
 import os
 import csv
 import subprocess
-from model.tools import make_dir, process_time_log
+
+from app.core.tools import make_dir, process_time_log
 
 
 def split_pcap(pcap_path, pcap_files, split_size):
