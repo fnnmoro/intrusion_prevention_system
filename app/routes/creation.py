@@ -1,10 +1,11 @@
 from flask import (request, redirect, render_template,
                    url_for, session, Blueprint)
+
 from model import gatherer, tools
 from model.preprocess import Formatter, Modifier
 from model import preprocess
 from model.tools import export_flows_csv, get_content, clean_files
-from path import root, paths
+
 
 
 bp = Blueprint('creation', __name__, url_prefix='/creation')
