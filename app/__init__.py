@@ -12,7 +12,7 @@ app.jinja_env.add_extension('jinja2.ext.do')
 
 socketio = SocketIO(app)
 
-from app.path import paths
+from app.paths import paths
 from app.core import tools
 from app.routes import configuration, creation, detection, mitigation, root
 
