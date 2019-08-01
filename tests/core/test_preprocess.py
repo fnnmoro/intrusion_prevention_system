@@ -2,18 +2,21 @@ import os
 import sys
 import unittest
 from datetime import datetime
-from core.model.gatherer import open_csv
-from core.model.preprocess import Formatter, Modifier, Extractor, Preprocessor
-from core.model.tools import clean_files
-from core.model.walker import get_files
+
+sys.path.append('/home/flmoro/bsi16/research_project/anomaly_detection/codes/'
+                'anomaly_detection_system')
+
+from app.core import gatherer
+from app.core import tools
+from app.core.preprocess import Formatter, Modifier, Extractor, Preprocessor
+from app.paths import paths
+
 
 
 # defines the main paths use during the tests
-base_path = ('/home/flmoro/bsi16/research_project/anomaly_detection/codes/'
-             'triple_m_ads/tests/data/preprocess/')
-formatter_path = f'{base_path}formatter/'
-modifier_path = f'{base_path}modifier/'
-extractor_path = f'{base_path}extractor/'
+formatter_path = f'{paths["test"]}preprocess/formatter/'
+modifier_path = f'{paths["test"]}preprocess/modifier/'
+extractor_path = f'{paths["test"]}preprocess/extractor/'
 
 
 # unit tests
@@ -24,9 +27,9 @@ class TestFormatter(unittest.TestCase):
     def setUpClass(cls):
         """Initiates the parameters to feed the test functions."""
 
-        raw_csv_file = get_files(formatter_path)[0]
+        raw_csv_file = tools.get_content(formatter_path)[1][0]
 
-        header, flows = open_csv(formatter_path, raw_csv_file)
+        header, flows = gatherer.open_csv(formatter_path, raw_csv_file)
 
         formatter = Formatter(header, flows)
         cls.header = formatter.format_header()
@@ -100,15 +103,15 @@ class TestModifier(unittest.TestCase):
     def setUpClass(cls):
         """Initiates the parameters to feed the test functions."""
 
-        raw_csv_file = get_files(modifier_path)[2]
+        raw_csv_file = tools.get_content(modifier_path)[1][-1]
 
-        header, flows = open_csv(modifier_path, raw_csv_file)
+        header, flows = gatherer.open_csv(modifier_path, raw_csv_file)
 
         formatter = Formatter(header, flows)
         header = formatter.format_header()
         flows = formatter.format_flows()
 
-        cls.modifier = Modifier(flows, header)
+        cls.modifier = Modifier(header, flows)
         # threshold defined according to the expected result in test dataset
         cls.header, cls.flows = cls.modifier.aggregate_flows(5)
 
@@ -122,10 +125,10 @@ class TestModifier(unittest.TestCase):
     def test_aggregate_flows(self):
         """Tests whether the features were correctly aggregated."""
 
-        csv_result = get_files(modifier_path)[0]
+        csv_result = tools.get_content(modifier_path)[1][0]
 
         # expected result
-        header, expected_flows = open_csv(modifier_path, csv_result)
+        header, expected_flows = gatherer.open_csv(modifier_path, csv_result)
 
         for entry in expected_flows:
             Formatter.convert_features(entry, True)
@@ -136,10 +139,11 @@ class TestModifier(unittest.TestCase):
     def test_create_features(self):
         """Tests whether the new features were correctly created."""
 
-        csv_result = get_files(modifier_path)[1]
+        csv_result = tools.get_content(modifier_path)[1][1]
 
         # expected result
-        expected_header, expected_flows = open_csv(modifier_path, csv_result)
+        expected_header, expected_flows = gatherer.open_csv(modifier_path,
+                                                            csv_result)
 
         for entry in expected_flows:
             Formatter.convert_features(entry, True)
@@ -160,20 +164,20 @@ class TestExtractor(unittest.TestCase):
     def setUpClass(cls):
         """Initiates the parameters to feed the test functions."""
 
-        modified_csv_file = get_files(extractor_path)[1]
+        modified_csv_file = tools.get_content(extractor_path)[1][-1]
 
-        header, flows = open_csv(extractor_path, modified_csv_file)
+        header, flows = gatherer.open_csv(extractor_path, modified_csv_file)
 
-        cls.extractor = Extractor(6, list(range(9)))        
+        cls.extractor = Extractor(6, list(range(9)))
         cls.features, cls.labels = cls.extractor.extract_features(flows)
 
     def test_extract_features(self):
         """Tests whether the features and labels were correctly extracted from
         the flows."""
 
-        csv_result = get_files(extractor_path)[0]
+        csv_result = tools.get_content(extractor_path)[1][0]
 
-        expected_features = open_csv(extractor_path, csv_result)[1]
+        expected_features = gatherer.open_csv(extractor_path, csv_result)[1]
 
         self.assertListEqual(self.features, expected_features,
                              'features extracted incorrectly')
@@ -196,7 +200,7 @@ class TestPreprocessor(unittest.TestCase):
         from sklearn.preprocessing import MinMaxScaler
 
         self.assertEqual(type(MinMaxScaler()),
-                         type(self.methods['minmax scaler']),
+                         type(self.methods['mis']['obj']),
                          'preprocessing method selected incorrectly')
 
 
