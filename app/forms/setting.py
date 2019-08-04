@@ -13,11 +13,11 @@ class DatasetForm(FlaskForm):
     preprocessing =  SelectField('Preprocessing methods')
     sample = IntegerField('Sample size',
                           widget=NumberInput(min=-1),
-                          validators=[DataRequired])
+                          validators=[DataRequired()])
     division = IntegerField('Test set size',
                             widget=NumberInput(min=5, max=95),
-                            validators=[DataRequired])
+                            validators=[DataRequired()])
     kfolds = IntegerField('Cross-validation folds',
                           widget=NumberInput(min=1, max=20),
-                          validators=[DataRequired])
+                          validators=[DataRequired()])
     submit = SubmitField('Submit')
