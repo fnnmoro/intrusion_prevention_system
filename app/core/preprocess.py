@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    MaxAbsScaler, RobustScaler,
                                    QuantileTransformer, Normalizer)
-                                   
+
 from app.core.tools import process_time_log
 
 
@@ -383,32 +383,13 @@ class Extractor:
             return self.features_name[2:8]
 
 
-class Preprocessor:
-    """Preprocessing methods to be used by detection instance.
-
-    Attributes
-    ----------
-    methods: dict
-        Objects and names of preprocessing methods."""
-
-    methods = {
-        'nm': {'name': 'Normal',
-               'obj': None},
-
-        'mas': {'name': 'Max Absolute Scaler',
-                'obj':  MaxAbsScaler()},
-
-        'mis': {'name': 'Min Max Scaler',
-                'obj':  MinMaxScaler()},
-
-        'rs': {'name': 'Robust Scaler',
-               'obj':  RobustScaler()},
-
-        'ss': {'name': 'Standard Scaler',
-               'obj':  StandardScaler()},
-
-        'nz': {'name': 'Normalizer',
-               'obj':  Normalizer()},
-
-        'qt': {'name': 'Quantile Transformer',
-               'obj':  QuantileTransformer(output_distribution='normal')}}
+# preprocessing methods to be used by detection instance.
+preprocessing = {
+    'normal': None,
+    'max_absolute_scaler': MaxAbsScaler(),
+    'min_max_scaler': MinMaxScaler(),
+    'robust_scaler': RobustScaler(),
+    'standard_scaler': StandardScaler(),
+    'normalizer': Normalizer(),
+    'quantile_transformer': QuantileTransformer(output_distribution='normal')
+}
