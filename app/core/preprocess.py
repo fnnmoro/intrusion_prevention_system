@@ -335,8 +335,8 @@ class Extractor:
     self.features_name: list
         Features name."""
 
-    def __init__(self, start_index, selected_features):
-        self.start_index = start_index
+    def __init__(self, agg_index, selected_features):
+        self.agg_index = agg_index
         self.selected_features = selected_features
         self.features_name = ['Source ports', 'Destination ports',
                               'Duration', 'Bytes',
@@ -363,7 +363,7 @@ class Extractor:
         for entry in flows:
             tmp = list()
             for idx in self.selected_features:
-                tmp.append(entry[self.start_index:][idx])
+                tmp.append(entry[self.agg_index:][idx])
             features.append(tmp)
             labels.append(entry[-1])
 
@@ -377,7 +377,7 @@ class Extractor:
         list
             Features names."""
 
-        if self.start_index == 6:
+        if self.agg_index == 6:
             return self.features_name
         else:
             return self.features_name[2:8]
