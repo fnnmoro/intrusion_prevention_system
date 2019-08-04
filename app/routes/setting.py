@@ -9,9 +9,9 @@ from sklearn.model_selection import train_test_split
 from app.paths import paths
 from app.core import gatherer
 from app.core.detection import Detector
-from app.core.preprocess import Extractor, Formatter, Preprocessor
+from app.core.preprocess import Extractor, Formatter, preprocessing
 from app.core.tools import evaluation_metrics, get_content
-from app.forms.setting import LoadForm
+from app.forms.setting import LoadForm, DatasetForm
 
 
 flows = list()
@@ -20,24 +20,30 @@ bp = Blueprint('setting', __name__)
 
 
 @bp.route('/load')
-def load():    
+def load():
     return render_template('setting/load.html',
                            files=get_content(f'{paths["models"]}')[1],
                            form=LoadForm())
 
 
 @bp.route('/dataset')
-def datasets():
+def dataset():
+    form = DatasetForm()
+
     datasets_names = list()
     datasets = get_content(f'{paths["csv"]}datasets/')[1]
-    for dataset in datasets:
-        tmp = dataset.split('.csv')[0].capitalize()
-        datasets_names.append(' '.join(tmp.split('_')))
+    for idx, dataset in enumerate(datasets):
+        datasets_names.append([idx,
+                              ' '.join(dataset.split('.csv')[0].split('_'))])
+    form.dataset.choices = datasets_names
 
-    return render_template('setting/datasets.html',
-                           datasets=datasets,
-                           datasets_names=datasets_names,
-                           preprocess_methods=Preprocessor.methods)
+    preprocessing_names = list()
+    for method in preprocessing:
+        preprocessing_names.append([method, ' '.join(method.split('_'))])
+    form.preprocessing.choices = preprocessing_names
+
+    return render_template('setting/dataset.html',
+                           form=form)
 
 
 @bp.route('/classifiers', methods=['GET', 'POST'])
