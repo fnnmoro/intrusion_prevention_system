@@ -11,6 +11,7 @@ from app.core import gatherer
 from app.core.detection import Detector
 from app.core.preprocess import Extractor, Formatter, Preprocessor
 from app.core.tools import evaluation_metrics, get_content
+from app.forms.setting import LoadForm
 
 
 flows = list()
@@ -19,9 +20,10 @@ bp = Blueprint('setting', __name__)
 
 
 @bp.route('/load')
-def load():
+def load():    
     return render_template('setting/load.html',
-                           files=get_content(f'{paths["saves"]}')[1])
+                           files=get_content(f'{paths["models"]}')[1],
+                           form=LoadForm())
 
 
 @bp.route('/dataset')
@@ -117,10 +119,10 @@ def results():
             rmtree(tmp_dir)
             session['obj_name'] = f'obj_{datetime.now().strftime("%Y%m%d%H%M%S")}'
             pickle.dump([extractor, detector, results],
-                        open(f'{paths["saves"]}{session["obj_name"]}', 'wb'))
+                        open(f'{paths["models"]}{session["obj_name"]}', 'wb'))
         else:
-            session['obj_name'] = f'{request.form["file"]}'
-            obj = pickle.load(open(f'{paths["saves"]}{session["obj_name"]}',
+            session['obj_name'] = f'{request.form["model"]}'
+            obj = pickle.load(open(f'{paths["models"]}{session["obj_name"]}',
                                    'rb'))
             results=obj[2]
 
