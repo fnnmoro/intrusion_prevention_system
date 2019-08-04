@@ -3,7 +3,8 @@ from datetime import datetime
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from flask import Blueprint, request, render_template, session
+from flask import (Blueprint, redirect, request,
+                   render_template, session, url_for)
 from sklearn.model_selection import train_test_split
 
 from app.paths import paths
@@ -26,14 +27,14 @@ def load():
                            form=LoadForm())
 
 
-@bp.route('/dataset')
+@bp.route('/dataset', methods=['GET', 'POST'])
 def dataset():
     form = DatasetForm()
 
     datasets_names = list()
     datasets = get_content(f'{paths["csv"]}datasets/')[1]
     for idx, dataset in enumerate(datasets):
-        datasets_names.append([idx,
+        datasets_names.append([str(idx),
                               ' '.join(dataset.split('.csv')[0].split('_'))])
     form.dataset.choices = datasets_names
 
@@ -42,12 +43,15 @@ def dataset():
         preprocessing_names.append([method, ' '.join(method.split('_'))])
     form.preprocessing.choices = preprocessing_names
 
+    if form.validate_on_submit():
+        return redirect(url_for('setting.classifier'))
+
     return render_template('setting/dataset.html',
                            form=form)
 
 
-@bp.route('/classifiers', methods=['GET', 'POST'])
-def classifiers():
+@bp.route('/classifier', methods=['GET', 'POST'])
+def classifier():
     global flows
     if request.method == 'POST':
         header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/',
@@ -63,11 +67,11 @@ def classifiers():
         features_names = extractor.extract_features_names()
 
         session['start_index'] = getattr(extractor, 'start_index')
-        session['test_size'] = int(request.form['test_size'])/100
-        session['k-folds'] = int(request.form['k-folds'])
-        session['preprocess_key'] = request.form['preprocess_key']
+        session['division'] = int(request.form['division'])/100
+        session['kfolds'] = int(request.form['kfolds'])
+        session['preprocessing'] = request.form['preprocessing']
 
-        return render_template('setting/classifiers.html',
+        return render_template('setting/classifier.html',
                                classifiers=getattr(Detector(), 'classifiers'),
                                features_names=features_names)
 
