@@ -3,7 +3,7 @@
 {% block title %}Datasets{% endblock %}
 
 {% block content %}
-    <form method='post' action='{{ url_for("setting.classifier") }}' novalidate>
+    <form method='post' novalidate>
         {{ form.csrf_token() }}
         {{ form.dataset.label }}
         {{ form.dataset() }}
