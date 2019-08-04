@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-    <form id='loading' method='post' action='{{ url_for("configuration.results") }}' onsubmit='hiddenForm()'>
+    <form id='loading' method='post' action='{{ url_for("setting.results") }}' onsubmit='hiddenForm()'>
         <p>Machine learning classifiers</p>
         <div class='checkbox'>
             {% for key in classifiers %}

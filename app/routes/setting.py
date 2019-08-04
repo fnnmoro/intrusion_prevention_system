@@ -15,12 +15,12 @@ from app.core.tools import evaluation_metrics, get_content
 
 flows = list()
 
-bp = Blueprint('configuration', __name__)
+bp = Blueprint('setting', __name__)
 
 
 @bp.route('/load')
 def load():
-    return render_template('configuration/load.html',
+    return render_template('setting/load.html',
                            files=get_content(f'{paths["saves"]}')[1])
 
 
@@ -32,7 +32,7 @@ def datasets():
         tmp = dataset.split('.csv')[0].capitalize()
         datasets_names.append(' '.join(tmp.split('_')))
 
-    return render_template('configuration/datasets.html',
+    return render_template('setting/datasets.html',
                            datasets=datasets,
                            datasets_names=datasets_names,
                            preprocess_methods=Preprocessor.methods)
@@ -59,7 +59,7 @@ def classifiers():
         session['k-folds'] = int(request.form['k-folds'])
         session['preprocess_key'] = request.form['preprocess_key']
 
-        return render_template('configuration/classifiers.html',
+        return render_template('setting/classifiers.html',
                                classifiers=getattr(Detector(), 'classifiers'),
                                features_names=features_names)
 
@@ -124,5 +124,5 @@ def results():
                                    'rb'))
             results=obj[2]
 
-        return render_template('configuration/results.html',
+        return render_template('setting/results.html',
                                results=results)

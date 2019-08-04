@@ -11,7 +11,7 @@
                 {% for file in files %}
                     <tr>
                         <td>
-                            <form method='post' action='{{ url_for("configuration.results") }}'>
+                            <form method='post' action='{{ url_for("setting.results") }}'>
                                 <input class='choose' name='file' type='submit' value='{{ file }}'>
                             </form>
                         </td>

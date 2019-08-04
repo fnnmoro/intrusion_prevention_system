@@ -14,7 +14,7 @@ socketio = SocketIO(app)
 
 from app.paths import paths
 from app.core import tools
-from app.routes import configuration, creation, detection, mitigation, root
+from app.routes import creation, detection, mitigation, root, setting
 
 
 for path in paths.values():
@@ -22,6 +22,6 @@ for path in paths.values():
 
 app.register_blueprint(root.bp)
 app.register_blueprint(creation.bp, url_prefix='/creation')
-app.register_blueprint(configuration.bp, url_prefix='/configuration')
 app.register_blueprint(detection.bp, url_prefix='/detection')
 app.register_blueprint(mitigation.bp, url_prefix='/mitigation')
+app.register_blueprint(configuration.bp, url_prefix='/setting')
