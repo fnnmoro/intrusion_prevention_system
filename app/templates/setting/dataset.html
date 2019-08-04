@@ -3,7 +3,7 @@
 {% block title %}Datasets{% endblock %}
 
 {% block content %}
-    <form method='post' action='{{ url_for("setting.classifiers") }}'>
+    <form method='post' action='{{ url_for("setting.classifier") }}' novalidate>
         {{ form.csrf_token() }}
         {{ form.dataset.label }}
         {{ form.dataset() }}
@@ -13,12 +13,21 @@
         <br>
         {{ form.sample.label }}
         {{ form.sample() }}
+        {% for error in form.sample.errors %}
+            <span class='warning'>{{ error }}</span>
+        {% endfor %}
         <br>
         {{ form.division.label }}
         {{ form.division() }}
+        {% for error in form.division.errors %}
+            <span class='warning'>{{ error }}</span>
+        {% endfor %}
         <br>
         {{ form.kfolds.label }}
         {{ form.kfolds() }}
+        {% for error in form.kfolds.errors %}
+            <span class='warning'>{{ error }}</span>
+        {% endfor %}
         <br>
         {{ form.submit() }}
     </form>
