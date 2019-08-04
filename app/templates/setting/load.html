@@ -12,7 +12,8 @@
                     <tr>
                         <td>
                             <form method='post' action='{{ url_for("setting.results") }}'>
-                                <input class='choose' name='file' type='submit' value='{{ file }}'>
+                                {{ form.csrf_token() }}
+                                {{ form.model(class='choose', value=file) }}
                             </form>
                         </td>
                     </tr>
