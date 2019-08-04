@@ -182,6 +182,10 @@ td {
     text-align: center;
 }
 
+.warning {
+    color: red;
+}
+
 #anomalies {
     cursor: pointer;
 }
