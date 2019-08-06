@@ -7,15 +7,15 @@ from flask import (Blueprint, redirect, request,
                    render_template, session, url_for)
 from sklearn.model_selection import train_test_split
 
+from app import db
 from app.paths import paths
 from app.core import gatherer
 from app.core.detection import Detector
 from app.core.preprocess import Extractor, Formatter, preprocessing
 from app.core.tools import evaluation_metrics, get_content
 from app.forms.setting import LoadForm, DatasetForm
+from app.models.dataset import Dataset
 
-
-flows = list()
 
 bp = Blueprint('setting', __name__)
 
@@ -34,46 +34,34 @@ def dataset():
     datasets_names = list()
     datasets = get_content(f'{paths["csv"]}datasets/')[1]
     for idx, dataset in enumerate(datasets):
-        datasets_names.append([str(idx),
+        datasets_names.append([dataset,
                               ' '.join(dataset.split('.csv')[0].split('_'))])
     form.dataset.choices = datasets_names
 
-    preprocessing_names = list()
-    for method in preprocessing:
-        preprocessing_names.append([method, ' '.join(method.split('_'))])
-    form.preprocessing.choices = preprocessing_names
+    if request.method == 'POST' and form.validate_on_submit():
+        details = form.dataset.data.split('_')
+        d = Dataset(file=form.dataset.data,
+                    window=details[1].split('w')[-1],
+                    aggregation=details[2].split('a')[-1],
+                    size=details[3].split('.csv')[0].split('s')[-1],
+                    sample=form.sample.data,
+                    split=form.split.data,
+                    kfolds=form.kfolds.data)
+        db.session.add(d)
+        db.session.commit()
 
-    if form.validate_on_submit():
         return redirect(url_for('setting.classifier'))
-
     return render_template('setting/dataset.html',
                            form=form)
 
 
 @bp.route('/classifier', methods=['GET', 'POST'])
 def classifier():
-    global flows
-    if request.method == 'POST':
-        header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/',
-                                          request.form['dataset'],
-                                          int(request.form['sample']))
 
-        for entry in flows:
-            Formatter.convert_features(entry, True)
 
-        extractor = Extractor(8, list())
-        if 'flw' in header:
-            setattr(extractor, 'start_index', 6)
-        features_names = extractor.extract_features_names()
-
-        session['start_index'] = getattr(extractor, 'start_index')
-        session['division'] = int(request.form['division'])/100
-        session['kfolds'] = int(request.form['kfolds'])
-        session['preprocessing'] = request.form['preprocessing']
-
-        return render_template('setting/classifier.html',
-                               classifiers=getattr(Detector(), 'classifiers'),
-                               features_names=features_names)
+    return render_template('setting/classifier.html',
+                           classifiers=getattr(Detector(), 'classifiers'),
+                           features_names=features_names)
 
 
 @bp.route('/results', methods=['GET', 'POST'])
