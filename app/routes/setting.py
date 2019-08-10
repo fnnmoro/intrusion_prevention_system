@@ -1,5 +1,6 @@
 import pickle
 from datetime import datetime
+from pytz import timezone
 from shutil import rmtree
 from tempfile import mkdtemp
 
@@ -8,13 +9,15 @@ from flask import (Blueprint, redirect, request,
 from sklearn.model_selection import train_test_split
 
 from app import db
-from app.paths import paths
 from app.core import gatherer
 from app.core.detection import Detector
 from app.core.preprocess import Extractor, Formatter, preprocessing
-from app.core.tools import evaluation_metrics, get_content
-from app.forms.setting import LoadForm, DatasetForm
+from app.core.tools import evaluation_metrics
+from app.forms.setting import LoadForm, DatasetForm, ClassifierForm
+from app.models.classifier import Classifier
 from app.models.dataset import Dataset
+from app.models.feature import Feature
+from app.models.model import Model
 
 
 bp = Blueprint('setting', __name__)
@@ -30,13 +33,7 @@ def load():
 @bp.route('/dataset', methods=['GET', 'POST'])
 def dataset():
     form = DatasetForm()
-
-    datasets_names = list()
-    datasets = get_content(f'{paths["csv"]}datasets/')[1]
-    for idx, dataset in enumerate(datasets):
-        datasets_names.append([dataset,
-                              ' '.join(dataset.split('.csv')[0].split('_'))])
-    form.dataset.choices = datasets_names
+    form.dataset_choices()
 
     if request.method == 'POST' and form.validate_on_submit():
         details = form.dataset.data.split('_')
@@ -51,17 +48,31 @@ def dataset():
         db.session.commit()
 
         return redirect(url_for('setting.classifier'))
-    return render_template('setting/dataset.html',
-                           form=form)
+    return render_template('setting/dataset.html', form=form)
 
 
 @bp.route('/classifier', methods=['GET', 'POST'])
 def classifier():
+    form = ClassifierForm()
 
-
-    return render_template('setting/classifier.html',
-                           classifiers=getattr(Detector(), 'classifiers'),
-                           features_names=features_names)
+    if request.method == 'POST' and form.validate_on_submit():
+        for clf in form.classifiers.data:
+            c = Classifier.query.get(clf)
+            dt = datetime.now(timezone('America/Sao_Paulo'))
+            m = Model(file=(f'{clf}_'
+                            f'{"_".join(c.name.lower().split(" "))}_'
+                            f'{dt.strftime("%Y%m%d%H%M%S")}'),
+                      datetime=dt,
+                      dataset_id=Dataset.query.all()[-1].id,
+                      classifier_id=clf,
+                      preprocessing_id=form.preprocessing.data)
+            db.session.add(m)
+            db.session.commit()
+            for feat in form.features.data:
+                m.features.append(Feature.query.get(feat))
+            db.session.commit()
+        return redirect(url_for('setting.results'))
+    return render_template('setting/classifier.html', form=form)
 
 
 @bp.route('/results', methods=['GET', 'POST'])
