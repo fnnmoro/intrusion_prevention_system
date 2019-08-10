@@ -6,6 +6,7 @@ from app.models.feature import features
 
 class Model(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    file = db.Column(db.String(100), index=True, nullable=True, default=' ')
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow())
     dataset_id = db.Column(db.Integer,
                              db.ForeignKey('dataset.id'),
