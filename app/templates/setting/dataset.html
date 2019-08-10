@@ -8,18 +8,15 @@
         {{ form.dataset.label }}
         {{ form.dataset() }}
         <br>
-        {{ form.preprocessing.label }}
-        {{ form.preprocessing() }}
-        <br>
         {{ form.sample.label }}
         {{ form.sample() }}
         {% for error in form.sample.errors %}
             <span class='warning'>{{ error }}</span>
         {% endfor %}
         <br>
-        {{ form.division.label }}
-        {{ form.division() }}
-        {% for error in form.division.errors %}
+        {{ form.split.label }}
+        {{ form.split() }}
+        {% for error in form.split.errors %}
             <span class='warning'>{{ error }}</span>
         {% endfor %}
         <br>
