@@ -1,7 +1,9 @@
 import os
 
 from flask import Flask, render_template
+from flask_sqlalchemy import SQLAlchemy
 from flask_socketio import SocketIO
+from flask_migrate import Migrate
 
 from config import Config
 
@@ -9,11 +11,15 @@ from config import Config
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_object(Config)
 app.jinja_env.add_extension('jinja2.ext.do')
-
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 socketio = SocketIO(app)
+
 
 from app.paths import paths
 from app.core import tools
+from app.models import (classifier, dataset, feature,
+                        model, preprocessing, result)
 from app.routes import creation, detection, mitigation, root, setting
 
 
