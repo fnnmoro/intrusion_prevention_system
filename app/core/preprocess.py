@@ -328,21 +328,11 @@ class Extractor:
 
     Attributes
     ----------
-    self.start_index: int
-        Start index used according to the chosen dataset.
     self.selected_features: list
-        Chosen features to be used by the machine learning algorithms.
-    self.features_name: list
-        Features name."""
+        Chosen features to be used by the machine learning algorithms."""
 
-    def __init__(self, agg_index, selected_features):
-        self.agg_index = agg_index
+    def __init__(self, selected_features):
         self.selected_features = selected_features
-        self.features_name = ['Source ports', 'Destination ports',
-                              'Duration', 'Bytes',
-                              'Packets', 'Bytes per second',
-                              'Bytes per packets', 'Packtes per second',
-                              'Flows']
 
     @process_time_log
     def extract_features(self, flows):
@@ -363,28 +353,15 @@ class Extractor:
         for entry in flows:
             tmp = list()
             for idx in self.selected_features:
-                tmp.append(entry[self.agg_index:][idx])
+                tmp.append(entry[idx])
             features.append(tmp)
             labels.append(entry[-1])
 
         return features, labels
 
-    def extract_features_names(self):
-        """Extracts features names according to the choosed dataset.
-
-        Returns
-        -------
-        list
-            Features names."""
-
-        if self.agg_index == 6:
-            return self.features_name
-        else:
-            return self.features_name[2:8]
-
 
 # preprocessing methods to be used by detection instance.
-preprocessing = {
+preprocessing_obj = {
     'normal': None,
     'max_absolute_scaler': MaxAbsScaler(),
     'min_max_scaler': MinMaxScaler(),
