@@ -1,18 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Datasets{% endblock %}
+{% block title %}Dataset{% endblock %}
 
 {% block content %}
     <form method='post' novalidate>
         {{ form.csrf_token() }}
         {{ form.dataset.label }}
         {{ form.dataset() }}
-        <br>
-        {{ form.sample.label }}
-        {{ form.sample() }}
-        {% for error in form.sample.errors %}
-            <span class='warning'>{{ error }}</span>
-        {% endfor %}
         <br>
         {{ form.split.label }}
         {{ form.split() }}
