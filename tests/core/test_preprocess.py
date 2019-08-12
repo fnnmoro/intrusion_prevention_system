@@ -8,7 +8,7 @@ sys.path.append('/home/flmoro/bsi16/research_project/anomaly_detection/codes/'
 
 from app.core import gatherer
 from app.core import tools
-from app.core.preprocess import Formatter, Modifier, Extractor, Preprocessor
+from app.core.preprocess import Formatter, Modifier, Extractor
 from app.paths import paths
 
 
@@ -166,43 +166,37 @@ class TestExtractor(unittest.TestCase):
 
         modified_csv_file = tools.get_content(extractor_path)[1][-1]
 
-        header, flows = gatherer.open_csv(extractor_path, modified_csv_file)
+        header, cls.flows = gatherer.open_csv(extractor_path, modified_csv_file)
 
-        cls.extractor = Extractor(6, list(range(9)))
-        cls.features, cls.labels = cls.extractor.extract_features(flows)
-
-    def test_extract_features(self):
-        """Tests whether the features and labels were correctly extracted from
+    def test_extract_features_labels(self):
+        """Tests if the features and labels were correctly extracted from
         the flows."""
+
+        extractor = Extractor([feature+5 for feature in range(1, 10)])
+        features, labels = extractor.extract_features(self.flows)
 
         csv_result = tools.get_content(extractor_path)[1][0]
 
         expected_features = gatherer.open_csv(extractor_path, csv_result)[1]
 
-        self.assertListEqual(self.features, expected_features,
+        self.assertListEqual(features, expected_features,
                              'features extracted incorrectly')
-        self.assertEqual(self.labels[0], '0',
+        self.assertEqual(labels[0], '0',
                          'labels extracted incorrectly')
 
+    def test_extract_specific_features(self):
+        """Tests if specifics features and labels were correctly extracted from
+        the flows."""
 
-class TestPreprocessor(unittest.TestCase):
-    """Tests the Preprocessor class in preprocess module."""
+        extractor = Extractor([feature+5 for feature in [3, 5]])
+        features, _ = extractor.extract_features(self.flows)
 
-    def setUp(self):
-        """Initiates the parameters to feed the test functions."""
+        csv_result = tools.get_content(extractor_path)[1][1]
 
-        self.methods = Preprocessor.methods
+        expected_features = gatherer.open_csv(extractor_path, csv_result)[1]
 
-    def test_select_method(self):
-        """Tests whether the constructor of a preprocessing method were
-        correctly selected.."""
-
-        from sklearn.preprocessing import MinMaxScaler
-
-        self.assertEqual(type(MinMaxScaler()),
-                         type(self.methods['mis']['obj']),
-                         'preprocessing method selected incorrectly')
-
+        self.assertListEqual(features, expected_features,
+                             'features extracted incorrectly')
 
 # collections of test cases
 def formatter_suite():
@@ -227,14 +221,8 @@ def modifier_suite():
 
 def extractor_suite():
     suite = unittest.TestSuite()
-    suite.addTest(TestExtractor('test_extract_features'))
-
-    return suite
-
-
-def preprocessor_suite():
-    suite = unittest.TestSuite()
-    suite.addTest(TestPreprocessor('test_select_method'))
+    suite.addTest(TestExtractor('test_extract_features_labels'))
+    suite.addTest(TestExtractor('test_extract_specific_features'))
 
     return suite
 
@@ -242,7 +230,6 @@ def preprocessor_suite():
 # outcome of the test cases
 if __name__ == '__main__':
    runner = unittest.TextTestRunner()
-   runner.run(formatter_suite())
-   runner.run(modifier_suite())
+   #runner.run(formatter_suite())
+   #runner.run(modifier_suite())
    runner.run(extractor_suite())
-   runner.run(preprocessor_suite())
