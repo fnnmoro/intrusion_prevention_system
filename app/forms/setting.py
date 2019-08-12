@@ -5,9 +5,7 @@ from wtforms.widgets import CheckboxInput, ListWidget, Input
 from wtforms.widgets.html5 import NumberInput
 
 from app.core import tools
-from app.models.classifier import Classifier
-from app.models.preprocessing import Preprocessing
-from app.models.feature import Feature
+from app.models import Classifier, Preprocessing, Feature
 from app.paths import paths
 
 
@@ -17,12 +15,9 @@ class LoadForm(FlaskForm):
 
 class DatasetForm(FlaskForm):
     dataset = SelectField('Datasets', choices=[])
-    sample = IntegerField('Sample size',
-                          widget=NumberInput(min=-1),
-                          validators=[DataRequired(), NumberRange(-1)])
     split = IntegerField('Split size',
-                            widget=NumberInput(min=5, max=95),
-                            validators=[DataRequired(), NumberRange(5, 95)])
+                         widget=NumberInput(min=5, max=95),
+                         validators=[DataRequired(), NumberRange(5, 95)])
     kfolds = IntegerField('Cross-validation folds',
                           widget=NumberInput(min=1, max=20),
                           validators=[DataRequired(), NumberRange(1, 20)])
@@ -54,6 +49,7 @@ class ClassifierForm(FlaskForm):
                                    widget=ListWidget(prefix_label=False),
                                    option_widget=CheckboxInput(),
                                    validators=[DataRequired()],
-                                   choices=[[feat.id, feat.name]
-                                            for feat in Feature.query.all()])
+                                   choices=[
+                                       [feat.id, feat.name]
+                                       for feat in Feature.query.all()])
     submit = SubmitField('Submit')
