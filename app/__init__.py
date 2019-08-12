@@ -16,10 +16,9 @@ migrate = Migrate(app, db)
 socketio = SocketIO(app)
 
 
+from app import models
 from app.paths import paths
 from app.core import tools
-from app.models import (classifier, dataset, feature,
-                        model, preprocessing, result)
 from app.routes import creation, detection, mitigation, root, setting
 
 

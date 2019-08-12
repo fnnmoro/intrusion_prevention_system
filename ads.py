@@ -1,12 +1,8 @@
 from app import app, db, socketio
 from app.core import tools
+from app.models import (Classifier, Dataset, Feature,
+                        Model, Preprocessing, Result)
 from app.paths import paths
-from app.models.classifier import Classifier
-from app.models.dataset import Dataset
-from app.models.feature import Feature
-from app.models.model import Model
-from app.models.preprocessing import Preprocessing
-from app.models.result import Result
 
 
 @app.shell_context_processor
