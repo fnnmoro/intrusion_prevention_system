@@ -83,12 +83,12 @@ def classifier():
             db.session.commit()
             # session used to remember the pk of the latest models
             session['last_models'].append(model.id)
-        return redirect(url_for('setting.results'))
+        return redirect(url_for('setting.result'))
     return render_template('setting/classifier.html', form=form)
 
 
-@bp.route('/results', methods=['GET', 'POST'])
-def results():
+@bp.route('/result', methods=['GET', 'POST'])
+def result():
     # creating an absolute path of a temporary directory
     tmp_directory = mkdtemp()
     # chosen models
@@ -139,7 +139,7 @@ def results():
     # removing the temporary directory used by the Pipeline object
     rmtree(tmp_directory)
 
-    return render_template('setting/results.html', models=models)
+    return render_template('setting/result.html', models=models)
 
 
 @bp.route('/model', methods=['GET', 'POST'])
