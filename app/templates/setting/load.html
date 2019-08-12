@@ -3,22 +3,26 @@
 {% block title %}Load{% endblock %}
 
 {% block content %}
-    <p>Load model</p>
+    {% if files %}
+        <p>Load model</p>
 
-    <div class="tables">
-        <table>
-            <tbody>
-                {% for file in files %}
-                    <tr>
-                        <td>
-                            <form method='post' action='{{ url_for("detection.realtime") }}'>
-                                {{ form.csrf_token() }}
-                                {{ form.model(class='choose', value=file) }}
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <div class="tables">
+            <table>
+                <tbody>
+                    {% for file in files %}
+                        <tr>
+                            <td>
+                                <form method='post' action='{{ url_for("detection.realtime") }}'>
+                                    {{ form.csrf_token() }}
+                                    {{ form.model(class='choose', value=file) }}
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No models available</p>
+    {% endif %}
 {% endblock %}
