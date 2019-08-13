@@ -113,19 +113,19 @@ def result():
     for model in models:
         classifier = Classifier.query.get(model.classifier_id)
         preprocessing = Preprocessing.query.get(model.preprocessing_id)
+        
+        # tunning, training and test
         detector = Detector(
             classifiers_obj['_'.join(classifier.name.lower().split(' '))])
-
         detector.define_tuning(
             preprocessing_obj['_'.join(preprocessing.name.lower().split(' '))],
             dataset.kfolds,
             tmp_directory)
-        # training
         hparam, train_date, train_dur = detector.train(x_train, y_train)
-        # test
         pred, test_date, test_dur = detector.test(x_test)
-        outcome = tools.evaluation_metrics(y_test, pred)
 
+        # results
+        outcome = tools.evaluation_metrics(y_test, pred)
         result = Result(
             train_date=train_date, test_date=test_date,
             train_duration=train_dur, test_duration=test_dur,
@@ -150,7 +150,6 @@ def model():
         model = Model.query.get(request.form['model_pk'])
         dataset = Dataset.query.get(model.dataset_id)
         classifier = Classifier.query.get(model.classifier_id)
-        preprocessing = Preprocessing.query.get(model.preprocessing_id)
         header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/',
                                           dataset.file)
         session['last_models'].remove(model.id)
@@ -168,15 +167,12 @@ def model():
         # adding extra value to skip first unused features
         extractor = Extractor([feature.id+5 for feature in model.features])
         features, labels = extractor.extract_features(flows)
+
+        # retraining
         detector = Detector(
             classifiers_obj['_'.join(classifier.name.lower().split(' '))])
-
-        detector.define_tuning(
-            preprocessing_obj['_'.join(preprocessing.name.lower().split(' '))],
-            dataset.kfolds,
-            tmp_directory)
-        # retraining
         detector.train(features, labels)
+
         # model persistence
         pickle.dump(detector, open(f'{paths["models"]}{model.file}', 'wb'))
         # removing the temporary directory used by the Pipeline object
