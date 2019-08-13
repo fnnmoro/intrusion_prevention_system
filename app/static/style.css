@@ -142,6 +142,7 @@ td {
 
 .box {
     padding: 20px;
+    list-style-type: none;
 }
 
 .tables {
@@ -180,6 +181,10 @@ td {
     display: flex;
     flex-direction: row;
     text-align: center;
+}
+
+.warning {
+    color: red;
 }
 
 #anomalies {

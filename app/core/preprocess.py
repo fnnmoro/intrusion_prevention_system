@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    MaxAbsScaler, RobustScaler,
                                    QuantileTransformer, Normalizer)
-                                   
+
 from app.core.tools import process_time_log
 
 
@@ -328,21 +328,11 @@ class Extractor:
 
     Attributes
     ----------
-    self.start_index: int
-        Start index used according to the chosen dataset.
     self.selected_features: list
-        Chosen features to be used by the machine learning algorithms.
-    self.features_name: list
-        Features name."""
+        Chosen features to be used by the machine learning algorithms."""
 
-    def __init__(self, start_index, selected_features):
-        self.start_index = start_index
+    def __init__(self, selected_features):
         self.selected_features = selected_features
-        self.features_name = ['Source ports', 'Destination ports',
-                              'Duration', 'Bytes',
-                              'Packets', 'Bytes per second',
-                              'Bytes per packets', 'Packtes per second',
-                              'Flows']
 
     @process_time_log
     def extract_features(self, flows):
@@ -363,52 +353,20 @@ class Extractor:
         for entry in flows:
             tmp = list()
             for idx in self.selected_features:
-                tmp.append(entry[self.start_index:][idx])
+                tmp.append(entry[idx])
             features.append(tmp)
             labels.append(entry[-1])
 
         return features, labels
 
-    def extract_features_names(self):
-        """Extracts features names according to the choosed dataset.
 
-        Returns
-        -------
-        list
-            Features names."""
-
-        if self.start_index == 6:
-            return self.features_name
-        else:
-            return self.features_name[2:8]
-
-
-class Preprocessor:
-    """Preprocessing methods to be used by detection instance.
-
-    Attributes
-    ----------
-    methods: dict
-        Objects and names of preprocessing methods."""
-
-    methods = {
-        'nm': {'name': 'Normal',
-               'obj': None},
-
-        'mas': {'name': 'Max Absolute Scaler',
-                'obj':  MaxAbsScaler()},
-
-        'mis': {'name': 'Min Max Scaler',
-                'obj':  MinMaxScaler()},
-
-        'rs': {'name': 'Robust Scaler',
-               'obj':  RobustScaler()},
-
-        'ss': {'name': 'Standard Scaler',
-               'obj':  StandardScaler()},
-
-        'nz': {'name': 'Normalizer',
-               'obj':  Normalizer()},
-
-        'qt': {'name': 'Quantile Transformer',
-               'obj':  QuantileTransformer(output_distribution='normal')}}
+# preprocessing methods to be used by detection instance.
+preprocessing_obj = {
+    'normal': None,
+    'max_absolute_scaler': MaxAbsScaler(),
+    'min_max_scaler': MinMaxScaler(),
+    'robust_scaler': RobustScaler(),
+    'standard_scaler': StandardScaler(),
+    'normalizer': Normalizer(),
+    'quantile_transformer': QuantileTransformer(output_distribution='normal')
+}

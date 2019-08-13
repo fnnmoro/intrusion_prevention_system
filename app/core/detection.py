@@ -15,101 +15,50 @@ class Detector:
 
     Attributes
     ----------
-    self.classifiers: dict
-        Supervised machine learning algorithms with a set of parameters to be
-        searched."""
+    self.classifier: dict
+        Supervised machine learning object."""
 
-    def __init__(self):
-        self.classifiers = {
-            'dt': {'name': 'Decision Tree',
-                   'obj': DecisionTreeClassifier(),
-                   'param': {'criterion': ['gini', 'entropy'],
-                             'splitter': ['best', 'random'],
-                             'max_depth': [3, 9, 15, 21],
-                             'min_samples_split': [2, 5, 10],
-                             'min_samples_leaf': [2, 5, 10],
-                             'max_features': [None, 'sqrt']}},
+    def __init__(self, classifier):
+        self.classifier = classifier
 
-            'gnb': {'name': 'Gaussian Naive Bayes',
-                    'obj': GaussianNB(),
-                    'param': {'var_smoothing': [0.00001, 0.01, 0.1, 1.0]}},
-
-            'knn': {'name': 'K-Nearest Neighbors',
-                    'obj': KNeighborsClassifier(),
-                    'param': {'n_neighbors': [5, 10, 15],
-                              'weights': ['uniform', 'distance'],
-                              'algorithm': ['ball_tree', 'kd_tree'],
-                              'leaf_size': [10, 20, 30]}},
-
-            'mlp': {'name': 'Multi-Layer Perceptron',
-                    'obj': MLPClassifier(),
-                    'param': {'hidden_layer_sizes': [(10,), (15, 10),
-                                                     (20, 15, 10)],
-                              'activation': ['identity', 'logistic',
-                                             'tanh', 'relu'],
-                              'solver': ['adam', 'lbfgs', 'sgd'],
-                              'alpha': [0.0001, 0.001, 0.01, 0.1],
-                              'max_iter': [50, 100, 200, 500]}},
-
-            'rf': {'name': 'Random Forest',
-                   'obj': RandomForestClassifier(),
-                   'param': {'n_estimators': [5, 10, 15],
-                             'criterion': ['gini', 'entropy'],
-                             'max_depth': [3, 9, 15, 21],
-                             'min_samples_split': [2, 5, 10],
-                             'min_samples_leaf': [2, 5, 10],
-                             'max_features': [None, 'sqrt']}},
-
-            'svm': {'name': 'Support Vector Machine',
-                    'obj': SVC(),
-                    'param': {'kernel': ['rbf'],
-                              'C': [0.1, 1.0, 10.0],
-                              'gamma': [0.001, 0.01, 0.1],
-                              'cache_size': [5000.0]}}}
-
-    def tuning_hyperparameters(self, clf, preprocess, kfolds, tmp_dir):
+    def define_tuning(self, preprocessing, kfolds, tmp_directory):
         """Exhaustive search over specified parameters values for an machine
         learning algorithm.
 
         Parameters
         ----------
-        clf: str
-            Machine learning classifier key.
-        preprocess: obj
-            Preprocess method.
+        preprocessing: obj
+            Preprocessing object.
         kfolds: int
             Number of k folds.
-        tmp_dir: str
+        tmp_directory: str
             Absoulute path of a temporary directory to cache each transformer
             after calling fit. It avoids computing the fit transformers many
             times in a case of grid search"""
 
-        if preprocess:
-            # avoids data leakage by ensuring that the same samples are used
-            # to train the transformers and predictors.
+        if preprocessing:
             # chains multiple estimators into one in a fixed sequence of steps.
-            self.classifiers[clf]['obj'] = Pipeline(
-                [('preprocess', preprocess), self.classifiers[clf]['obj']],
-                memory=tmp_dir)
+            self.classifier['obj'] = Pipeline(
+                [('preprocessing', preprocessing), self.classifier['obj']],
+                memory=tmp_directory)
 
             # necessary for doing grid searches
-            for key in list(self.classifiers[clf]['param'].keys()):
-                self.classifiers[clf]['param'][f'classifier__{key}'] = \
-                self.classifiers[clf]['param'].pop(key)
+            for key in self.classifier['param']:
+                value = self.classifier['param'].pop(key)
+                self.classifier['param'][f'clf__{key}'] = value
 
-        self.classifiers[clf]['obj'] = \
-        GridSearchCV(self.classifiers[clf]['obj'],
-                     self.classifiers[clf]['param'],
-                     cv=kfolds)
+        tunning = GridSearchCV(self.classifier['obj'],
+                               self.classifier['param'],
+                               cv=kfolds)
+
+        self.classifier['obj'] = tunning
 
     @process_time_log
-    def train_classifier(self, clf, training_features, training_labels):
+    def train(self, training_features, training_labels):
         """Trains the machine learning algorithm.
 
         Parameters
         ----------
-        clf: str
-            Machine learning classifier key.
         training_features: list
             Features to training the algorithm.
         training_labels: list
@@ -120,19 +69,16 @@ class Detector:
         param
             Best parameters found by grid search."""
 
-        self.classifiers[clf]['obj'].fit(training_features, training_labels)
-        param = self.classifiers[clf]['obj'].best_params_
+        self.classifier['obj'].fit(training_features, training_labels)
 
-        return param
+        return self.classifier['obj'].best_params_
 
     @process_time_log
-    def execute_classifier(self, clf, test_features):
+    def test(self, test_features):
         """Executes the machine learning algorithm.
 
         Parameters
         ----------
-        clf: str
-            Machine learning classifier key.
         test_features: list
             Features to classify.
 
@@ -141,9 +87,7 @@ class Detector:
         pred
             Prediction for each test entry."""
 
-        pred = self.classifiers[clf]['obj'].predict(test_features)
-
-        return pred
+        return self.classifier['obj'].predict(test_features)
 
     def add_predictions(self, flows, pred):
         """Adds the predictions performed in real time into the evaluated
@@ -165,3 +109,56 @@ class Detector:
             entry[-1] = pred[idx]
 
         return flows
+
+
+classifiers_obj = {
+    'decision_tree': {
+        'obj': DecisionTreeClassifier(),
+        'param': {
+            'criterion': ['gini', 'entropy'],
+            'splitter': ['best', 'random'],
+            'max_depth': [3, 9, 15, 21],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [2, 5, 10],
+            'max_features': [None, 'sqrt']
+        }
+    },
+
+    'gaussian_naive_bayes': {
+        'obj': GaussianNB(),
+        'param': {
+            'var_smoothing': [0.00001, 0.01, 0.1, 1.0]
+        }
+    },
+
+    'k-nearest_neighbors': {
+        'obj': KNeighborsClassifier(),
+        'param': {
+            'n_neighbors': [5, 10, 15],
+            'weights': ['uniform', 'distance'],
+            'algorithm': ['ball_tree', 'kd_tree'],
+            'leaf_size': [10, 20, 30]
+        }
+    },
+
+    'multi-layer_perceptron': {
+        'obj': MLPClassifier(),
+        'param': {
+            'hidden_layer_sizes': [(10,), (15, 10), (20, 15, 10)],
+            'activation': ['identity', 'logistic', 'tanh', 'relu'],
+            'solver': ['adam', 'lbfgs', 'sgd'],
+            'alpha': [0.0001, 0.001, 0.01, 0.1],
+            'max_iter': [50, 100, 200, 500]
+        }
+    },
+
+    'support_vector_machine': {
+        'obj': SVC(),
+        'param': {
+            'kernel': ['rbf'],
+            'C': [0.1, 1.0, 10.0],
+            'gamma': [0.001, 0.01, 0.1],
+            'cache_size': [5000.0]
+        }
+    }
+}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Result{% endblock %}
+
+{% block script %}
+    <script src='{{ url_for("static", filename="content.js") }}'></script>
+{% endblock %}
+
+{% block content %}
+    <p>Choose the model</p>
+
+    <div class='tables'>
+        {% for model in models %}
+            <table>
+                <tbody>
+                    <tr>
+                       <th>Classifier</th>
+                       <td>
+                            <form id='loading' method='post' action='{{ url_for("setting.model") }} 'onsubmit='hiddenForm("Retraining...")'>
+                                <input name='model_pk' type='hidden' value='{{ model.id }}'>
+                                <input class='choose' type='submit' value='{{ model.classifier.name }}'>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Training date</th>
+                        <td>{{ model.result.train_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Test date</th>
+                        <td>{{ model.result.test_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Training duration</th>
+                        <td>{{ model.result.train_duration }}</td>
+                    </tr>
+                    <tr>
+                        <th>Test duration</th>
+                        <td>{{ model.result.test_duration }}</td>
+                    </tr>
+                    <tr>
+                        <th>Accuracy</th>
+                        <td>{{ model.result.accuracy }}</td>
+                    </tr>
+                    <tr>
+                        <th>Precision</th>
+                        <td>{{ model.result.precision }}</td>
+                    </tr>
+                    <tr>
+                        <th>Recall</th>
+                        <td>{{ model.result.recall }}</td>
+                    </tr>
+                    <tr>
+                        <th>F1-score</th>
+                        <td>{{ model.result.f1_score }}</td>
+                    </tr>
+                    <tr>
+                        <th>True negative</th>
+                        <td>{{ model.result.true_negative }}</td>
+                    </tr>
+                    <tr>
+                        <th>False positive</th>
+                        <td>{{ model.result.false_positive }}</td>
+                    </tr>
+                    <tr>
+                        <th>False negative</th>
+                        <td>{{ model.result.false_negative }}</td>
+                    </tr>
+                    <tr>
+                        <th>True positive</th>
+                        <td>{{ model.result.true_positive }}</td>
+                    </tr>
+                    <tr>
+                        <th>Hyperparameters</th>
+                        <td>{{ model.result.hyperparameters }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+{% endblock %}

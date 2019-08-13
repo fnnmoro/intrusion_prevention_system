@@ -2,12 +2,14 @@ import csv
 import os
 import time
 from datetime import datetime
+from pytz import timezone
 
 from sklearn.metrics import (accuracy_score, precision_score,
                              recall_score, f1_score,
                              confusion_matrix)
 
 from app.paths import paths
+
 
 def make_dir(path):
     """Creates a directory, if it not exists.
@@ -33,32 +35,18 @@ def evaluation_metrics(test_labels, pred):
 
     tn, fp, fn, tp = confusion_matrix(test_labels, pred).ravel()
 
-    result = {
-        'as': {'name': 'Accuracy score',
-               'result': round(accuracy_score(test_labels, pred), 5)},
+    outcome = {
+        'accuracy': round(accuracy_score(test_labels, pred), 5),
+        'precision': round(precision_score(test_labels, pred), 5),
+        'recall': round(recall_score(test_labels, pred), 5),
+        'f1_score': round(f1_score(test_labels, pred), 5),
+        'tn': int(tn),
+        'fp': int(fp),
+        'fn': int(fn),
+        'tp': int(tp)
+    }
 
-        'ps': {'name': 'Precision score',
-               'result': round(precision_score(test_labels, pred), 5)},
-
-        'rs': {'name': 'Recall score',
-               'result': round(recall_score(test_labels, pred), 5)},
-
-        'fs': {'name': 'F1-score',
-               'result': round(f1_score(test_labels, pred), 5)},
-
-        'tn': {'name': 'True negative',
-               'result': tn},
-
-        'fp': {'name': 'False positive',
-               'result': fp},
-
-        'fn': {'name': 'False negative',
-               'result': fn},
-
-        'tp': {'name': 'True positive',
-               'result': tp}}
-
-    return result
+    return outcome
 
 
 def export_flows_csv(header, flows, dst_path, file_name):
@@ -119,26 +107,22 @@ def process_time_log(func):
             Otherwise only the normal return of the passed function as argument
             will be returned."""
 
-        date = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        date = datetime.now(timezone('America/Sao_Paulo'))
         start = time.time()
-
         # function passed as an argument
         result = func(*args, **kwargs)
-
         end = time.time()
-
         # duration of the function
-        dur = round(end - start, 7)
+        duration = round(end - start, 7)
 
         # log
         with open(f'{paths["log"]}process_time_log.csv', mode='a') as file:
             writer = csv.writer(file)
-            writer.writerow([date, dur, func.__name__])
+            writer.writerow([date, duration, func.__name__])
 
         # checks if the function is to train or execute the classifier
-        if (func.__name__ == 'train_classifier'
-            or func.__name__ == 'execute_classifier'):
-            return result, date, dur
+        if (func.__name__ == 'train' or func.__name__ == 'test'):
+            return result, date, duration
         else:
             return result
     return timer

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Classifier{% endblock %}
+
+{% block script %}
+    <script src='{{ url_for("static", filename="content.js") }}'></script>
+{% endblock %}
+
+{% block content %}
+    <form id='loading' method='post' onsubmit='hiddenForm("Training...")' novalidate>
+        {{ form.csrf_token() }}
+        {{ form.preprocessing.label }}
+        {{ form.preprocessing() }}
+        <br>
+        {{ form.classifiers.label }}
+        <div class='checkbox'>
+            {{ form.classifiers(class_='box') }}
+        </div>
+        {% for error in form.classifiers.errors %}
+            <span class='warning'>{{ error }}</span>
+        {% endfor %}
+        <br>
+        {{ form.features.label }}
+        <div class='checkbox'>
+            {{ form.features(class_='box') }}
+        </div>
+        {% for error in form.features.errors %}
+            <span class='warning'>{{ error }}</span>
+        {% endfor %}
+        <br>
+        {{ form.submit() }}
+    </form>
+{% endblock %}

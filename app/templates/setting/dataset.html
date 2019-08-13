@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Dataset{% endblock %}
+
+{% block content %}
+    <form method='post' novalidate>
+        {{ form.csrf_token() }}
+        {{ form.dataset.label }}
+        {{ form.dataset() }}
+        <br>
+        {{ form.split.label }}
+        {{ form.split() }}
+        {% for error in form.split.errors %}
+            <span class='warning'>{{ error }}</span>
+        {% endfor %}
+        <br>
+        {{ form.kfolds.label }}
+        {{ form.kfolds() }}
+        {% for error in form.kfolds.errors %}
+            <span class='warning'>{{ error }}</span>
+        {% endfor %}
+        <br>
+        {{ form.submit() }}
+    </form>
+{% endblock %}
