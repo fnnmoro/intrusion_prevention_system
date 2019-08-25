@@ -39,19 +39,17 @@ class Detector:
         if preprocessing:
             # chains multiple estimators into one in a fixed sequence of steps.
             self.classifier['obj'] = Pipeline(
-                [('preprocessing', preprocessing), self.classifier['obj']],
+                [('prep', preprocessing), ('clf', self.classifier['obj'])],
                 memory=tmp_directory)
 
-            # necessary for doing grid searches
-            for key in self.classifier['param']:
+            # key method and list function must be kept to avoid repetitions            
+            for key in list(self.classifier['param'].keys()):
                 value = self.classifier['param'].pop(key)
                 self.classifier['param'][f'clf__{key}'] = value
 
-        tunning = GridSearchCV(self.classifier['obj'],
-                               self.classifier['param'],
-                               cv=kfolds)
-
-        self.classifier['obj'] = tunning
+        self.classifier['obj'] = GridSearchCV(self.classifier['obj'],
+                                              self.classifier['param'],
+                                              cv=kfolds)
 
     @process_time_log
     def train(self, training_features, training_labels):
@@ -89,9 +87,9 @@ class Detector:
 
         return self.classifier['obj'].predict(test_features)
 
-    def add_predictions(self, flows, pred):
-        """Adds the predictions performed in real time into the evaluated
-        flows.
+    def find_intrusions(self, flows, pred):
+        """Finds intrusions of predictions performed in real time into the
+        evaluated flows.
 
         Parameters
         ----------
@@ -102,13 +100,16 @@ class Detector:
 
         Returns
         -------
-        flows
-            IP flows with the predictions."""
+        intrusions
+            IP flows with with label marked as an intrusions (1)."""
 
+        intrusions = list()
         for idx, entry in enumerate(flows):
-            entry[-1] = pred[idx]
+            if pred[idx]:
+                entry[-1] = pred[idx]
+                intrusions.append(entry)
 
-        return flows
+        return intrusions
 
 
 classifiers_obj = {
