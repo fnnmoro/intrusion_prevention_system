@@ -56,7 +56,7 @@ class TestFormatter(unittest.TestCase):
                                                '%Y-%m-%d %H:%M:%S'),
                              datetime.strptime('2015-11-24 13:40:39',
                                                '%Y-%m-%d %H:%M:%S'),
-                             '146.164.69.172', '146.164.69.255', 'udp',
+                             '146.164.69.172', '146.164.69.255', 'UDP',
                              [0], '631', '631', 2, 3, 678]
 
         self.assertListEqual(self.header, sorted_header, 'wrong order')
@@ -71,7 +71,7 @@ class TestFormatter(unittest.TestCase):
                    datetime.strptime('0001-01-01 01:01:01',
                                      '%Y-%m-%d %H:%M:%S'),
                    '000.000.000.000', '000.000.000.000',
-                   'nopr', [0], '0', '0', 0, 0, 0]
+                   'NONE', [0], '0', '0', 0, 0, 0]
 
         self.assertListEqual(self.flows[1], missing,
                              'missing values filled incorrectly')
@@ -110,49 +110,44 @@ class TestModifier(unittest.TestCase):
         header = formatter.format_header()
         flows = formatter.format_flows()
 
-        cls.modifier = Modifier(header, flows)
         # threshold defined according to the expected result in test dataset
-        cls.header, cls.flows = cls.modifier.aggregate_flows(5)
+        modifier = Modifier(header, flows, label=0, threshold=5)
+        cls.header = modifier.extend_header()
+        cls.flows = list()
+        while getattr(modifier, 'flows'):
+            entry = modifier.aggregate_flow()
+            cls.flows.append(entry)
 
     def test_header_order(self):
         """Tests if header order matches new inserts."""
 
-        self.assertEqual(self.header, ['ts', 'te', 'sa', 'da', 'pr', 'flg',
-                                       'sp', 'dp', 'td', 'ipkt', 'ibyt', 'nsp',
-                                       'ndp', 'flw'])
+        self.assertEqual(self.header, ['ts', 'te', 'sa', 'da', 'pr',
+                                       'flg', 'sp', 'dp', 'td', 'ipkt',
+                                       'ibyt', 'bps', 'bpp', 'pps', 'nsp',
+                                       'ndp', 'flw', 'lbl'])
 
     def test_num_features(self):
         """Tests if the flw feature was added."""
 
-        self.assertEqual(len(self.header), 14, 'some features were not added')
+        self.assertEqual(len(self.header), 18, 'some features were not added')
         for flow in self.flows:
-            self.assertEqual(len(flow), 14, 'some features were not added')
+            self.assertEqual(len(flow), 18, 'some features were not added')
 
     def test_aggregate_flows(self):
         """Tests if the features were correctly aggregated."""
 
-        csv_result = tools.get_content(modifier_path)[1][0]
-        _, expected_flows = gatherer.open_csv(modifier_path, csv_result)
-        for entry in expected_flows:
-            Formatter.convert_features(entry, True)
+        # gathering flows
+        expt_csv = tools.get_content(modifier_path)[1][0]
+        expt_header, expt_flows = gatherer.open_csv(modifier_path, expt_csv)
 
-        self.assertListEqual(self.flows, expected_flows,
-                             'aggregation performed incorrectly')
+        # preprocessing flows
+        formatter = Formatter(expt_header, expt_flows, gather=False, train=True)
+        expt_flows = formatter.format_flows()
 
-    def test_create_features(self):
-        """Tests if the new features were correctly created."""
-
-        csv_result = tools.get_content(modifier_path)[1][1]
-        expected_header, expected_flows = gatherer.open_csv(modifier_path,
-                                                            csv_result)
-        for entry in expected_flows:
-            Formatter.convert_features(entry, True)
-        header, flows = self.modifier.create_features(0)
-
-        self.assertListEqual(header, expected_header,
-                             'creation performed incorrectly in header')
-        self.assertListEqual(flows, expected_flows,
-                             'creation performed incorrectly in flows')
+        self.assertListEqual(self.header, expt_header,
+                             'aggregation performed incorrectly in header')
+        self.assertListEqual(self.flows, expt_flows,
+                             'aggregation performed incorrectly in flows')
 
 
 class TestExtractor(unittest.TestCase):
@@ -170,29 +165,32 @@ class TestExtractor(unittest.TestCase):
         """Tests if the features and labels were correctly extracted from
         the flows."""
 
+        # gathering features
+        expt_csv = tools.get_content(extractor_path)[1][0]
+        expt_features = gatherer.open_csv(extractor_path, expt_csv)[1]
+
         extractor = Extractor([feature+5 for feature in range(1, 10)])
-        features, labels = extractor.extract_features(self.flows)
-
-        csv_result = tools.get_content(extractor_path)[1][0]
-        expected_features = gatherer.open_csv(extractor_path, csv_result)[1]
-
-        self.assertListEqual(features, expected_features,
-                             'features extracted incorrectly')
-        self.assertEqual(labels[0], '0',
-                         'labels extracted incorrectly')
+        for entry, expt in zip(self.flows, expt_features):
+            features, label = extractor.extract_features(entry)
+            self.assertListEqual(features, expt,
+                                 'features extracted incorrectly')
+            self.assertEqual(label[0], '0',
+                             'labels extracted incorrectly')
 
     def test_extract_specific_features(self):
         """Tests if specifics features and labels were correctly extracted from
         the flows."""
 
+        # gathering features
+        expt_csv = tools.get_content(extractor_path)[1][1]
+        expt_features = gatherer.open_csv(extractor_path, expt_csv)[1]
+
         extractor = Extractor([feature+5 for feature in [3, 5]])
-        features, _ = extractor.extract_features(self.flows)
+        for entry, expt in zip(self.flows, expt_features):
+            features, label = extractor.extract_features(entry)
+            self.assertListEqual(features, expt,
+                                 'features extracted incorrectly')
 
-        csv_result = tools.get_content(extractor_path)[1][1]
-        expected_features = gatherer.open_csv(extractor_path, csv_result)[1]
-
-        self.assertListEqual(features, expected_features,
-                             'features extracted incorrectly')
 
 # collections of test cases
 def formatter_suite():
@@ -211,7 +209,6 @@ def modifier_suite():
     suite.addTest(TestModifier('test_header_order'))
     suite.addTest(TestModifier('test_num_features'))
     suite.addTest(TestModifier('test_aggregate_flows'))
-    suite.addTest(TestModifier('test_create_features'))
 
     return suite
 
