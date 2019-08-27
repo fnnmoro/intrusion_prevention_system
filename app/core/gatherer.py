@@ -28,22 +28,21 @@ def split_pcap(pcap_path, pcap_files, split_size):
         Entered a invalid value less or equal to zero in the split size."""
 
     try:
-        dir = f'split_{pcap_files[0].split("_")[0]}/'
-        make_dir(f'{pcap_path}{dir}')
+        directory = f'split_{pcap_files[0].split("_")[0]}'
+        directory = make_directory(pcap_path, directory)
 
         for pcap_file in pcap_files:
             # runs tcpdump program to split the pcap files
             subprocess.run(f'tcpdump -r {pcap_path}{pcap_file} -w '
-                           f'{pcap_path}{dir}{pcap_file.split(".pcap")[0]} '
+                           f'{pcap_path}{directory}'
+                           f'{pcap_file.split(".pcap")[0]} '
                            f'-C {split_size}',
                            shell=True, check=True)
 
-            print(end=f'{"-" * 10}\n')
-
         # renames all split pcap files
-        for file in sorted(os.listdir(f'{pcap_path}{dir}')):
-            os.rename(f'{pcap_path}{dir}{file}',
-                      f'{pcap_path}{dir}/{file}.pcap')
+        for file in sorted(os.listdir(f'{pcap_path}{directory}')):
+            os.rename(f'{pcap_path}{directory}{file}',
+                      f'{pcap_path}{directory}/{file}.pcap')
     except subprocess.CalledProcessError:
         print('split size must be greater than 0', end=f'\n{"-" * 10}\n')
 
@@ -71,8 +70,6 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, time_interval):
 
     try:
         for pcap_file in pcap_files:
-            print(f'{pcap_path}{pcap_file}', end=f'\n{"-" * 10}\n')
-
             # runs nfpcapd program to convert pcap files to nfcapd files
             subprocess.run(f'nfpcapd -t {time_interval} -T all '
                            f'-r {pcap_path}{pcap_file} -l {nfcapd_path}',
@@ -103,9 +100,6 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
     file_name = f'{file_name}_' \
                 f'{nfcapd_files[0].split("nfcapd.")[1]}_'\
                 f'{nfcapd_files[-1].split("nfcapd.")[1]}.csv'
-
-    print(f'{nfcapd_path}{nfcapd_files[0]}:{nfcapd_files[-1]}',
-          end=f'\n{"-" * 10}\n')
 
     # runs nfdump program to convert nfcapd files to csv
     subprocess.run(f'nfdump -O tstart -o csv -6 -R {nfcapd_path}'
