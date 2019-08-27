@@ -93,3 +93,33 @@ class Result(db.Model):
 
     def __repr__(self):
         return f'<Result {self.id}: {self.train_date}>'
+
+
+class Intrusion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    start_time = db.Column(db.DateTime, index=True, nullable=False)
+    end_time = db.Column(db.DateTime, index=True, nullable=False)
+    source_address = db.Column(db.String(39), nullable=False)
+    destination_address = db.Column(db.String(39), nullable=False)
+    protocol = db.Column(db.String(10), nullable=False)
+    flags = db.Column(db.String(100), nullable=False)
+    source_port = db.Column(db.Text, nullable=False)
+    destination_port = db.Column(db.Text, nullable=False)
+    duration = db.Column(db.Integer, nullable=False)
+    packets = db.Column(db.Integer, nullable=False)
+    bytes = db.Column(db.Integer, nullable=False)
+    bytes_per_second = db.Column(db.Integer, nullable=False)
+    bytes_per_packets = db.Column(db.Integer, nullable=False)
+    packtes_per_second = db.Column(db.Integer, nullable=False)
+    number_source_port = db.Column(db.Integer, nullable=False)
+    number_destination_port = db.Column(db.Integer, nullable=False)
+    flows = db.Column(db.Integer, nullable=False)
+    rule = db.Column(db.String(10), nullable=False)
+    model_id = db.Column(db.Integer,
+                         db.ForeignKey('model.id'),
+                         nullable=False)
+
+    def __repr__(self):
+        return (f'<Intrusion {self.id}: '
+                f'{self.source_address} -> {self.destination_address} '
+                f'{self.rule}>')
