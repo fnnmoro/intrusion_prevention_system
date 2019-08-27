@@ -1,0 +1,72 @@
+<tr>
+    <th>Preprocessing</th>
+    <td>{{ model.preprocessing.name }}</td>
+</tr>
+<tr>
+    <th>Features</th>
+    {% set features = [] %}
+    {% for feature in model.features %}
+        {% do features.append(feature.name) %}
+    {% endfor %}
+    <td>{{ features|join(' - ') }}</td>
+</tr>
+<tr>
+    <th>Training date</th>
+    <td>{{ model.result.train_date }}</td>
+</tr>
+<tr>
+    <th>Test date</th>
+    <td>{{ model.result.test_date }}</td>
+</tr>
+<tr>
+    <th>Training duration</th>
+    <td>{{ model.result.train_duration }}</td>
+</tr>
+<tr>
+    <th>Test duration</th>
+    <td>{{ model.result.test_duration }}</td>
+</tr>
+<tr>
+    <th>Accuracy</th>
+    <td>{{ model.result.accuracy }}</td>
+</tr>
+<tr>
+    <th>Precision</th>
+    <td>{{ model.result.precision }}</td>
+</tr>
+<tr>
+    <th>Recall</th>
+    <td>{{ model.result.recall }}</td>
+</tr>
+<tr>
+    <th>F1-score</th>
+    <td>{{ model.result.f1_score }}</td>
+</tr>
+<tr>
+    <th>True negative</th>
+    <td>{{ model.result.true_negative }}</td>
+</tr>
+<tr>
+    <th>False positive</th>
+    <td>{{ model.result.false_positive }}</td>
+</tr>
+<tr>
+    <th>False negative</th>
+    <td>{{ model.result.false_negative }}</td>
+</tr>
+<tr>
+    <th>True positive</th>
+    <td>{{ model.result.true_positive }}</td>
+</tr>
+<tr>
+    <th>Hyperparameters</th>
+    <td>{{ model.result.hyperparameters }}</td>
+</tr>
+<tr>
+    <th>Dataset file</th>
+    <td>{{ model.dataset.file }}</td>
+</tr>
+<tr>
+    <th>Model file</th>
+    <td>{{ model.file }}</td>
+</tr>
