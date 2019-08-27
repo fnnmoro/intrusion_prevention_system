@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Parameter{% endblock %}
+
+{% block script %}
+    <script src='{{ url_for("static", filename="content.js") }}'></script>
+{% endblock %}
+
+{% block content %}
+    <div id='loading' class='wrapper'>
+        <p>Parameter</p>
+        <p>Split pcap</p>
+        <br>
+        <form method='post' onsubmit='hiddenForm("Loading...")' novalidate>
+            {{ form.csrf_token() }}
+            {{ form.split.label }}
+            {{ form.split() }}
+            {% for error in form.split.errors %}
+                <span class='warning'>{{ error }}</span>
+            {% endfor %}
+            <br>
+            {{ form.submit() }}
+        </form>
+    </div>
+{% endblock %}
