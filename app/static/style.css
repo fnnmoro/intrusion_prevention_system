@@ -60,6 +60,7 @@ main {
     overflow: auto;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     flex-direction: column;
 }
 
@@ -135,6 +136,7 @@ td {
     flex-wrap: wrap;
     text-align: center;
     flex-shrink: 0;
+    flex-direction: column;
     justify-content: space-around;
     border: thin solid dimgray;
     background-color: gainsboro;
@@ -187,7 +189,13 @@ td {
     color: red;
 }
 
-#anomalies {
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#intrusions {
     cursor: pointer;
 }
 
