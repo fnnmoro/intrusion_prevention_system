@@ -11,7 +11,7 @@ from sklearn.metrics import (accuracy_score, precision_score,
 from app.paths import paths
 
 
-def make_dir(path):
+def make_directory(path, directory):
     """Creates a directory, if it not exists.
 
     Parameters
@@ -19,8 +19,14 @@ def make_dir(path):
     path: str
         Absolute path."""
 
-    if not os.path.exists(path):
-        os.system(f'mkdir {path}')
+    count = 0
+    while True:
+        new_directory = f'{directory}{count}/'
+        if not os.path.exists(f'{path}{new_directory}'):
+            os.system(f'mkdir {path}{new_directory}')
+
+            return new_directory
+        count += 1
 
 
 def evaluation_metrics(test_labels, pred):
