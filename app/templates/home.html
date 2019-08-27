@@ -13,10 +13,10 @@
     <p>Dataset creation</p>
     <br>
     <div class='option'>
-        <a class='main_choose' href='{{ url_for("creation.content", function="split_pcap", dir="pcap") }}'>Split pcap</a>
-        <a class='main_choose' href='{{ url_for("creation.content", function="convert_pcap_nfcapd", dir="pcap") }}'>Convert pcap to nfcapd</a>
-        <a class='main_choose' href='{{ url_for("creation.content", function="convert_nfcapd_csv", dir="nfcapd") }}'>Convert nfcapd to csv</a>
-        <a class='main_choose' href='{{ url_for("creation.content", function="convert_csv_flows", dir="csv") }}'>Convert csv to flows</a>
-        <a class='main_choose' href='{{ url_for("creation.content", function="merge_flows", dir="csv") }}'>Merge flows</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="split_pcap", directory="pcap") }}'>Split pcap</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="convert_pcap_nfcapd", directory="pcap") }}'>Convert pcap to nfcapd</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="convert_nfcapd_csv", directory="nfcapd") }}'>Convert nfcapd to csv</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="preprocessing_flows", directory="csv") }}'>Preprocessing flows</a>
+        <a class='main_choose' href='{{ url_for("creation.content", function="merging_flows", directory="csv") }}'>Merging flows</a>
     </div>
 {% endblock %}
