@@ -7,32 +7,34 @@
 {% endblock %}
 
 {% block content %}
+    <p>Content</p>
+    <p>{{ ' '.join(function.split('_'))|capitalize }}</p>
+    <br>
     <p>{{ relative_path }}</p>
     <br>
     {% if inner_dirs %}
         <p>Directories</p>
             <div class='checkbox'>
                 {% for inner_dir in inner_dirs %}
-                    <a class='box' href='{{ url_for("creation.content", function=function, dir=inner_dir) }}'>{{ inner_dir }}</a>
+                    <a class='box' href='{{ url_for("creation.content", function=function, directory=inner_dir) }}'>{{ inner_dir }}</a>
                 {% endfor %}
             </div>
     {% else %}
         <p>No directories</p>
     {% endif %}
     <br>
-    {% if files %}
-        <p>Files</p>
-        <form method="post" action='{{ url_for("creation.parameters", function=function, dir=dir) }}'">
-        <div class='checkbox'>
-            {% for file in files %}
-                <div class='box'>
-                    <input id='files{{ loop.index }}' type='checkbox' name='files' value='{{ file }}'>
-                    <label for="files{{ loop.index }}">{{ file }}</label>
-                </div>
+    {% if form.files.choices %}
+        <form method='post' novalidate>
+            {{ form.csrf_token() }}
+            {{ form.files.label }}
+            <div class='checkbox'>
+                {{ form.files(class='box') }}
+            </div>
+            {% for error in form.files.errors %}
+                <span class='warning'>{{ error }}</span>
             {% endfor %}
-        </div>
-        <br>
-        <input type='submit' value='Next'>
+            <br>
+            {{ form.submit() }}
         </form>
     {% else %}
         <p>No files</p>
