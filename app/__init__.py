@@ -1,3 +1,4 @@
+import logging
 import os
 
 from flask import Flask, render_template
@@ -15,15 +16,13 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 socketio = SocketIO(app)
 
+logging.basicConfig(format='%(asctime)s %(levelname)s %(name)s %(message)s',
+                    datefmt='%y-%m-%d %H:%M:%S',
+                    level=logging.INFO)
 
 from app import models
-from app.paths import paths
-from app.core import tools
 from app.routes import creation, detection, mitigation, root, setting
 
-
-for path in paths.values():
-    tools.make_dir(path)
 
 app.register_blueprint(root.bp)
 app.register_blueprint(creation.bp, url_prefix='/creation')
