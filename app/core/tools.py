@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 import time
 from datetime import datetime
@@ -11,6 +12,9 @@ from sklearn.metrics import (accuracy_score, precision_score,
 from app.paths import paths
 
 
+logger = logging.getLogger('tools')
+
+
 def make_directory(path, directory):
     """Creates a directory, if it not exists.
 
@@ -21,6 +25,7 @@ def make_directory(path, directory):
 
     count = 0
     while True:
+        # new directory based on count value.
         new_directory = f'{directory}{count}/'
         if not os.path.exists(f'{path}{new_directory}'):
             os.system(f'mkdir {path}{new_directory}')
@@ -72,7 +77,7 @@ def export_flows_csv(header, flows, dst_path, file_name):
     with open(f'{dst_path}{file_name}', mode='a') as file:
         writer = csv.writer(file)
 
-        # writes header once when merge flows
+        # write header only once.
         if not os.stat(f'{dst_path}{file_name}').st_size:
             writer.writerow(header)
 
@@ -115,22 +120,17 @@ def process_time_log(func):
 
         date = datetime.now(timezone('America/Sao_Paulo'))
         start = time.time()
-        # function passed as an argument
         result = func(*args, **kwargs)
         end = time.time()
-        # duration of the function
         duration = round(end - start, 7)
 
-        # log
-        with open(f'{paths["log"]}process_time_log.csv', mode='a') as file:
-            writer = csv.writer(file)
-            writer.writerow([date, duration, func.__name__])
+        logger.info(f'{func.__name__} duration: {duration}')
 
-        # checks if the function is to train or execute the classifier
-        if (func.__name__ == 'train' or func.__name__ == 'test'):
+        if func.__name__ == 'train' or func.__name__ == 'test':
             return result, date, duration
         else:
             return result
+
     return timer
 
 
@@ -142,19 +142,17 @@ def get_content(path):
     path: str
         The absolute path of a directory."""
 
-    dirs = list()
+    directory = list()
     files = list()
 
-    # lists the directory content
+    # listing directory content.
     for content in sorted(os.listdir(path)):
-        # gets the paths
         if os.path.isdir(f'{path}{content}'):
-            dirs.append(content)
-        # gets the files
+            directory.append(content)
         else:
             files.append(content)
 
-    return dirs, files
+    return directory, files
 
 
 def clean_files(path, file):
