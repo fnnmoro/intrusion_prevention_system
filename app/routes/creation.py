@@ -14,23 +14,24 @@ from app.paths import paths, root
 bp = Blueprint('creation', __name__)
 logger = logging.getLogger('creation')
 
+
 @bp.route('/content/<function>/<directory>/', methods=['GET', 'POST'])
 def content(function, directory):
     form = ContentForm(request.form)
 
-    # clears the previous dirs if the directory received is from main options
+    # clearing the previous directory.
     if directory in ['pcap', 'nfcapd', 'csv']:
         paths_hist = {'root': root}
     else:
         paths_hist = session['paths_hist']
 
-    # checks if the folder was already opened
+    # checking if the folder was already opened.
     if not directory in paths_hist.keys():
         paths_hist[directory] = f'{directory}/'
-    # creates the full path
-    full_path = paths_hist['root'] + paths_hist[directory]
 
-    # gets inner directory content
+    # creating the full path.
+    full_path = paths_hist['root'] + paths_hist[directory]
+    # getting inner directory content.
     inner_dirs, files = tools.get_content(full_path)
     form.files_choices(files)
 
@@ -38,7 +39,7 @@ def content(function, directory):
         session['files'] = form.files.data
         return redirect(url_for(f'creation.{function}', directory=directory))
 
-    # creates the path of the inner directories
+    # creating the paths of the inner directories.
     for inner_dir in inner_dirs:
         paths_hist[inner_dir] = f'{paths_hist[directory]}{inner_dir}/'
 
@@ -59,6 +60,7 @@ def split_pcap(directory):
         path = (session['paths_hist']['root'] +
                 session['paths_hist'][directory])
         logger.info(f'path: {path} file: {session["files"]}')
+
         gatherer.split_pcap(path, session['files'], form.split.data)
 
         return redirect(url_for('creation.content',
@@ -76,6 +78,7 @@ def convert_pcap_nfcapd(directory):
         path = (session['paths_hist']['root'] +
                 session['paths_hist'][directory])
         logger.info(f'path: {path} file: {session["files"]}')
+
         gatherer.convert_pcap_nfcapd(path, session['files'],
                                      paths['nfcapd'], form.window.data)
 
@@ -94,6 +97,7 @@ def convert_nfcapd_csv(directory):
         path = (session['paths_hist']['root'] +
                 session['paths_hist'][directory])
         logger.info(f'path: {path} file: {session["files"]}')
+
         gatherer.convert_nfcapd_csv(path, session['files'],
                                     f'{paths["csv"]}/raw/', form.name.data)
 
@@ -112,10 +116,11 @@ def preprocessing_flows(directory):
         path = (session['paths_hist']['root'] +
                 session['paths_hist'][directory])
         logger.info(f'path: {path} file: {session["files"]}')
+
         for file in session['files']:
-            # gathering flows
+            # gathering flows.
             header, flows = gatherer.open_csv(path, file, form.sample.data)
-            # preprocessing flows
+            # preprocessing flows.
             formatter = Formatter(header, flows)
             header = formatter.format_header()
             flows = formatter.format_flows()
@@ -126,12 +131,14 @@ def preprocessing_flows(directory):
             header = modifier.extend_header()
             flows = list()
             while getattr(modifier, 'flows'):
-                entry = modifier.aggregate_flow()
-                flows.append(entry)
+                flow = modifier.aggregate_flow()
+                flows.append(flow)
 
+            # exporting flows.
+            name = file.split(".csv")[0]
             tools.export_flows_csv(header, flows,
-                             f'{paths["csv"]}/flows/',
-                             f'{file.split(".csv")[0]}_s{len(flows)}.csv')
+                                   f'{paths["csv"]}/flows/',
+                                   f'{name}_s{len(flows)}.csv')
 
         return redirect(url_for('creation.content',
                                 function='preprocessing_flows',
@@ -148,12 +155,13 @@ def merging_flows(directory):
         path = (session['paths_hist']['root'] +
                 session['paths_hist'][directory])
         logger.info(f'path: {path} file: {session["files"]}')
+
         for file in session['files']:
             header, flows = gatherer.open_csv(path, file)
 
             tools.export_flows_csv(header, flows,
-                             f'{paths["csv"]}/datasets/',
-                             f'{form.name.data}.csv')
+                                   f'{paths["csv"]}/datasets/',
+                                   f'{form.name.data}.csv')
 
         return redirect(url_for('creation.content',
                                 function='merging_flows',
