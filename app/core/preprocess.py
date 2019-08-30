@@ -54,7 +54,7 @@ class Formatter:
             Formatted IP flows."""
 
         if self.gather:
-            # deletes the summary lines
+            # deleting summary lines.
             del self.flows[-3:]
 
         for flow in self.flows:
@@ -75,9 +75,9 @@ class Formatter:
         flow: list
             IP flow."""
 
-        # fwd and stos
+        # fwd and stos.
         del flow[9:11]
-        # from opkt to the end
+        # from opkt to the end.
         del flow[11:]
 
     def sort_features(self, flow):
@@ -88,7 +88,6 @@ class Formatter:
         flow: list
             IP flow."""
 
-        # updates existing flow with the new order
         flow[:] = [flow[idx] for idx in [0, 1, 3, 4, 7, 8, 5, 6, 2, 9, 10]]
 
     def replace_features(self, flow):
@@ -105,7 +104,6 @@ class Formatter:
                           8: '0', 9: '0', 10: '0'}
 
         for idx, feature in enumerate(flow):
-            # checks missing features
             if not feature:
                 flow[idx] = default_values[idx]
 
@@ -118,11 +116,11 @@ class Formatter:
             IP flow."""
 
         flow[0:2] = [datetime.strptime(i, '%Y-%m-%d %H:%M:%S')
-                      for i in flow[0:2]]
+                     for i in flow[0:2]]
         flow[8] = round(float(flow[8]))
         flow[9:] = [int(i) for i in flow[9:]]
 
-        # checks if is in the train mode to convert properly
+        # evaluating an expression.
         if self.train:
             flow[5:8] = [ast.literal_eval(feat) for feat in flow[5:8]]
 
@@ -134,13 +132,11 @@ class Formatter:
         flow: list
             IP flow."""
 
-        # checks if is the tcp protocol
         if flow[4] == 'TCP':
-            # flags order
             flags = ['U', 'A', 'S', 'F', 'R', 'P']
-            # filters only the flags
+            # filtering only the flags.
             flow[5] = [flag for flag in flow[5] if flag != '.']
-            # creates a new list with the flags order and the count of them
+            # new list with flags order and count.
             flow[5] = [flow[5].count(flag) for flag in flags]
         else:
             flow[5] = [0]
@@ -195,28 +191,24 @@ class Modifier:
         self.flow: list
             Modified IP flow."""
 
-        # separates the first flow that will be matched against the others
-        # use only the right features when intrusions flow
-        base = self.flows.pop(0)[:11]
-
-        # keeps only the unique ports
+        # separating the flow that will be matched against the others.
+        base = self.flows.pop(0)
+        # keeps only the unique ports.
         sp = {base[6]}
         dp = {base[7]}
+        # 1 is used instead of 0 because the base flow.
+        agg = 1
 
-        # compares the value with the established threshold
-        # 1 is used instead of 0 because a flow is separated first
-        count = 1
-        # compares the base flow with the rest of the flows
+        # comparing the base flow with the rest of the flows.
         for idx, flow in enumerate(self.flows):
-            # checks if the threshold was reached
-            if count != self.threshold:
-                # default rules for aggregation
+            # checking if threshold was reached.
+            if agg != self.threshold:
                 rules = [base[0].hour == flow[0].hour,
                          base[0].minute == flow[0].minute,
                          base[2:5] == flow[2:5]]
 
                 if all(rules):
-                    # avoiding entries out of order
+                    # avoiding flows out of order.
                     if base[1] < flow[1]:
                         base[1] = flow[1]
                     base[5] = [x+y for x, y in zip(base[5], flow[5])]
@@ -225,26 +217,25 @@ class Modifier:
                     base[10] += flow[10]
                     sp.add(flow[6])
                     dp.add(flow[7])
-                    # marks the flow that was aggregated
+                    # marking aggregated flows.
                     self.flows[idx] = [None]
-                    count += 1
+                    agg += 1
             else:
                 break
+
         base[6] = sp
         base[7] = dp
-        # counts the quantity of unique ports
+        # counting unique ports.
         base.append(len(sp))
         base.append(len(dp))
-        # time duration recalculed
+        # recalculating time duration.
         base[8] = (base[1] - base[0]).seconds
-        # number of aggregated flows
-        base.append(count)
-
+        # number of aggregated flows.
+        base.append(agg)
         self.create_features(base)
 
-        # checks if aggregation happened
-        if count > 1:
-            # filters only the not aggregated flows
+        if agg > 1:
+            # filtering only the remaining flows.
             self.flows = [flow for flow in self.flows if flow != [None]]
 
         return base
@@ -258,17 +249,16 @@ class Modifier:
         base: list
             IP flow base."""
 
-        # default value
         bps, bpp, pps = [0, 0, 0]
 
-        # checks if the time duration isn't zero
+        # checking if the time duration isn't zero
         if base[8]:
             # bytes per second
             bps = int(round(base[10] / base[8]))
             # packet per second
             pps = int(round(base[9] / base[8]))
 
-        # checks if the packet value isn't zero
+        # checking if the packet value isn't zero
         if base[9]:
             # bytes per packet
             bpp = int(round(base[10] / base[9]))

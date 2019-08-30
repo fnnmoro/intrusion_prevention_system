@@ -36,13 +36,13 @@ class StaticFlowPusher:
         tuple
             Status code and response body returned by server."""
 
-        # HTTP request
+        # HTTP request.
         conn = client.HTTPConnection(self.controller_ip, self.controller_port)
         conn.request(action, uri, json.dumps(data),
                      {'Content-type': 'application/json',
                       'Accept': 'application/json'})
 
-        # HTTP response
+        # HTTP response.
         resp = conn.getresponse()
         ret = (resp.status, resp.read())
         conn.close()
@@ -118,7 +118,7 @@ class Mitigator(StaticFlowPusher):
                      'eth_type': '0x0800', 'ipv4_src': '',
                      'ipv4_dst': ''}
 
-    def get_switch(self, entry):
+    def get_switch(self, source_address):
         """Gets the switch where the anomalous device are attached.
 
         Parameters
@@ -132,9 +132,10 @@ class Mitigator(StaticFlowPusher):
             Switch identification."""
 
         network_data = self.get()
+        
         for device in network_data['devices']:
               if device['ipv4']:
-                  if entry == device['ipv4'][0]:
+                  if source_address == device['ipv4'][0]:
                     return device['attachmentPoint'][0]['switch']
 
     def block_attack(self, intrusion):
@@ -143,6 +144,7 @@ class Mitigator(StaticFlowPusher):
         Flow rules are saved in a database to allow deletion if the blocked
         device is a false positive."""
 
+        # defining rule.
         self.rule['switch'] = self.get_switch(intrusion.source_address)
         self.rule['name'] = 'block' + str(self.count)
         self.rule['ipv4_src'] = intrusion.source_address
@@ -150,10 +152,11 @@ class Mitigator(StaticFlowPusher):
         self.post(self.rule)
 
         self.count += 1
+        # saving rule in database.
         intrusion.rule = self.rule['name']
         db.session.add(intrusion)
         db.session.commit()
-        
+
     def remove_rule(self, rule):
         """Deletes the flow rule in case of a false positive.
 

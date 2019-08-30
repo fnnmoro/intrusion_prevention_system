@@ -32,14 +32,14 @@ def split_pcap(pcap_path, pcap_files, split_size):
         directory = make_directory(pcap_path, directory)
 
         for pcap_file in pcap_files:
-            # runs tcpdump program to split the pcap files
+            # runs tcpdump program to split the pcap files.
             subprocess.run(f'tcpdump -r {pcap_path}{pcap_file} -w '
                            f'{pcap_path}{directory}'
                            f'{pcap_file.split(".pcap")[0]} '
                            f'-C {split_size}',
                            shell=True, check=True)
 
-        # renames all split pcap files
+        # renames all split pcap files.
         for file in sorted(os.listdir(f'{pcap_path}{directory}')):
             os.rename(f'{pcap_path}{directory}{file}',
                       f'{pcap_path}{directory}/{file}.pcap')
@@ -70,7 +70,7 @@ def convert_pcap_nfcapd(pcap_path, pcap_files, nfcapd_path, time_interval):
 
     try:
         for pcap_file in pcap_files:
-            # runs nfpcapd program to convert pcap files to nfcapd files
+            # runs nfpcapd program to convert pcap files to nfcapd files.
             subprocess.run(f'nfpcapd -t {time_interval} -T all '
                            f'-r {pcap_path}{pcap_file} -l {nfcapd_path}',
                            shell=True, check=True)
@@ -101,7 +101,7 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
                 f'{nfcapd_files[0].split("nfcapd.")[1]}_'\
                 f'{nfcapd_files[-1].split("nfcapd.")[1]}.csv'
 
-    # runs nfdump program to convert nfcapd files to csv
+    # runs nfdump program to convert nfcapd files to csv.
     subprocess.run(f'nfdump -O tstart -o csv -6 -R {nfcapd_path}'
                    f'{nfcapd_files[0]}:{nfcapd_files[-1]} > '
                    f'{csv_path}{file_name}',
@@ -135,11 +135,12 @@ def open_csv(csv_path, csv_file, sample_size=-1):
         header = next(reader)
 
         for idx, line in enumerate(reader):
-            # adds lines until sample was reached
+            # checking if sample was reached.
             if idx != sample_size:
                 flows.append(line)
             else:
                 break
+                
     return header, flows
 
 
@@ -167,6 +168,7 @@ def capture_nfcapd(nfcapd_path, win_time):
                                     '-l', nfcapd_path],
                                     stdout=subprocess.DEVNULL,
                                     stderr=subprocess.DEVNULL)
+
         return process
     except subprocess.CalledProcessError:
         print('the duration of the time interval must be greater than 0',

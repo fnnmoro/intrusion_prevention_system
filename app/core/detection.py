@@ -37,12 +37,12 @@ class Detector:
             times in a case of grid search"""
 
         if preprocessing:
-            # chains multiple estimators into one in a fixed sequence of steps.
+            # chaining estimators in a fixed sequence of steps.
             self.classifier['obj'] = Pipeline(
                 [('prep', preprocessing), ('clf', self.classifier['obj'])],
                 memory=tmp_directory)
 
-            # key method and list function must be kept to avoid repetitions            
+            # key method and list function must be kept to avoid repetitions.
             for key in list(self.classifier['param'].keys()):
                 value = self.classifier['param'].pop(key)
                 self.classifier['param'][f'clf__{key}'] = value
@@ -104,6 +104,7 @@ class Detector:
             IP flows with with label marked as an intrusions (1)."""
 
         intrusions = list()
+        
         for idx, entry in enumerate(flows):
             if pred[idx]:
                 entry[-1] = pred[idx]
