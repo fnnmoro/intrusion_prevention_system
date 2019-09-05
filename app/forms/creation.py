@@ -28,8 +28,8 @@ class SplitPcapForm(FlaskForm):
 
 class ConvertPcapNfcapdForm(FlaskForm):
     window = IntegerField('Time window',
-                         widget=NumberInput(min=5, max=95),
-                         validators=[DataRequired(), NumberRange(5, 95)])
+                          widget=NumberInput(min=5, max=300),
+                          validators=[DataRequired(), NumberRange(5, 300)])
     submit = SubmitField('Submit')
 
 
@@ -56,4 +56,9 @@ class PreprocessingFlowsForm(FlaskForm):
 class MergingFlowsForm(FlaskForm):
     name = StringField('File name',
                        validators=[DataRequired(), Length(max=50)])
+    window = StringField('Time window defined',
+                         validators=[DataRequired(), Length(max=3)])
+    threshold = StringField('Threshold defined',
+                            validators=[DataRequired(), Length(max=4)])
+
     submit = SubmitField('Submit')
