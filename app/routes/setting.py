@@ -16,7 +16,7 @@ from app.core import gatherer
 from app.core import tools
 from app.core.detection import Detector, classifiers_obj
 from app.core.preprocess import Extractor, Formatter, preprocessing_obj
-from app.forms.setting import LoadForm, DatasetForm, ClassifierForm
+from app.forms.setting import DatasetForm, ClassifierForm
 from app.models import (Classifier, Dataset, Feature,
                         Model, Preprocessing, Result)
 from app.paths import paths
@@ -28,11 +28,10 @@ logger = logging.getLogger('setting')
 
 @bp.route('/load')
 def load():
-    form = LoadForm()
     files = tools.get_content(f'{paths["models"]}')[1]
     models = [Model.query.get(file.split('_')[0]) for file in files]
 
-    return render_template('setting/load.html', form=form, models=models)
+    return render_template('setting/load.html', models=models)
 
 
 @bp.route('/dataset', methods=['GET', 'POST'])
