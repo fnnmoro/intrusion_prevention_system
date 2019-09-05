@@ -11,6 +11,8 @@
         <p>Parameter</p>
         <p>Convert pcap to nfcapd</p>
         <br>
+        <p>Directory: {{ directory }}</p>
+        <br>
         <form method='post' onsubmit='hiddenForm("Loading...")' novalidate>
             {{ form.csrf_token() }}
             {{ form.window.label }}
