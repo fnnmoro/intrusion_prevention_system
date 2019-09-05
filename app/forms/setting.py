@@ -11,10 +11,6 @@ from app.models import Classifier, Preprocessing, Feature
 from app.paths import paths
 
 
-class LoadForm(FlaskForm):
-    model = SubmitField('Load model')
-
-
 class DatasetForm(FlaskForm):
     dataset = SelectField('Datasets', choices=[])
     split = IntegerField('Split size',
