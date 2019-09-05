@@ -4,8 +4,7 @@
 
 {% block content %}
     {% if models %}
-        {{ form.csrf_token() }}
-        {{ form.model.label }}
+        <p>Load model</p>
         <br>
         <div class='tables'>
             {% for model in models %}
