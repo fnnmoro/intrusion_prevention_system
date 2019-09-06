@@ -77,10 +77,7 @@ def export_flows_csv(header, flows, dst_path, file_name):
     with open(f'{dst_path}{file_name}', mode='a') as file:
         writer = csv.writer(file)
 
-        # write header only once.
-        if not os.stat(f'{dst_path}{file_name}').st_size:
-            writer.writerow(header)
-
+        writer.writerow(header)
         for entry in flows:
             writer.writerow(entry)
 
