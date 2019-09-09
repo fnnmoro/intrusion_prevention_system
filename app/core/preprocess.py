@@ -24,14 +24,11 @@ class Formatter:
     self.train: bool
         Signals the training process."""
 
-    def __init__(self, header, flows, gather=True, train=False):
-        self.header = header
-        self.flows = flows
+    def __init__(self, gather=True, train=False):
         self.gather = gather
         self.train = train
 
-    @process_time_log
-    def format_header(self):
+    def format_header(self, header):
         """Format the header.
 
         Returns
@@ -39,13 +36,13 @@ class Formatter:
         list of list
             Formatted header."""
 
-        self.delete_features(self.header)
-        self.sort_features(self.header)
+        self.delete_features(header)
+        self.sort_features(header)
 
-        return self.header
+        return header
 
     @process_time_log
-    def format_flows(self):
+    def format_flows(self, flows):
         """Formats the flows to be used by the machine learning algorithms.
 
         Returns
@@ -55,9 +52,9 @@ class Formatter:
 
         if self.gather:
             # deleting summary lines.
-            del self.flows[-3:]
+            del flows[-3:]
 
-        for flow in self.flows:
+        for flow in flows:
             if not self.train:
                 self.delete_features(flow)
                 self.sort_features(flow)
@@ -65,7 +62,7 @@ class Formatter:
                 self.count_flags(flow)
             self.convert_features(flow)
 
-        return self.flows
+        return flows
 
     def delete_features(self, flow):
         """Deletes non-discriminative features.
@@ -158,13 +155,11 @@ class Modifier:
         Aggregation threshold to prevent that mulitple flows become just
         one."""
 
-    def __init__(self, header, flows, label, threshold):
-        self.header = header
-        self.flows = flows
+    def __init__(self, label, threshold):
         self.label = label
         self.threshold = threshold
 
-    def extend_header(self):
+    def extend_header(self, header):
         """Extendes header according to new aggregations features.
 
         Returns
@@ -172,12 +167,22 @@ class Modifier:
         self.header: list of list
             Extended features description."""
 
-        self.header.extend(['bps', 'bpp', 'pps', 'nsp', 'ndp', 'flw', 'lbl'])
+        header.extend(['bps', 'bpp', 'pps', 'nsp', 'ndp', 'flw', 'lbl'])
 
-        return self.header
+        return header
 
     @process_time_log
-    def aggregate_flow(self):
+    def aggregate_flows(self, flows):
+        #self.flows = flows
+        agg_flows = list()
+
+        while flows:
+            agg_flow, flows = self.aggregate(flows)
+            agg_flows.append(agg_flow)
+
+        return agg_flows
+
+    def aggregate(self, flows):
         """Aggregates a formatted IP flow according to a established threshold.
 
         The flow are aggregated considering the same start hour and minute,
@@ -192,7 +197,8 @@ class Modifier:
             Modified IP flow."""
 
         # separating the flow that will be matched against the others.
-        base = self.flows.pop(0)
+        base = flows.pop(0)
+
         # keeps only the unique ports.
         sp = {base[6]}
         dp = {base[7]}
@@ -200,7 +206,7 @@ class Modifier:
         agg = 1
 
         # comparing the base flow with the rest of the flows.
-        for idx, flow in enumerate(self.flows):
+        for idx, flow in enumerate(flows):
             # checking if threshold was reached.
             if agg != self.threshold:
                 rules = [base[0].hour == flow[0].hour,
@@ -218,7 +224,7 @@ class Modifier:
                     sp.add(flow[6])
                     dp.add(flow[7])
                     # marking aggregated flows.
-                    self.flows[idx] = [None]
+                    flows[idx] = [None]
                     agg += 1
             else:
                 break
@@ -236,11 +242,10 @@ class Modifier:
 
         if agg > 1:
             # filtering only the remaining flows.
-            self.flows = [flow for flow in self.flows if flow != [None]]
+            flows = [flow for flow in flows if flow[0]]
 
-        return base
+        return base, flows
 
-    @process_time_log
     def create_features(self, base):
         """Creates new features based on bytes, packtes and flow duration.
 
@@ -249,7 +254,7 @@ class Modifier:
         base: list
             IP flow base."""
 
-        bps, bpp, pps = [0, 0, 0]
+        bps, pps = 0, 0
 
         # checking if the time duration isn't zero
         if base[8]:
@@ -258,10 +263,8 @@ class Modifier:
             # packet per second
             pps = int(round(base[9] / base[8]))
 
-        # checking if the packet value isn't zero
-        if base[9]:
-            # bytes per packet
-            bpp = int(round(base[10] / base[9]))
+        # bytes per packet
+        bpp = int(round(base[10] / base[9]))
 
         base[11:11] = [bps, bpp, pps]
         base.append(self.label)
@@ -279,8 +282,29 @@ class Extractor:
         self.selected_features = selected_features
 
     @process_time_log
-    def extract_features(self, flow):
-        """Extracts features and label from flow.
+    def extract_features_labels(self, flows):
+        """Extracts features and labels from flows.
+
+        Parameters
+        ----------
+        flows: list
+            Formatted and modified flows.
+
+        Returns
+        -------
+        list
+            Features and labels to be split into appropriate sets."""
+
+        features, labels = list(), list()
+        for flow in flows:
+            feat, lbl = self.extract(flow)
+            features.append(feat)
+            labels.append(lbl)
+
+        return features, labels
+
+    def extract(self, flow):
+        """Extracts features and label from a unique flow.
 
         Parameters
         ----------
@@ -290,13 +314,14 @@ class Extractor:
         Returns
         -------
         list
-            Features and label to be split into appropriate sets."""
+            Features and label."""
 
-        features, label = list(), list()
+        features = list()
+        label = -1
 
         for idx in self.selected_features:
             features.append(flow[idx])
-        label.append(flow[-1])
+        label = flow[-1]
 
         return features, label
 
