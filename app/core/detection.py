@@ -87,31 +87,6 @@ class Detector:
 
         return self.classifier['obj'].predict(test_features)
 
-    def find_intrusions(self, flows, pred):
-        """Finds intrusions of predictions performed in real time into the
-        evaluated flows.
-
-        Parameters
-        ----------
-        flows: list
-            IP flows exported by the network devices.
-        pred: list
-            Predictions done by the model.
-
-        Returns
-        -------
-        intrusions
-            IP flows with with label marked as an intrusions (1)."""
-
-        intrusions = list()
-        
-        for idx, entry in enumerate(flows):
-            if pred[idx]:
-                entry[-1] = pred[idx]
-                intrusions.append(entry)
-
-        return intrusions
-
 
 classifiers_obj = {
     'decision_tree': {
