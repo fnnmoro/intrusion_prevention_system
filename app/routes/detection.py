@@ -19,8 +19,7 @@ thread = None
 @bp.route('/', methods=['GET', 'POST'])
 def realtime():
     global thread
-    form = RealtimeForm()
-
+    
     if request.method == 'POST' and re.search('load', request.referrer):
         model = Model.query.get(request.form['model_pk'])
     else:
@@ -33,11 +32,10 @@ def realtime():
     num_intrusions = db.session.query(Intrusion).count()
 
     return render_template('detection/realtime.html',
-                           form=form,
                            num_intrusions=num_intrusions)
 
 
-@bp.route('/stop', methods=['GET', 'POST'])
+@bp.route('/stop')
 def stop():
     thread.event.set()
 
