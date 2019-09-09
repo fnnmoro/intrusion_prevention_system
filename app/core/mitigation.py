@@ -110,9 +110,9 @@ class Mitigator(StaticFlowPusher):
     self.blacklist: list
         Anomalous flows to be blocked."""
 
-    def __init__(self, count):
+    def __init__(self):
         super().__init__()
-        self.count = count
+        self.count = 1
         self.rule = {'switch': '', 'name': '', 'cookie': '0',
                      'priority': '32768', 'active': 'true',
                      'eth_type': '0x0800', 'ipv4_src': '',
@@ -132,7 +132,7 @@ class Mitigator(StaticFlowPusher):
             Switch identification."""
 
         network_data = self.get()
-        
+
         for device in network_data['devices']:
               if device['ipv4']:
                   if source_address == device['ipv4'][0]:
