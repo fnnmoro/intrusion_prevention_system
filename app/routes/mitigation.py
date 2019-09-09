@@ -1,31 +1,35 @@
+import logging
+
 from flask import (Blueprint, redirect, request,
                    render_template, session, url_for)
 
-from app import database as db
+from app import db
 from app.core.mitigation import Mitigator
+from app.models import Intrusion
 
 
 bp = Blueprint('mitigation', __name__)
-
-@bp.route('/')
-def blacklist():
-    blacklist = db.select_blacklist()
-
-    if not blacklist:
-        return redirect(url_for('detection.realtime'))
-
-    return render_template('mitigation/blacklist.html',
-                           text=['attacker', 'target', 'time',
-                                 'protocol', 'anomalous flows'],
-                           blacklist=blacklist)
+logger = logging.getLogger('mitigation')
 
 
-@bp.route('/remove_anomaly', methods=['GET', 'POST'])
-def remove_anomaly():
+@bp.route('/', methods=['GET', 'POST'])
+def intrusions():
     if request.method == 'POST':
-        db.delete_false_positive(request.form['false_anomaly'])
+        intrusion = Intrusion.query.get(request.form['itr_pk'])
+        mitigator = Mitigator()
+        mitigator.remove_rule(intrusion.rule)
+        logger.info(f'removed rule: {intrusion.rule}')
 
-        mtg = Mitigator()
-        mtg.delete_flow_rule(request.form['false_anomaly'])
+        db.session.delete(intrusion)
+        db.session.commit()
 
-    return redirect(url_for('mitigation.blacklist'))
+        return redirect(url_for('mitigation.intrusions'))
+    intrusions = Intrusion.query.all()
+    columns = [column.key for column in Intrusion.__table__.columns]
+    columns_info = columns[:7]
+    columns_quant = columns[9:18]
+
+    return render_template('mitigation/intrusions.html',
+                           columns_info=columns_info,
+                           columns_quant=columns_quant,
+                           intrusions=intrusions)
