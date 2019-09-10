@@ -9,9 +9,7 @@
 {% endblock %}
 
 {% block content %}
-    <p>Number of intrusions detected: <span id='intrusions' onclick='window.location="{{ url_for("mitigation.intrusions") }}"'>{{ num_intrusions }}</span></p>
-
-    <form method='post' action='{{ url_for("detection.stop") }}' novalidate>
-        {{ form.stop() }}
-    </form>
+    <p>Number of intrusions detected: <a id='intrusions' class='choose' href='{{ url_for("mitigation.intrusions") }}'>{{ num_intrusions }}</a></p>
+    <br>
+    <a href='{{ url_for("detection.stop") }}'>Stop detection</a>
 {% endblock %}
