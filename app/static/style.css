@@ -168,14 +168,14 @@ td {
     flex-shrink: 0;
 }
 
-.main_choose {
+.main-choose {
     margin: 30px;
     padding: 0px 30px 0px 30px;
     border-left: thin solid dimgray;
     border-right: thin solid dimgray;
 }
 
-.main_choose:hover {
+.main-choose:hover {
     border-color: red;
 }
 
@@ -193,6 +193,10 @@ td {
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.hidden {
+    display: none;
 }
 
 #intrusions {
