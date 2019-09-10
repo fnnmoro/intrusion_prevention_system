@@ -32,9 +32,9 @@ class TestFormatter(unittest.TestCase):
         header, flows = gatherer.open_csv(formatter_path, raw_csv_file)
 
         # preprocessing flows
-        formatter = Formatter(header, flows)
-        cls.header = formatter.format_header()
-        cls.flows = formatter.format_flows()
+        formatter = Formatter()
+        cls.header = formatter.format_header(header)
+        cls.flows = formatter.format_flows(flows)
 
     def test_delete_features(self):
         """Tests if the non-discriminative features were correctly
@@ -106,17 +106,14 @@ class TestModifier(unittest.TestCase):
         header, flows = gatherer.open_csv(modifier_path, raw_csv_file)
 
         # preprocessing flows
-        formatter = Formatter(header, flows)
-        header = formatter.format_header()
-        flows = formatter.format_flows()
+        formatter = Formatter()
+        header = formatter.format_header(header)
+        flows = formatter.format_flows(flows)
 
         # threshold defined according to the expected result in test dataset
-        modifier = Modifier(header, flows, label=0, threshold=5)
-        cls.header = modifier.extend_header()
-        cls.flows = list()
-        while getattr(modifier, 'flows'):
-            entry = modifier.aggregate_flow()
-            cls.flows.append(entry)
+        modifier = Modifier(label=0, threshold=5)
+        cls.header = modifier.extend_header(header)
+        cls.flows = modifier.aggregate_flows(flows)
 
     def test_header_order(self):
         """Tests if header order matches new inserts."""
@@ -141,8 +138,8 @@ class TestModifier(unittest.TestCase):
         expt_header, expt_flows = gatherer.open_csv(modifier_path, expt_csv)
 
         # preprocessing flows
-        formatter = Formatter(expt_header, expt_flows, gather=False, train=True)
-        expt_flows = formatter.format_flows()
+        formatter = Formatter(gather=False, train=True)
+        expt_flows = formatter.format_flows(expt_flows)
 
         self.assertListEqual(self.header, expt_header,
                              'aggregation performed incorrectly in header')
@@ -158,7 +155,7 @@ class TestExtractor(unittest.TestCase):
         """Initiates the parameters to feed the test functions."""
 
         # gathering flows
-        modified_csv_file = tools.get_content(extractor_path)[1][-1]
+        modified_csv_file = tools.get_content(extractor_path)[1][1]
         _, cls.flows = gatherer.open_csv(extractor_path, modified_csv_file)
 
     def test_extract_features_labels(self):
@@ -169,27 +166,26 @@ class TestExtractor(unittest.TestCase):
         expt_csv = tools.get_content(extractor_path)[1][0]
         expt_features = gatherer.open_csv(extractor_path, expt_csv)[1]
 
-        extractor = Extractor([feature+5 for feature in range(1, 10)])
-        for entry, expt in zip(self.flows, expt_features):
-            features, label = extractor.extract_features(entry)
-            self.assertListEqual(features, expt,
-                                 'features extracted incorrectly')
-            self.assertEqual(label[0], '0',
-                             'labels extracted incorrectly')
+        extractor = Extractor([feature+7 for feature in range(1, 10)])
+        features, labels = extractor.extract_features_labels(self.flows)
+
+        self.assertListEqual(features, expt_features,
+                             'features extracted incorrectly')
+        self.assertEqual(labels[0], '0', 'labels extracted incorrectly')
 
     def test_extract_specific_features(self):
         """Tests if specifics features and labels were correctly extracted from
         the flows."""
 
         # gathering features
-        expt_csv = tools.get_content(extractor_path)[1][1]
+        expt_csv = tools.get_content(extractor_path)[1][-1]
         expt_features = gatherer.open_csv(extractor_path, expt_csv)[1]
 
-        extractor = Extractor([feature+5 for feature in [3, 5]])
-        for entry, expt in zip(self.flows, expt_features):
-            features, label = extractor.extract_features(entry)
-            self.assertListEqual(features, expt,
-                                 'features extracted incorrectly')
+        extractor = Extractor([feature+7 for feature in [1, 3]])
+        features, labels = extractor.extract_features_labels(self.flows)
+
+        self.assertListEqual(features, expt_features,
+                            'features extracted incorrectly')
 
 
 # collections of test cases
