@@ -1,16 +1,13 @@
+from datetime import datetime
+
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, SelectField, SelectMultipleField, SubmitField
 from wtforms.validators import DataRequired, NumberRange
 from wtforms.widgets import CheckboxInput, ListWidget, Input
 from wtforms.widgets.html5 import NumberInput
 
-from app.core import tools
+from app.core import util
 from app.models import Classifier, Preprocessing, Feature
-from app.paths import paths
-
-
-class LoadForm(FlaskForm):
-    model = SubmitField('Model')
 
 
 class DatasetForm(FlaskForm):
@@ -23,8 +20,8 @@ class DatasetForm(FlaskForm):
                           validators=[DataRequired(), NumberRange(1, 20)])
     submit = SubmitField('Submit')
 
-    def dataset_choices(self):
-        datasets = tools.get_content(f'{paths["csv"]}datasets/')[1]
+    def datasets_choices(self):
+        datasets = util.directory_content(f'{util.paths["csv"]}datasets/')[1]
         for ds in datasets:
             self.dataset.choices.append([ds, ' '.join(ds.split('.csv')[0]
                                                         .split('_'))])

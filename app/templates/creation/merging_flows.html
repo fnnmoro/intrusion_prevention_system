@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Parameter{% endblock %}
+
+{% block script %}
+    <script src='{{ url_for("static", filename="content.js") }}'></script>
+{% endblock %}
+
+{% block content %}
+    <div id='loading' class='wrapper'>
+        <p>Parameter</p>
+        <p>Merging flows</p>
+        <br>
+        <p>Directory: {{ directory }}</p>
+        <br>
+        <form method='post' onsubmit='hiddenForm("Loading...")' novalidate>
+            {{ form.csrf_token() }}
+            {{ form.name.label }}
+            {{ form.name() }}
+            {% for error in form.name.errors %}
+                <span class='warning'>{{ error }}</span>
+            {% endfor %}
+            <br>
+            {{ form.window.label }}
+            {{ form.window() }}
+            {% for error in form.window.errors %}
+                <span class='warning'>{{ error }}</span>
+            {% endfor %}
+            <br>
+            {{ form.threshold.label }}
+            {{ form.threshold() }}
+            {% for error in form.threshold.errors %}
+                <span class='warning'>{{ error }}</span>
+            {% endfor %}
+            <br>
+            {{ form.submit() }}
+        </form>
+    </div>
+{% endblock %}

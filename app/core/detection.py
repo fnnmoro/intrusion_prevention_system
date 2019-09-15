@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from app.core.tools import process_time_log
+from app.core.util import timing
 
 
 class Detector:
@@ -37,23 +37,21 @@ class Detector:
             times in a case of grid search"""
 
         if preprocessing:
-            # chains multiple estimators into one in a fixed sequence of steps.
+            # chaining estimators in a fixed sequence of steps.
             self.classifier['obj'] = Pipeline(
-                [('preprocessing', preprocessing), self.classifier['obj']],
+                [('prep', preprocessing), ('clf', self.classifier['obj'])],
                 memory=tmp_directory)
 
-            # necessary for doing grid searches
-            for key in self.classifier['param']:
+            # key method and list function must be kept to avoid repetitions.
+            for key in list(self.classifier['param'].keys()):
                 value = self.classifier['param'].pop(key)
                 self.classifier['param'][f'clf__{key}'] = value
 
-        tunning = GridSearchCV(self.classifier['obj'],
-                               self.classifier['param'],
-                               cv=kfolds)
+        self.classifier['obj'] = GridSearchCV(self.classifier['obj'],
+                                              self.classifier['param'],
+                                              cv=kfolds)
 
-        self.classifier['obj'] = tunning
-
-    @process_time_log
+    @timing
     def train(self, training_features, training_labels):
         """Trains the machine learning algorithm.
 
@@ -73,7 +71,7 @@ class Detector:
 
         return self.classifier['obj'].best_params_
 
-    @process_time_log
+    @timing
     def test(self, test_features):
         """Executes the machine learning algorithm.
 
@@ -88,27 +86,6 @@ class Detector:
             Prediction for each test entry."""
 
         return self.classifier['obj'].predict(test_features)
-
-    def add_predictions(self, flows, pred):
-        """Adds the predictions performed in real time into the evaluated
-        flows.
-
-        Parameters
-        ----------
-        flows: list
-            IP flows exported by the network devices.
-        pred: list
-            Predictions done by the model.
-
-        Returns
-        -------
-        flows
-            IP flows with the predictions."""
-
-        for idx, entry in enumerate(flows):
-            entry[-1] = pred[idx]
-
-        return flows
 
 
 classifiers_obj = {

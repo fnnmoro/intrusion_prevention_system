@@ -1,151 +1,194 @@
+import logging
+
 from flask import (Blueprint, redirect, request,
                    render_template, session, url_for)
 
-from app.core import gatherer
-from app.core.preprocess import Formatter, Modifier
-from app.core.tools import export_flows_csv, clean_files, get_content
-from app.paths import paths, root
+from app.core import exporter, gatherer, util
+from app.core.preprocessing import Formatter, Modifier
+from app.forms.creation import (ContentForm, ConvertNfcapdCsvForm,
+                                ConvertPcapNfcapdForm, MergingFlowsForm,
+                                PreprocessingFlowsForm, SplitPcapForm)
 
 
 bp = Blueprint('creation', __name__)
+logger = logging.getLogger('creation')
 
-@bp.route('/<function>/<dir>/')
-def content(function, dir):
-    # clears the path history if the dir received is from the main options
-    if dir in ['pcap', 'nfcapd', 'csv']:
-        path_history = {'root': root}
+
+@bp.route('/content/<function>/<directory>/', methods=['GET', 'POST'])
+def content(function, directory):
+    form = ContentForm(request.form)
+
+    # clearing the previous directory.
+    if directory in ['pcap', 'nfcapd', 'csv']:
+        paths_hist = {'root': util.root}
     else:
-        path_history = session['path_history']
+        paths_hist = session['paths_hist']
 
-    # checks if the folder was already opened
-    if not dir in path_history.keys():
-        path_history[dir] = f'{dir}/'
-    # creates the full path
-    full_path = path_history['root'] + path_history[dir]
+    # checking if the folder was already opened.
+    if not directory in paths_hist.keys():
+        paths_hist[directory] = f'{directory}/'
 
-    # gets dir content
-    inner_dirs, files = get_content(full_path)
+    # creating the full path.
+    full_path = paths_hist['root'] + paths_hist[directory]
+    # getting inner directory content.
+    inner_dirs, files = util.directory_content(full_path)
+    form.files_choices(files)
 
-    # creates the path of the inner dirs
+    if request.method == 'POST' and form.validate_on_submit():
+        logger.info(f'file: {form.files.data}')
+        session['files'] = form.files.data
+
+        return redirect(url_for(f'creation.{function}', directory=directory))
+
+    # creating the paths of the inner directories.
     for inner_dir in inner_dirs:
-        path_history[inner_dir] = f'{path_history[dir]}{inner_dir}/'
+        paths_hist[inner_dir] = f'{paths_hist[directory]}{inner_dir}/'
 
-    session['path_history'] = path_history
+    session['paths_hist'] = paths_hist
 
     return render_template('creation/content.html',
-                           dir=dir,
+                           form=form,
                            inner_dirs=inner_dirs,
-                           files=files,
-                           relative_path=session['path_history'][dir],
+                           relative_path=session['paths_hist'][directory],
                            function=function)
 
 
-@bp.route('/<function>/<dir>/parameters', methods=['GET','POST'])
-def parameters(function, dir):
-    session['function'] = function
-    session['dir'] = dir
-    session['files'] = request.form.getlist('files')
-    session['path'] = (session['path_history']['root']
-                       + session['path_history'][dir])
+@bp.route('/parameters/split_pcap/<directory>/', methods=['GET', 'POST'])
+def split_pcap(directory):
+    form = SplitPcapForm()
 
-    # functions parameters to be used according to the function selected
-    functions = {'split_pcap':
-                    {'parameters': [{'name': 'Split size',
-                                    'type': 'number'}]},
-                 'convert_pcap_nfcapd':
-                    {'parameters': [{'name': 'Time window size',
-                                     'type': 'number'}]},
-                 'convert_nfcapd_csv':
-                    {'parameters': [{'name': 'File name',
-                                     'type': 'text'}]},
-                 'convert_csv_flows':
-                    {'parameters': [{'name': 'Sample size',
-                                    'type': 'number'},
-                                   {'name': 'Aggregation size',
-                                    'type': 'number'},
-                                   {'name': 'Flow label',
-                                    'type': 'number'}]},
-                'merge_flows':
-                    {'parameters': [{'name': 'Dataset name',
-                                     'type': 'text'}]}}
+    if request.method == 'POST' and form.validate_on_submit():
+        path = (session['paths_hist']['root'] +
+                session['paths_hist'][directory])
+        logger.info(f'path: {path}')
+        logger.info(f'split: {form.split.data}')
 
-    return render_template('creation/parameters.html',
-                           parameters=functions[function]['parameters'],
-                           url=f'creation.{function}')
+        gatherer.split_pcap(path, session['files'], form.split.data)
+
+        return redirect(url_for('creation.content',
+                                function='split_pcap',
+                                directory=directory))
+    return render_template('creation/split_pcap.html',
+                           form=form,
+                           directory=directory)
 
 
-@bp.route('/split_pcap', methods=['GET', 'POST'])
-def split_pcap():
-    gatherer.split_pcap(session['path'],
-                        session['files'],
-                        int(request.form['split_size']))
+@bp.route('/parameters/convert_pcap_nfcapd/<directory>/',
+          methods=['GET', 'POST'])
+def convert_pcap_nfcapd(directory):
+    form = ConvertPcapNfcapdForm()
 
-    return redirect(url_for('creation.content',
-                            function=session['function'],
-                            dir=session['dir']))
+    if request.method == 'POST' and form.validate_on_submit():
+        path = (session['paths_hist']['root'] +
+                session['paths_hist'][directory])
+        logger.info(f'path: {path}')
+        logger.info(f'window: {form.window.data}')
 
+        gatherer.convert_pcap_nfcapd(path, session['files'],
+                                     util.paths['nfcapd'], form.window.data)
 
-@bp.route('/convert_pcap_nfcapd', methods=['GET', 'POST'])
-def convert_pcap_nfcapd():
-    gatherer.convert_pcap_nfcapd(session['path'],
-                                 session['files'],
-                                 paths['nfcapd'],
-                                 request.form['time_window_size'])
-
-    return redirect(url_for('creation.content',
-                            function=session['function'],
-                            dir=session['dir']))
-
-
-@bp.route('/convert_nfcapd_csv', methods=['GET', 'POST'])
-def convert_nfcapd_csv():
-    gatherer.convert_nfcapd_csv(session['path'],
-                                session['files'],
-                                f'{paths["csv"]}/raw/',
-                                request.form['file_name'])
-
-    return redirect(url_for('creation.content',
-                            function=session['function'],
-                            dir=session['dir']))
+        return redirect(url_for('creation.content',
+                                function='convert_pcap_nfcapd',
+                                directory=directory))
+    return render_template('creation/convert_pcap_nfcapd.html',
+                           form=form,
+                           directory=directory)
 
 
-@bp.route('/convert_csv_flows', methods=['GET', 'POST'])
-def convert_csv_flows():
-    for file in session['files']:
-        header, flows = gatherer.open_csv(session['path'],
-                                          file,
-                                          int(request.form['sample_size']))
+@bp.route('/parameters/convert_nfcapd_csv/<directory>/',
+          methods=['GET', 'POST'])
+def convert_nfcapd_csv(directory):
+    form = ConvertNfcapdCsvForm()
 
-        fomatter = Formatter(header, flows)
-        header = formatter.format_header()
-        flows = formatter.format_flows()
+    if request.method == 'POST' and form.validate_on_submit():
+        path = (session['paths_hist']['root'] +
+                session['paths_hist'][directory])
+        logger.info(f'path: {path}')
+        logger.info(f'name: {form.name.data}')
 
-        modifier = Modifier(header, flows)
-        if int(request.form['aggregation_size']):
-            header, flows = modifier.aggregate_flows(
-                                     int(request.form['aggregation_size']))
-        header, flows = modifier.create_features(
-                                 int(request.form['flow_label']))
+        gatherer.convert_nfcapd_csv(path, session['files'],
+                                    f'{util.paths["csv"]}/raws/',
+                                    form.name.data)
 
-        export_flows_csv(header, flows,
-                         f'{paths["csv"]}/flows/',
-                         f'{file.split(".csv")[0]}_s{len(flows)}.csv')
-
-    return redirect(url_for('creation.content',
-                            function=session['function'],
-                            dir=session['dir']))
+        return redirect(url_for('creation.content',
+                                function='convert_nfcapd_csv',
+                                directory=directory))
+    return render_template('creation/convert_nfcapd_csv.html',
+                           form=form,
+                           directory=directory)
 
 
-@bp.route('/merge_flows', methods=['GET', 'POST'])
-def merge_flows():
-    for file in session['files']:
-        header, flows = gatherer.open_csv(session['path'],
-                                          file)
+@bp.route('/parameters/preprocessing_flows/<directory>/',
+          methods=['GET', 'POST'])
+def preprocessing_flows(directory):
+    form = PreprocessingFlowsForm()
 
-        export_flows_csv(header, flows,
-                         f'{paths["csv"]}/datasets/',
-                         f'{request.form["dataset_name"]}.csv')
+    if request.method == 'POST' and form.validate_on_submit():
+        path = (session['paths_hist']['root'] +
+                session['paths_hist'][directory])
+        logger.info(f'path: {path}')
+        logger.info(f'sample: {form.sample.data}, '
+                    f'threshold: {form.threshold.data}, '
+                    f'label: {form.label.data}')
 
-    return redirect(url_for('creation.content',
-                            function=session['function'],
-                            dir=session['dir']))
+        for file in session['files']:
+            # gathering flows.
+            header, flows = gatherer.open_csv(path, file, form.sample.data)
+            logger.info(f'flow: {flows[0]}')
+
+            # preprocessing flows.
+            formatter = Formatter()
+            header = formatter.format_header(header)
+            flows = formatter.format_flows(flows)
+            logger.info(f'formatted flow: {flows[0]}')
+
+            modifier = Modifier(label=form.label.data,
+                                threshold=form.threshold.data)
+            header = modifier.extend_header(header)
+            flows = modifier.aggregate_flows(flows)
+            logger.info(f'modified flow: {flows[0]}')
+
+            # exporting flows.
+            name = file.split(".csv")[0]
+            exporter.flows_csv(header, flows,
+                               f'{util.paths["csv"]}/flows/',
+                               f'{name}_s{len(flows)}.csv')
+
+        return redirect(url_for('creation.content',
+                                function='preprocessing_flows',
+                                directory=directory))
+    return render_template('creation/preprocessing_flows.html',
+                           form=form,
+                           directory=directory)
+
+
+@bp.route('/parameters/merging_flows/<directory>/',
+          methods=['GET', 'POST'])
+def merging_flows(directory):
+    form = MergingFlowsForm()
+
+    if request.method == 'POST' and form.validate_on_submit():
+        path = (session['paths_hist']['root'] +
+                session['paths_hist'][directory])
+        logger.info(f'path: {path}')
+        logger.info(f'name: {form.name.data}')
+
+        size = 0
+        header = []
+        dataset = []
+        for file in session['files']:
+            header, flows = gatherer.open_csv(path, file)
+            logger.info(f'merged flow: {flows[0]}')
+            size += len(flows)
+            dataset.extend(flows)
+        exporter.flows_csv(header, dataset,
+                           f'{util.paths["csv"]}/datasets/',
+                           f'{form.name.data}_w{form.window.data}_'
+                           f't{form.threshold.data}_s{size}.csv')
+
+        return redirect(url_for('creation.content',
+                                function='merging_flows',
+                                directory=directory))
+    return render_template('creation/merging_flows.html',
+                           form=form,
+                           directory=directory)

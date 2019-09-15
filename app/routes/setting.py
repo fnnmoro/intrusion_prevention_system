@@ -1,3 +1,5 @@
+import copy
+import logging
 import os
 import pickle
 from datetime import datetime
@@ -10,42 +12,46 @@ from flask import (Blueprint, redirect, request,
 from sklearn.model_selection import train_test_split
 
 from app import db
-from app.core import gatherer
-from app.core import tools
+from app.core import evaluator, gatherer, util
 from app.core.detection import Detector, classifiers_obj
-from app.core.preprocess import Extractor, Formatter, preprocessing_obj
-from app.forms.setting import LoadForm, DatasetForm, ClassifierForm
+from app.core.preprocessing import Extractor, Formatter, preprocessing_obj
+from app.forms.setting import DatasetForm, ClassifierForm
 from app.models import (Classifier, Dataset, Feature,
                         Model, Preprocessing, Result)
-from app.paths import paths
 
 
 bp = Blueprint('setting', __name__)
+logger = logging.getLogger('setting')
 
 
 @bp.route('/load')
 def load():
-    form = LoadForm()
-    files = tools.get_content(f'{paths["models"]}')[1]
-    return render_template('setting/load.html', form=form, files=files)
+    files = util.directory_content(f'{util.paths["models"]}')[1]
+    models = [Model.query.get(file.split('_')[0]) for file in files]
+
+    return render_template('setting/load.html', models=models)
 
 
 @bp.route('/dataset', methods=['GET', 'POST'])
 def dataset():
     form = DatasetForm()
-    form.dataset_choices()
+    form.datasets_choices()
 
     if request.method == 'POST' and form.validate_on_submit():
-        # parameters used when the dataset was created
+        logger.info(f'dataset: {form.dataset.data}, split: {form.split.data}, '
+                    f'kfolds: {form.kfolds.data}')
+
+        # parameters used when the dataset was created.
         details = form.dataset.data.split('_')
         dataset = Dataset(file=form.dataset.data,
                           window=details[1].split('w')[-1],
-                          aggregation=details[2].split('a')[-1],
+                          aggregation=details[2].split('t')[-1],
                           size=details[3].split('.csv')[0].split('s')[-1],
                           split=form.split.data,
                           kfolds=form.kfolds.data)
         db.session.add(dataset)
         db.session.commit()
+
         return redirect(url_for('setting.classifier'))
     return render_template('setting/dataset.html', form=form)
 
@@ -53,17 +59,17 @@ def dataset():
 @bp.route('/classifier', methods=['GET', 'POST'])
 def classifier():
     form = ClassifierForm()
-    # removing some features if dataset is not aggregated
     dataset = Dataset.query.all()[-1]
 
-    if not dataset.aggregation:
-        form.features.choices = form.features.choices[2:8]
-
     if request.method == 'POST' and form.validate_on_submit():
+        logger.info(f'preprocessing: {form.preprocessing.data}, '
+                    f'classifiers: {form.classifiers.data}'
+                    f'features: {form.features.data}')
         session['last_models'] = list()
 
         for clf_pk in form.classifiers.data:
             clf = Classifier.query.get(clf_pk)
+            pre = Preprocessing.query.get(form.preprocessing.data)
             dt = datetime.now(timezone('America/Sao_Paulo'))
             model = Model(file=' ',
                           datetime=dt,
@@ -75,35 +81,44 @@ def classifier():
                 model.features.append(Feature.query.get(feat_pk))
             db.session.add(model)
             db.session.commit()
-            # committing the model first in order to get the pk
+
+            # committing the model to get the pk.
             model.file = (f'{model.id}_'
-                          f'{"_".join(clf.name.lower().split(" "))}_'
+                          f'{"-".join(clf.name.lower().split(" "))}_'
+                          f'{"-".join(pre.name.lower().split(" "))}_'
                           f'{dt.strftime("%Y%m%d%H%M%S")}')
             db.session.add(model)
             db.session.commit()
-            # session used to remember the pk of the latest models
+
             session['last_models'].append(model.id)
+            logger.info(f'last_models: {session["last_models"]}')
+
         return redirect(url_for('setting.result'))
     return render_template('setting/classifier.html', form=form)
 
 
 @bp.route('/result', methods=['GET', 'POST'])
 def result():
-    # creating an absolute path of a temporary directory
+    # creating an absolute path of a temporary directory.
     tmp_directory = mkdtemp()
-    # chosen models
     models = [Model.query.get(model_pk) for model_pk in session['last_models']]
     dataset = Dataset.query.get(models[-1].dataset_id)
-    header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/', dataset.file)
 
-    # data formatting
-    for entry in flows:
-        Formatter.convert_features(entry, True)
+    # gathering flows.
+    header, flows = gatherer.open_csv(f'{util.paths["csv"]}datasets/',
+                                      dataset.file)
+    logger.info(f'raw flow: {flows[0]}')
 
-    # data extraction
-    # adding extra value to skip first unused features
-    extractor = Extractor([feature.id+5 for feature in models[-1].features])
-    features, labels = extractor.extract_features(flows)
+    # preprocessing flows.
+    formatter = Formatter(gather=False, train=True)
+    flows = formatter.format_flows(flows)
+    logger.info(f'final flow: {flows[0]}')
+
+    # extracting features.
+    # adding extra value to skip first unused features.
+    extractor = Extractor([feature.id+7 for feature in models[-1].features])
+    features, labels = extractor.extract_features_labels(flows)
+    logger.info(f'feature: {features[0]}, label: {labels[0]}')
 
     x_train, x_test, y_train, y_test = train_test_split(
         features, labels,
@@ -111,21 +126,24 @@ def result():
         stratify=labels)
 
     for model in models:
-        classifier = Classifier.query.get(model.classifier_id)
         preprocessing = Preprocessing.query.get(model.preprocessing_id)
-        
-        # tunning, training and test
-        detector = Detector(
-            classifiers_obj['_'.join(classifier.name.lower().split(' '))])
-        detector.define_tuning(
-            preprocessing_obj['_'.join(preprocessing.name.lower().split(' '))],
-            dataset.kfolds,
-            tmp_directory)
+        classifier = Classifier.query.get(model.classifier_id)
+        prep_key = '_'.join(preprocessing.name.lower().split(' '))
+        clf_key = '_'.join(classifier.name.lower().split(' '))
+        logger.info(f'classifier: {classifier.name}')
+        logger.info(f'preprocessing: {preprocessing.name}')
+
+        # tunning, training and test.
+        detector = Detector(copy.deepcopy(classifiers_obj[clf_key]))
+        detector.define_tuning(copy.deepcopy(preprocessing_obj[prep_key]),
+                               dataset.kfolds,
+                               tmp_directory)
+
         hparam, train_date, train_dur = detector.train(x_train, y_train)
         pred, test_date, test_dur = detector.test(x_test)
 
-        # results
-        outcome = tools.evaluation_metrics(y_test, pred)
+        # results.
+        outcome = evaluator.metrics(y_test, pred)
         result = Result(
             train_date=train_date, test_date=test_date,
             train_duration=train_dur, test_duration=test_dur,
@@ -136,10 +154,13 @@ def result():
             hyperparameters=str(hparam), model_id=model.id)
         db.session.add(result)
         db.session.commit()
-    # removing the temporary directory used by the Pipeline object
+    # removing the temporary directory used by the Pipeline object.
     rmtree(tmp_directory)
+    columns = Model.__table__.columns
 
-    return render_template('setting/result.html', models=models)
+    return render_template('setting/result.html',
+                           columns=columns,
+                           models=models)
 
 
 @bp.route('/model', methods=['GET', 'POST'])
@@ -149,33 +170,47 @@ def model():
         tmp_directory = mkdtemp()
         model = Model.query.get(request.form['model_pk'])
         dataset = Dataset.query.get(model.dataset_id)
+        preprocessing = Preprocessing.query.get(model.preprocessing_id)
         classifier = Classifier.query.get(model.classifier_id)
-        header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/',
+        prep_key = '_'.join(preprocessing.name.lower().split(' '))
+        clf_key = '_'.join(classifier.name.lower().split(' '))
+        logger.info(f'classifier: {classifier.name}')
+        logger.info(f'preprocessing: {preprocessing.name}')
+
+        # gathering flows.
+        header, flows = gatherer.open_csv(f'{util.paths["csv"]}datasets/',
                                           dataset.file)
         session['last_models'].remove(model.id)
+        logger.info(f'raw flow: {flows[0]}')
 
-        # removing unselected models
+        # removing unselected models.
         for model_pk in session['last_models']:
             db.session.delete(Model.query.get(model_pk))
         db.session.commit()
 
-        # data formatting
-        for entry in flows:
-            Formatter.convert_features(entry, True)
+        # preprocessing flows.
+        formatter = Formatter(gather=False, train=True)
+        flows = formatter.format_flows(flows)
+        logger.info(f'final flow: {flows[0]}')
 
-        # data extraction
-        # adding extra value to skip first unused features
-        extractor = Extractor([feature.id+5 for feature in model.features])
-        features, labels = extractor.extract_features(flows)
+        # extracting features.
+        # adding extra value to skip first unused features.
+        extractor = Extractor([feature.id+7 for feature in model.features])
+        features, labels = extractor.extract_features_labels(flows)
+        logger.info(f'feature: {features[0]}, label: {labels[0]}')
 
-        # retraining
-        detector = Detector(
-            classifiers_obj['_'.join(classifier.name.lower().split(' '))])
+        # tunning and retraining.
+        detector = Detector(copy.deepcopy(classifiers_obj[clf_key]))
+        detector.define_tuning(copy.deepcopy(preprocessing_obj[prep_key]),
+                               dataset.kfolds,
+                               tmp_directory)
         detector.train(features, labels)
 
-        # model persistence
-        pickle.dump(detector, open(f'{paths["models"]}{model.file}', 'wb'))
-        # removing the temporary directory used by the Pipeline object
+        # model persistence.
+        pickle.dump(detector,
+                    open(f'{util.paths["models"]}{model.file}', 'wb'))
+        logger.info(f'model file: {model.file}')
+        # removing the temporary directory used by the Pipeline object.
         rmtree(tmp_directory)
 
-    return redirect(url_for('detection.realtime'))
+    return redirect(url_for('detection.realtime', model_pk=model.id))

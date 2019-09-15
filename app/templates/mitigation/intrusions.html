@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Intrusions{% endblock%}
+
+{% block script %}
+    <script src='{{ url_for("static", filename="content.js") }}'></script>
+{% endblock %}
+
+{% block content %}
+    {% if intrusions %}
+        <p>Intrusions</p>
+
+        <div class='tables'>
+            {% for intrusion in intrusions %}
+                <table id='t{{ loop.index0 }}'>
+                    <tbody>
+                        {% for column in columns_info %}
+                            <tr>
+                                <th>{{ ' '.join(column.split('_'))|capitalize }}</th>
+                                <td>{{ intrusion|attr(column) }}</td>
+                            </tr>
+                        {% endfor %}
+                        <tr>
+                            <th>Source ports</th>
+                                <td class='not-hidden' onclick='hiddenTableData({{ loop.index0 }}, 0)'><span class='choose'>show all</span></td>
+                                <td class='hidden' onclick='hiddenTableData({{ loop.index0 }}, 0)'><span class='choose'>{{ intrusion.source_port }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Destination ports</th>
+                                <td class='not-hidden' onclick='hiddenTableData({{ loop.index0 }}, 1)'><span class='choose'>show all</span></td>
+                                <td class='hidden' onclick='hiddenTableData({{ loop.index0 }}, 1)'><span class='choose'>{{ intrusion.destination_port }}</span></td>
+                        </tr>
+                        {% for column in columns_quant %}
+                            <tr>
+                                <th>{{ ' '.join(column.split('_'))|capitalize }}</th>
+                                <td>{{ intrusion|attr(column) }}</td>
+                            </tr>
+                        {% endfor %}
+                        <tr>
+                           <th>Remove rule</th>
+                           <td>
+                               <form method='post'>
+                                   <input name='itr_pk' type='hidden' value='{{ intrusion.id }}'>
+                                   <input class='choose' type='submit' value='{{ intrusion.rule }}'>
+                               </form>
+                           </td>
+                        </tr>
+                    </tbody>
+                </table>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No blacklist available</p>
+    {% endif %}
+    <br>
+    <a href='{{ url_for("detection.realtime") }}'>Return</a>
+{% endblock %}

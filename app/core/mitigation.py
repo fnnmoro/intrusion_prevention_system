@@ -1,7 +1,8 @@
 import json
 from http import client
 
-from app import database
+from app import db
+from app.core import util
 
 
 class StaticFlowPusher:
@@ -36,13 +37,13 @@ class StaticFlowPusher:
         tuple
             Status code and response body returned by server."""
 
-        # HTTP request
+        # HTTP request.
         conn = client.HTTPConnection(self.controller_ip, self.controller_port)
         conn.request(action, uri, json.dumps(data),
                      {'Content-type': 'application/json',
                       'Accept': 'application/json'})
 
-        # HTTP response
+        # HTTP response.
         resp = conn.getresponse()
         ret = (resp.status, resp.read())
         conn.close()
@@ -110,16 +111,16 @@ class Mitigator(StaticFlowPusher):
     self.blacklist: list
         Anomalous flows to be blocked."""
 
-    def __init__(self, blacklist, count=0):
+    def __init__(self):
         super().__init__()
-        self.count = count
-        self.blacklist = blacklist
+        self.count = 1
         self.rule = {'switch': '', 'name': '', 'cookie': '0',
                      'priority': '32768', 'active': 'true',
-                     'hard_timeout': '7200', 'eth_type': '0x0800',
-                     'ipv4_src': '', 'ipv4_dst': ''}
+                     'eth_type': '0x0800', 'ipv4_src': '',
+                     'ipv4_dst': ''}
 
-    def get_switch(self, entry):
+    @util.timing
+    def get_switch(self, source_address):
         """Gets the switch where the anomalous device are attached.
 
         Parameters
@@ -136,27 +137,31 @@ class Mitigator(StaticFlowPusher):
 
         for device in network_data['devices']:
               if device['ipv4']:
-                  if entry == device['ipv4'][0]:
+                  if source_address == device['ipv4'][0]:
                     return device['attachmentPoint'][0]['switch']
 
-    def insert_flows_rules(self):
-        """Inserts the flow rules to blocked the anomalous devices.
+    @util.timing
+    def block_attack(self, intrusion):
+        """Inserts flow rules to blocked the anomalous devices.
 
         Flow rules are saved in a database to allow deletion if the blocked
         device is a false positive."""
 
-        for entry in self.blacklist:
-            self.rule['switch'] = self.get_switch(entry[0])
-            self.rule['name'] = 'block' + str(self.count)
-            self.rule['ipv4_src'] = entry[0]
-            self.rule['ipv4_dst'] = entry[1]
-            self.post(self.rule)
-            self.count += 1
+        # defining rule.
+        self.rule['switch'] = self.get_switch(intrusion.source_address)
+        self.rule['name'] = 'block' + str(self.count)
+        self.rule['ipv4_src'] = intrusion.source_address
+        self.rule['ipv4_dst'] = intrusion.destination_address
+        self.post(self.rule)
 
-            # saves the flow rules in the database
-            database.insert_blacklist(entry + tuple([self.rule['name']]))
+        self.count += 1
+        # saving rule in database.
+        intrusion.rule = self.rule['name']
+        db.session.add(intrusion)
+        db.session.commit()
 
-    def delete_flow_rule(self, rule_name):
+    @util.timing
+    def remove_rule(self, rule):
         """Deletes the flow rule in case of a false positive.
 
         Parameters
@@ -164,4 +169,4 @@ class Mitigator(StaticFlowPusher):
         rule_name: str
             Rule name to be deleted."""
 
-        self.delete({'name': rule_name})
+        self.delete({'name': rule})

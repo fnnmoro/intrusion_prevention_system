@@ -14,7 +14,7 @@
         <br>
         {{ form.classifiers.label }}
         <div class='checkbox'>
-            {{ form.classifiers(class_='box') }}
+            {{ form.classifiers(class='box') }}
         </div>
         {% for error in form.classifiers.errors %}
             <span class='warning'>{{ error }}</span>
@@ -22,7 +22,7 @@
         <br>
         {{ form.features.label }}
         <div class='checkbox'>
-            {{ form.features(class_='box') }}
+            {{ form.features(class='box') }}
         </div>
         {% for error in form.features.errors %}
             <span class='warning'>{{ error }}</span>

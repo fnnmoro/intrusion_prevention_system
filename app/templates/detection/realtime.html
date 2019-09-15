@@ -1,13 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}Detect{% endblock%}
+{% block title %}Realtime{% endblock%}
 
 {% block script %}
-    <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
-    <script type='text/javascript' src='//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js'></script>
-    <script src='{{ url_for("static", filename="socket.js") }}'></script>
+    <script src='http://code.jquery.com/jquery-3.3.1.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js'></script>
+    <script src='{{ url_for("static", filename="notification.js") }}'></script>
 {% endblock %}
 
 {% block content %}
-    <p>Anomalous flows detected: <span id='anomalies' onclick='window.location="{{ url_for("mitigation.blacklist") }}"'>{{ anomalous_flows }}</span></p>
+    <p>Number of intrusions detected: <a id='intrusions' class='choose' href='{{ url_for("mitigation.intrusions") }}'>{{ num_intrusions }}</a></p>
+    <br>
+    <a href='{{ url_for("detection.stop") }}'>Stop detection</a>
 {% endblock %}
