@@ -1,9 +1,8 @@
 from app import app, db, socketio
-from app.core import tools
+from app.core import util
 from app.models import (Classifier, Dataset, Feature,
                         Intrusion, Model, Preprocessing,
                         Result)
-from app.paths import paths
 
 
 @app.shell_context_processor
@@ -23,4 +22,4 @@ if __name__ == '__main__':
             db.session.delete(itr)
         db.session.commit()
 
-        tools.clean_files(paths['nfcapd'], '*')
+        util.clean_directory(util.paths['nfcapd'], '*')
