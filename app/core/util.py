@@ -4,10 +4,16 @@ import time
 from datetime import datetime
 from pytz import timezone
 
-from app.paths import paths
-
 
 logger = logging.getLogger('util')
+
+root = (f'{os.path.abspath(os.path.dirname("intrusion_prevention_system"))}'
+        '/data/')
+paths = {'csv': f'{root}' + 'csv/',
+         'log': f'{root}' + 'log/',
+         'nfcapd': f'{root}' + 'nfcapd/',
+         'pcap': f'{root}' + 'pcap/',
+         'models': f'{root}' + 'models/'}
 
 
 def make_directory(path, directory):
@@ -68,8 +74,7 @@ def timing(func):
         end = time.time()
         duration = round(end - start, 7)
 
-        if func.__name__ != 'test': 
-            logger.info(f'{func.__name__} duration: {duration}')
+        logger.info(f'{func.__name__} duration: {duration}')
 
         if func.__name__ == 'train' or func.__name__ == 'test':
             return result, date, duration
@@ -79,7 +84,7 @@ def timing(func):
     return timer
 
 
-def get_content(path):
+def directory_content(path):
     """Gets the content of a directory.
 
     Parameters
@@ -100,7 +105,7 @@ def get_content(path):
     return directory, files
 
 
-def clean_files(path, file):
+def clean_directory(path, file):
     """Cleans the files of a directory.
 
     Parameters
