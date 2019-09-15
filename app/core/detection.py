@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from app.core.tools import process_time_log
+from app.core.util import timing
 
 
 class Detector:
@@ -51,7 +51,7 @@ class Detector:
                                               self.classifier['param'],
                                               cv=kfolds)
 
-    @process_time_log
+    @timing
     def train(self, training_features, training_labels):
         """Trains the machine learning algorithm.
 
@@ -71,7 +71,7 @@ class Detector:
 
         return self.classifier['obj'].best_params_
 
-    @process_time_log
+    @timing
     def test(self, test_features):
         """Executes the machine learning algorithm.
 

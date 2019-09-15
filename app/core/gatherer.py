@@ -2,7 +2,7 @@ import csv
 import os
 import subprocess
 
-from app.core.tools import make_directory, process_time_log
+from app.core import util
 
 
 def split_pcap(pcap_path, pcap_files, split_size):
@@ -29,7 +29,7 @@ def split_pcap(pcap_path, pcap_files, split_size):
 
     try:
         directory = f'split_{pcap_files[0].split("_")[0]}'
-        directory = make_directory(pcap_path, directory)
+        directory = util.make_directory(pcap_path, directory)
 
         for pcap_file in pcap_files:
             # runs tcpdump program to split the pcap files.
@@ -108,7 +108,7 @@ def convert_nfcapd_csv(nfcapd_path, nfcapd_files, csv_path, file_name):
                    shell=True, check=True)
 
 
-@process_time_log
+@util.timing
 def open_csv(csv_path, csv_file, sample_size=-1):
     """Opens CSV file.
 
@@ -140,7 +140,7 @@ def open_csv(csv_path, csv_file, sample_size=-1):
                 flows.append(line)
             else:
                 break
-                
+
     return header, flows
 
 

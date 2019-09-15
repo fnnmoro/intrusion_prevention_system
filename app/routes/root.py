@@ -1,5 +1,3 @@
-import threading
-
 from flask import Blueprint, render_template
 
 

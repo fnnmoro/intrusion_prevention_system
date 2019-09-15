@@ -5,7 +5,7 @@ from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
                                    MaxAbsScaler, RobustScaler,
                                    QuantileTransformer, Normalizer)
 
-from app.core.tools import process_time_log
+from app.core import util
 
 
 class Formatter:
@@ -28,6 +28,7 @@ class Formatter:
         self.gather = gather
         self.train = train
 
+    @util.timing
     def format_header(self, header):
         """Format the header.
 
@@ -41,7 +42,7 @@ class Formatter:
 
         return header
 
-    @process_time_log
+    @util.timing
     def format_flows(self, flows):
         """Formats the flows to be used by the machine learning algorithms.
 
@@ -159,6 +160,7 @@ class Modifier:
         self.label = label
         self.threshold = threshold
 
+    @util.timing
     def extend_header(self, header):
         """Extendes header according to new aggregations features.
 
@@ -171,7 +173,7 @@ class Modifier:
 
         return header
 
-    @process_time_log
+    @util.timing
     def aggregate_flows(self, flows):
         #self.flows = flows
         agg_flows = list()
@@ -281,7 +283,7 @@ class Extractor:
     def __init__(self, selected_features):
         self.selected_features = selected_features
 
-    @process_time_log
+    @util.timing
     def extract_features_labels(self, flows):
         """Extracts features and labels from flows.
 

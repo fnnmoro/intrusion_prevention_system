@@ -7,11 +7,10 @@ import threading
 from sqlalchemy import func
 
 from app import db, socketio
-from app.core import gatherer, tools
+from app.core import gatherer, util
 from app.core.mitigation import Mitigator
-from app.core.preprocess import Extractor, Formatter, Modifier
+from app.core.preprocessing import Extractor, Formatter, Modifier
 from app.models import Dataset, Intrusion
-from app.paths import paths
 
 
 logger = logging.getLogger('realtime')
@@ -22,19 +21,19 @@ class RealtimeThread(threading.Thread):
         super().__init__()
         self.event = event
         self.model = model
-        self.detector = pickle.load(open(f'{paths["models"]}'
+        self.detector = pickle.load(open(f'{util.paths["models"]}'
                                          f'{self.model.file}', 'rb'))
         self.mitigator = Mitigator()
 
     def execution(self):
-        process = gatherer.capture_nfcapd(paths['nfcapd'], 30)
+        process = gatherer.capture_nfcapd(util.paths['nfcapd'], 30)
         dataset = Dataset.query.get(self.model.dataset_id)
         logger.info(f'process pid: {process.pid}')
         logger.info(f'dataset file: {dataset.file}')
 
         try:
             while not self.event.is_set():
-                nfcapd_files = tools.get_content(paths['nfcapd'])[1]
+                nfcapd_files = util.directory_content(util.paths['nfcapd'])[1]
 
                 try:
                     if not 'current' in nfcapd_files[0]:
@@ -44,8 +43,9 @@ class RealtimeThread(threading.Thread):
                         flows = self.gathering(nfcapd_files[:-1])
 
                         # cleaning remaining files
-                        tools.clean_files(paths['nfcapd'], 'nfcapd.20*')
-                        tools.clean_files(f'{paths["csv"]}tmp/', '*')
+                        util.clean_directory(util.paths['nfcapd'],
+                                             'nfcapd.20*')
+                        util.clean_directory(f'{util.paths["csv"]}tmp/', '*')
 
                         if len(flows[0]) < 18:
                             raise ValueError('No matched flows')
@@ -75,20 +75,20 @@ class RealtimeThread(threading.Thread):
                     continue
                 except ValueError as error:
                     logger.error(error)
-                    tools.clean_files(paths['nfcapd'], 'nfcapd.20*')
-                    tools.clean_files(f'{paths["csv"]}tmp/', '*')
+                    util.clean_directory(util.paths['nfcapd'], 'nfcapd.20*')
+                    util.clean_directory(f'{util.paths["csv"]}tmp/', '*')
                     continue
         finally:
             logger.info('thread status: false')
             process.kill()
 
     def gathering(self, nfcapd_files):
-        gatherer.convert_nfcapd_csv(paths['nfcapd'], nfcapd_files,
-                                    f'{paths["csv"]}tmp/',
+        gatherer.convert_nfcapd_csv(util.paths['nfcapd'], nfcapd_files,
+                                    f'{util.paths["csv"]}tmp/',
                                     'realtime')
-        csv_file = tools.get_content(f'{paths["csv"]}tmp/')[1]
+        csv_file = util.directory_content(f'{util.paths["csv"]}tmp/')[1]
         logger.info(f'csv files: {csv_file[0]}')
-        _, flows = gatherer.open_csv(f'{paths["csv"]}tmp/', csv_file[0])
+        _, flows = gatherer.open_csv(f'{util.paths["csv"]}tmp/', csv_file[0])
 
         return flows
 

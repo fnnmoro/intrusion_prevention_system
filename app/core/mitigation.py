@@ -2,6 +2,7 @@ import json
 from http import client
 
 from app import db
+from app.core import util
 
 
 class StaticFlowPusher:
@@ -118,6 +119,7 @@ class Mitigator(StaticFlowPusher):
                      'eth_type': '0x0800', 'ipv4_src': '',
                      'ipv4_dst': ''}
 
+    @util.timing
     def get_switch(self, source_address):
         """Gets the switch where the anomalous device are attached.
 
@@ -138,6 +140,7 @@ class Mitigator(StaticFlowPusher):
                   if source_address == device['ipv4'][0]:
                     return device['attachmentPoint'][0]['switch']
 
+    @util.timing
     def block_attack(self, intrusion):
         """Inserts flow rules to blocked the anomalous devices.
 
@@ -157,6 +160,7 @@ class Mitigator(StaticFlowPusher):
         db.session.add(intrusion)
         db.session.commit()
 
+    @util.timing
     def remove_rule(self, rule):
         """Deletes the flow rule in case of a false positive.
 

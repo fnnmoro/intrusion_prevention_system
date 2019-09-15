@@ -12,14 +12,12 @@ from flask import (Blueprint, redirect, request,
 from sklearn.model_selection import train_test_split
 
 from app import db
-from app.core import gatherer
-from app.core import tools
+from app.core import evaluator, gatherer, util
 from app.core.detection import Detector, classifiers_obj
-from app.core.preprocess import Extractor, Formatter, preprocessing_obj
+from app.core.preprocessing import Extractor, Formatter, preprocessing_obj
 from app.forms.setting import DatasetForm, ClassifierForm
 from app.models import (Classifier, Dataset, Feature,
                         Model, Preprocessing, Result)
-from app.paths import paths
 
 
 bp = Blueprint('setting', __name__)
@@ -28,7 +26,7 @@ logger = logging.getLogger('setting')
 
 @bp.route('/load')
 def load():
-    files = tools.get_content(f'{paths["models"]}')[1]
+    files = util.directory_content(f'{util.paths["models"]}')[1]
     models = [Model.query.get(file.split('_')[0]) for file in files]
 
     return render_template('setting/load.html', models=models)
@@ -107,7 +105,8 @@ def result():
     dataset = Dataset.query.get(models[-1].dataset_id)
 
     # gathering flows.
-    header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/', dataset.file)
+    header, flows = gatherer.open_csv(f'{util.paths["csv"]}datasets/',
+                                      dataset.file)
     logger.info(f'raw flow: {flows[0]}')
 
     # preprocessing flows.
@@ -144,7 +143,7 @@ def result():
         pred, test_date, test_dur = detector.test(x_test)
 
         # results.
-        outcome = tools.evaluation_metrics(y_test, pred)
+        outcome = evaluator.metrics(y_test, pred)
         result = Result(
             train_date=train_date, test_date=test_date,
             train_duration=train_dur, test_duration=test_dur,
@@ -179,7 +178,7 @@ def model():
         logger.info(f'preprocessing: {preprocessing.name}')
 
         # gathering flows.
-        header, flows = gatherer.open_csv(f'{paths["csv"]}datasets/',
+        header, flows = gatherer.open_csv(f'{util.paths["csv"]}datasets/',
                                           dataset.file)
         session['last_models'].remove(model.id)
         logger.info(f'raw flow: {flows[0]}')
@@ -208,7 +207,8 @@ def model():
         detector.train(features, labels)
 
         # model persistence.
-        pickle.dump(detector, open(f'{paths["models"]}{model.file}', 'wb'))
+        pickle.dump(detector,
+                    open(f'{util.paths["models"]}{model.file}', 'wb'))
         logger.info(f'model file: {model.file}')
         # removing the temporary directory used by the Pipeline object.
         rmtree(tmp_directory)

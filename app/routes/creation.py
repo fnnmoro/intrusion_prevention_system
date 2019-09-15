@@ -3,12 +3,11 @@ import logging
 from flask import (Blueprint, redirect, request,
                    render_template, session, url_for)
 
-from app.core import gatherer, tools
-from app.core.preprocess import Formatter, Modifier
+from app.core import exporter, gatherer, util
+from app.core.preprocessing import Formatter, Modifier
 from app.forms.creation import (ContentForm, ConvertNfcapdCsvForm,
                                 ConvertPcapNfcapdForm, MergingFlowsForm,
                                 PreprocessingFlowsForm, SplitPcapForm)
-from app.paths import paths, root
 
 
 bp = Blueprint('creation', __name__)
@@ -21,7 +20,7 @@ def content(function, directory):
 
     # clearing the previous directory.
     if directory in ['pcap', 'nfcapd', 'csv']:
-        paths_hist = {'root': root}
+        paths_hist = {'root': util.root}
     else:
         paths_hist = session['paths_hist']
 
@@ -32,7 +31,7 @@ def content(function, directory):
     # creating the full path.
     full_path = paths_hist['root'] + paths_hist[directory]
     # getting inner directory content.
-    inner_dirs, files = tools.get_content(full_path)
+    inner_dirs, files = util.directory_content(full_path)
     form.files_choices(files)
 
     if request.method == 'POST' and form.validate_on_submit():
@@ -86,7 +85,7 @@ def convert_pcap_nfcapd(directory):
         logger.info(f'window: {form.window.data}')
 
         gatherer.convert_pcap_nfcapd(path, session['files'],
-                                     paths['nfcapd'], form.window.data)
+                                     util.paths['nfcapd'], form.window.data)
 
         return redirect(url_for('creation.content',
                                 function='convert_pcap_nfcapd',
@@ -108,7 +107,8 @@ def convert_nfcapd_csv(directory):
         logger.info(f'name: {form.name.data}')
 
         gatherer.convert_nfcapd_csv(path, session['files'],
-                                    f'{paths["csv"]}/raw/', form.name.data)
+                                    f'{util.paths["csv"]}/raws/',
+                                    form.name.data)
 
         return redirect(url_for('creation.content',
                                 function='convert_nfcapd_csv',
@@ -150,9 +150,9 @@ def preprocessing_flows(directory):
 
             # exporting flows.
             name = file.split(".csv")[0]
-            tools.export_flows_csv(header, flows,
-                                   f'{paths["csv"]}/flows/',
-                                   f'{name}_s{len(flows)}.csv')
+            exporter.flows_csv(header, flows,
+                               f'{util.paths["csv"]}/flows/',
+                               f'{name}_s{len(flows)}.csv')
 
         return redirect(url_for('creation.content',
                                 function='preprocessing_flows',
@@ -181,10 +181,10 @@ def merging_flows(directory):
             logger.info(f'merged flow: {flows[0]}')
             size += len(flows)
             dataset.extend(flows)
-        tools.export_flows_csv(header, dataset,
-                               f'{paths["csv"]}/datasets/',
-                               f'{form.name.data}_w{form.window.data}_'
-                               f't{form.threshold.data}_s{size}.csv')
+        exporter.flows_csv(header, dataset,
+                           f'{util.paths["csv"]}/datasets/',
+                           f'{form.name.data}_w{form.window.data}_'
+                           f't{form.threshold.data}_s{size}.csv')
 
         return redirect(url_for('creation.content',
                                 function='merging_flows',

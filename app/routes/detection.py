@@ -6,7 +6,6 @@ from flask import (Blueprint, redirect, request,
                    render_template, session, url_for)
 
 from app import db
-from app.forms.detection import RealtimeForm
 from app.models import Intrusion, Model
 from app.realtime import RealtimeThread
 
@@ -19,7 +18,7 @@ thread = None
 @bp.route('/', methods=['GET', 'POST'])
 def realtime():
     global thread
-    
+
     if request.method == 'POST' and re.search('load', request.referrer):
         model = Model.query.get(request.form['model_pk'])
     else:

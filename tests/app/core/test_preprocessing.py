@@ -3,20 +3,18 @@ import sys
 import unittest
 from datetime import datetime
 
-sys.path.append('/home/flmoro/bsi16/research_project/anomaly_detection/codes/'
-                'anomaly_detection_system')
+base_path = os.path.abspath(os.path.dirname('intrusion_prevention_system'))
+sys.path.append(base_path)
 
 from app.core import gatherer
-from app.core import tools
-from app.core.preprocess import Formatter, Modifier, Extractor
-from app.paths import paths
-
+from app.core import util
+from app.core.preprocessing import Formatter, Modifier, Extractor
 
 
 # defines the main paths use during the tests
-formatter_path = f'{paths["test"]}preprocess/formatter/'
-modifier_path = f'{paths["test"]}preprocess/modifier/'
-extractor_path = f'{paths["test"]}preprocess/extractor/'
+formatter_path = f'{base_path}/tests/app/core/data/preprocessing/formatter/'
+modifier_path = f'{base_path}/tests/app/core/data/preprocessing/modifier/'
+extractor_path = f'{base_path}/tests/app/core/data/preprocessing/extractor/'
 
 
 # unit tests
@@ -28,7 +26,7 @@ class TestFormatter(unittest.TestCase):
         """Initiates the parameters to feed the test functions."""
 
         # gathering flows
-        raw_csv_file = tools.get_content(formatter_path)[1][0]
+        raw_csv_file = util.directory_content(formatter_path)[1][0]
         header, flows = gatherer.open_csv(formatter_path, raw_csv_file)
 
         # preprocessing flows
@@ -102,7 +100,7 @@ class TestModifier(unittest.TestCase):
         """Initiates the parameters to feed the test functions."""
 
         # gathering flows
-        raw_csv_file = tools.get_content(modifier_path)[1][-1]
+        raw_csv_file = util.directory_content(modifier_path)[1][-1]
         header, flows = gatherer.open_csv(modifier_path, raw_csv_file)
 
         # preprocessing flows
@@ -134,7 +132,7 @@ class TestModifier(unittest.TestCase):
         """Tests if the features were correctly aggregated."""
 
         # gathering flows
-        expt_csv = tools.get_content(modifier_path)[1][0]
+        expt_csv = util.directory_content(modifier_path)[1][0]
         expt_header, expt_flows = gatherer.open_csv(modifier_path, expt_csv)
 
         # preprocessing flows
@@ -155,7 +153,7 @@ class TestExtractor(unittest.TestCase):
         """Initiates the parameters to feed the test functions."""
 
         # gathering flows
-        modified_csv_file = tools.get_content(extractor_path)[1][1]
+        modified_csv_file = util.directory_content(extractor_path)[1][1]
         _, cls.flows = gatherer.open_csv(extractor_path, modified_csv_file)
 
     def test_extract_features_labels(self):
@@ -163,7 +161,7 @@ class TestExtractor(unittest.TestCase):
         the flows."""
 
         # gathering features
-        expt_csv = tools.get_content(extractor_path)[1][0]
+        expt_csv = util.directory_content(extractor_path)[1][0]
         expt_features = gatherer.open_csv(extractor_path, expt_csv)[1]
 
         extractor = Extractor([feature+7 for feature in range(1, 10)])
@@ -178,7 +176,7 @@ class TestExtractor(unittest.TestCase):
         the flows."""
 
         # gathering features
-        expt_csv = tools.get_content(extractor_path)[1][-1]
+        expt_csv = util.directory_content(extractor_path)[1][-1]
         expt_features = gatherer.open_csv(extractor_path, expt_csv)[1]
 
         extractor = Extractor([feature+7 for feature in [1, 3]])

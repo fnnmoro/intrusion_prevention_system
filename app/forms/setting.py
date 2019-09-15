@@ -6,9 +6,8 @@ from wtforms.validators import DataRequired, NumberRange
 from wtforms.widgets import CheckboxInput, ListWidget, Input
 from wtforms.widgets.html5 import NumberInput
 
-from app.core import tools
+from app.core import util
 from app.models import Classifier, Preprocessing, Feature
-from app.paths import paths
 
 
 class DatasetForm(FlaskForm):
@@ -22,7 +21,7 @@ class DatasetForm(FlaskForm):
     submit = SubmitField('Submit')
 
     def datasets_choices(self):
-        datasets = tools.get_content(f'{paths["csv"]}datasets/')[1]
+        datasets = util.directory_content(f'{util.paths["csv"]}datasets/')[1]
         for ds in datasets:
             self.dataset.choices.append([ds, ' '.join(ds.split('.csv')[0]
                                                         .split('_'))])
