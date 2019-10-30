@@ -3,20 +3,20 @@
 {% block title %}Home{% endblock%}
 
 {% block content %}
-    <p>Intrusion prevention</p>
+    <p>Intrusion prevention system</p>
     <br>
     <div class='option'>
-        <a class='main-choose' href='{{ url_for("setting.dataset") }}'>New</a>
-        <a class='main-choose' href='{{ url_for("setting.load") }}'>Load</a>
+        <a class='choice' href='{{ url_for("setting.dataset") }}'>New</a>
+        <a class='choice' href='{{ url_for("setting.load") }}'>Load</a>
     </div>
     <br>
-    <p>Dataset creation</p>
+    <p>Network dataset creation</p>
     <br>
     <div class='option'>
-        <a class='main-choose' href='{{ url_for("creation.content", function="split_pcap", directory="pcap") }}'>Split pcap</a>
-        <a class='main-choose' href='{{ url_for("creation.content", function="convert_pcap_nfcapd", directory="pcap") }}'>Convert pcap to nfcapd</a>
-        <a class='main-choose' href='{{ url_for("creation.content", function="convert_nfcapd_csv", directory="nfcapd") }}'>Convert nfcapd to csv</a>
-        <a class='main-choose' href='{{ url_for("creation.content", function="preprocessing_flows", directory="csv") }}'>Preprocessing flows</a>
-        <a class='main-choose' href='{{ url_for("creation.content", function="merging_flows", directory="csv") }}'>Merging flows</a>
+        <a class='choice' href='{{ url_for("creation.content", function="split_pcap", directory="pcap") }}'>Split pcap</a>
+        <a class='choice' href='{{ url_for("creation.content", function="convert_pcap_nfcapd", directory="pcap") }}'>Convert pcap to nfcapd</a>
+        <a class='choice' href='{{ url_for("creation.content", function="convert_nfcapd_csv", directory="nfcapd") }}'>Convert nfcapd to csv</a>
+        <a class='choice' href='{{ url_for("creation.content", function="preprocessing_flows", directory="csv") }}'>Preprocessing flows</a>
+        <a class='choice' href='{{ url_for("creation.content", function="merging_flows", directory="csv") }}'>Merging flows</a>
     </div>
 {% endblock %}

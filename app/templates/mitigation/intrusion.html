@@ -22,13 +22,13 @@
                         {% endfor %}
                         <tr>
                             <th>Source ports</th>
-                                <td class='not-hidden' onclick='hiddenTableData({{ loop.index0 }}, 0)'><span class='choose'>show all</span></td>
-                                <td class='hidden' onclick='hiddenTableData({{ loop.index0 }}, 0)'><span class='choose'>{{ intrusion.source_port }}</span></td>
+                                <td class='not-hidden' onclick='hiddenTableData({{ loop.index0 }}, 0)'><span class='selection'>show all</span></td>
+                                <td class='hidden' onclick='hiddenTableData({{ loop.index0 }}, 0)'><span class='selection'>{{ intrusion.source_port }}</span></td>
                         </tr>
                         <tr>
                             <th>Destination ports</th>
-                                <td class='not-hidden' onclick='hiddenTableData({{ loop.index0 }}, 1)'><span class='choose'>show all</span></td>
-                                <td class='hidden' onclick='hiddenTableData({{ loop.index0 }}, 1)'><span class='choose'>{{ intrusion.destination_port }}</span></td>
+                                <td class='not-hidden' onclick='hiddenTableData({{ loop.index0 }}, 1)'><span class='selection'>show all</span></td>
+                                <td class='hidden' onclick='hiddenTableData({{ loop.index0 }}, 1)'><span class='selection'>{{ intrusion.destination_port }}</span></td>
                         </tr>
                         {% for column in columns_quant %}
                             <tr>
@@ -41,7 +41,7 @@
                            <td>
                                <form method='post'>
                                    <input name='itr_pk' type='hidden' value='{{ intrusion.id }}'>
-                                   <input class='choose' type='submit' value='{{ intrusion.rule }}'>
+                                   <input class='selection' type='submit' value='{{ intrusion.rule }}'>
                                </form>
                            </td>
                         </tr>
@@ -50,7 +50,7 @@
             {% endfor %}
         </div>
     {% else %}
-        <p>No blacklist available</p>
+        <p>No intrusions available</p>
     {% endif %}
     <br>
     <a href='{{ url_for("detection.realtime") }}'>Return</a>

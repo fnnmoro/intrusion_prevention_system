@@ -19,7 +19,7 @@
                            <td>
                                 <form method='post' onsubmit='hiddenForm("Retraining...")' action='{{ url_for("setting.model") }}'>
                                     <input name='model_pk' type='hidden' value='{{ model.id }}'>
-                                    <input class='choose' type='submit' value='{{ model.classifier.name }}'>
+                                    <input class='selection' type='submit' value='{{ model.classifier.name }}'>
                                 </form>
                             </td>
                         </tr>

@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-    <p>Number of intrusions detected: <a id='intrusions' class='choose' href='{{ url_for("mitigation.intrusions") }}'>{{ num_intrusions }}</a></p>
+    <p>Number of intrusions detected: <a id='intrusions' class='selection' href='{{ url_for("mitigation.intrusion") }}'>{{ num_intrusions }}</a></p>
     <br>
     <a href='{{ url_for("detection.stop") }}'>Stop detection</a>
 {% endblock %}
