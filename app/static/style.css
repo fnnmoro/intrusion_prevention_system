@@ -1,18 +1,18 @@
 @charset "utf-8";
 *{margin: 0}
 
-/*body*/
-
 html {
     height: 100%;
 }
 
+/*body*/
+
 body {
-    height: 100%;
     display: flex;
+    flex-direction: column;
+    height: 100%;
     color: dimgray;
     font-size: 20px;
-    flex-direction: column;
     font-family: "Economica";
 }
 
@@ -27,24 +27,20 @@ p {
 
 /*header*/
 
-header {
-    width: 100%;
-}
-
 nav {
-    text-align: center;
     background-color: gainsboro;
     border-bottom: thin solid dimgray;
 }
 
 nav ul {
+    display: flex;
+    justify-content: center;
     padding: 0;
 }
 
 nav ul li {
     padding: 10px;
     list-style: none;
-    display: inline-block;
 }
 
 nav ul li a:hover {
@@ -55,13 +51,14 @@ nav ul li a:hover {
 /*main*/
 
 main {
-    flex-grow: 1;
     display: flex;
-    overflow: auto;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     flex-direction: column;
+    flex-grow: 1;
+    flex-shrink: 0;
+    padding: 10px;
+    text-align: center;
 }
 
 main a:hover {
@@ -71,18 +68,14 @@ main a:hover {
 form {
     display: flex;
     flex-direction: column;
-    align-items: center;
-}
-
-form p {
-    margin: 15px 0px 2px 0px;
+    text-align: center;
 }
 
 form select, form input {
-    color: dimgray;
-    font-size: 20px;
     flex-shrink: 0;
+    color: dimgray;
     text-align: center;
+    font-size: 20px;
     font-family: "Economica";
     border: thin solid dimgray;
     background-color: gainsboro;
@@ -115,35 +108,39 @@ form input[type="checkbox"]:checked+label {
 }
 
 table {
-    width: 400px;
-    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 500px;
+
     padding-bottom: 30px;
 }
 
-th {
-   width: 100px;
-   font-weight: normal;
-}
-
 td {
-   align: center;
    border-bottom: thin solid dimgray;
 }
 
+.choice {
+    margin: 30px;
+    padding: 0px 30px 0px 30px;
+    border-left: thin solid dimgray;
+    border-right: thin solid dimgray;
+}
+
+.choice:hover {
+    border-color: red;
+}
+
 .checkbox {
-    max-width: 500px;
     display: flex;
-    flex-wrap: wrap;
-    text-align: center;
-    flex-shrink: 0;
     flex-direction: column;
-    justify-content: space-around;
+    flex-shrink: 0;
+    text-align: center;
     border: thin solid dimgray;
     background-color: gainsboro;
 }
 
 .box {
-    padding: 20px;
+    padding: 10px;
     list-style-type: none;
 }
 
@@ -153,46 +150,29 @@ td {
     text-align: center;
 }
 
-.choose {
+.selection {
     border: none;
     color: dimgray;
-    font-size: 20px;
     background: none;
+    font-size: 20px;
     font-family: "Economica";
 }
 
-.choose:hover {
+.selection:hover {
     border: none;
     color: red;
     cursor: pointer;
-    flex-shrink: 0;
-}
-
-.main-choose {
-    margin: 30px;
-    padding: 0px 30px 0px 30px;
-    border-left: thin solid dimgray;
-    border-right: thin solid dimgray;
-}
-
-.main-choose:hover {
-    border-color: red;
 }
 
 .option {
     display: flex;
     flex-direction: row;
-    text-align: center;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .warning {
     color: red;
-}
-
-.wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
 .hidden {
