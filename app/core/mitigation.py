@@ -5,7 +5,7 @@ from app import db
 from app.core import util
 
 
-class StaticFlowPusher:
+class StaticEntryFlowPusher:
     """REST client to use the Static Entry Pusher API of the Floodlight
     controller.
 
@@ -97,7 +97,7 @@ class StaticFlowPusher:
         return ret[0] == 200
 
 
-class Mitigator(StaticFlowPusher):
+class Mitigator(StaticEntryFlowPusher):
     """Mitigates anomalous flows by inserting flow table entries in the
     OpenFlow devices through the Floodlight controller.
 
