@@ -63,7 +63,7 @@ def classifier():
 
     if request.method == 'POST' and form.validate_on_submit():
         logger.info(f'preprocessing: {form.preprocessing.data}, '
-                    f'classifiers: {form.classifiers.data}'
+                    f'classifiers: {form.classifiers.data[0]} '
                     f'features: {form.features.data}')
         session['last_models'] = list()
 
@@ -122,8 +122,12 @@ def result():
 
     x_train, x_test, y_train, y_test = train_test_split(
         features, labels,
-        test_size=dataset.split,
+        test_size=dataset.split/100,
         stratify=labels)
+    logger.info(f'x_train: {len(x_train)}')
+    logger.info(f'x_test: {len(x_test)}')
+    logger.info(f'y_train: {len(y_train)}')
+    logger.info(f'y_test: {len(y_test)}')
 
     for model in models:
         preprocessing = Preprocessing.query.get(model.preprocessing_id)
@@ -213,4 +217,4 @@ def model():
         # removing the temporary directory used by the Pipeline object.
         rmtree(tmp_directory)
 
-    return redirect(url_for('detection.realtime', model_pk=model.id))
+    return redirect(url_for('setting.load'))

@@ -16,7 +16,8 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 socketio = SocketIO(app)
 
-logging.basicConfig(format=('[%(asctime)s] %(levelname)s %(name)s - '
+logging.basicConfig(filename='data/log/app.log', filemode='a',
+                    format=('[%(asctime)s] %(levelname)s %(name)s - '
                             '%(message)s'),
                     datefmt='%y-%m-%d %H:%M:%S',
                     level=logging.INFO)

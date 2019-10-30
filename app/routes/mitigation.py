@@ -13,7 +13,7 @@ logger = logging.getLogger('mitigation')
 
 
 @bp.route('/', methods=['GET', 'POST'])
-def intrusions():
+def intrusion():
     if request.method == 'POST':
         intrusion = Intrusion.query.get(request.form['itr_pk'])
         mitigator = Mitigator()
@@ -23,13 +23,13 @@ def intrusions():
         db.session.delete(intrusion)
         db.session.commit()
 
-        return redirect(url_for('mitigation.intrusions'))
+        return redirect(url_for('mitigation.intrusion'))
     intrusions = Intrusion.query.all()
     columns = [column.key for column in Intrusion.__table__.columns]
     columns_info = columns[:7]
     columns_quant = columns[9:18]
 
-    return render_template('mitigation/intrusions.html',
+    return render_template('mitigation/intrusion.html',
                            columns_info=columns_info,
                            columns_quant=columns_quant,
                            intrusions=intrusions)

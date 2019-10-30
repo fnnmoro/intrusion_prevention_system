@@ -26,7 +26,7 @@ class RealtimeThread(threading.Thread):
         self.mitigator = Mitigator()
 
     def execution(self):
-        process = gatherer.capture_nfcapd(util.paths['nfcapd'], 30)
+        process = gatherer.capture_nfcapd(util.paths['nfcapd'], 60)
         dataset = Dataset.query.get(self.model.dataset_id)
         logger.info(f'process pid: {process.pid}')
         logger.info(f'dataset file: {dataset.file}')
@@ -126,10 +126,10 @@ class RealtimeThread(threading.Thread):
             intrusion.end_time = flow[1]
             flags = ast.literal_eval(intrusion.flags)
             intrusion.flags = str([x+y for x, y in zip(flags, flow[5])])
-            sp = ast.literal_eval(intrusion.source_port)
-            dp = ast.literal_eval(intrusion.destination_port)
-            intrusion.source_port = str(sp | flow[6])
-            intrusion.destination_port = str(dp | flow[7])
+            sp = ast.literal_eval(intrusion.source_port) | flow[6]
+            dp = ast.literal_eval(intrusion.destination_port) | flow[7]
+            intrusion.source_port = str(sp)
+            intrusion.destination_port = str(dp)
             intrusion.duration = (flow[1] - intrusion.start_time).seconds
             intrusion.packets += flow[9]
             intrusion.bytes += flow[10]
@@ -142,8 +142,8 @@ class RealtimeThread(threading.Thread):
             intrusion.bytes_per_second = int(round(bps))
             intrusion.bytes_per_packets = int(round(bpp))
             intrusion.packtes_per_second = int(round(pps))
-            intrusion.number_source_port += flow[14]
-            intrusion.number_destination_port += flow[15]
+            intrusion.number_source_port = len(sp)
+            intrusion.number_destination_port = len(dp)
             intrusion.flows += flow[16]
         db.session.add(intrusion)
         db.session.commit()

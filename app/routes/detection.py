@@ -15,15 +15,13 @@ logger = logging.getLogger('detection')
 thread = None
 
 
-@bp.route('/', methods=['GET', 'POST'])
+@bp.route('/realtime', methods=['GET', 'POST'])
 def realtime():
     global thread
 
     if request.method == 'POST' and re.search('load', request.referrer):
         model = Model.query.get(request.form['model_pk'])
-    else:
-        model = Model.query.all()[-1]
-    logger.info(f'model file: {model.file}')
+        logger.info(f'model file: {model.file}')
 
     if not re.search('mitigation', request.referrer):
         thread = RealtimeThread(threading.Event(), model)
