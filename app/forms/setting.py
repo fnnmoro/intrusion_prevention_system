@@ -11,7 +11,7 @@ from app.models import Classifier, Preprocessing, Feature
 
 
 class DatasetForm(FlaskForm):
-    dataset = SelectField('Datasets', choices=[])
+    dataset = SelectField('IP flows datasets', choices=[])
     split = IntegerField('Split size',
                          widget=NumberInput(min=5, max=95),
                          validators=[DataRequired(), NumberRange(5, 95)])
