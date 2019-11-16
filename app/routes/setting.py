@@ -99,8 +99,6 @@ def classifier():
 
 @bp.route('/result', methods=['GET', 'POST'])
 def result():
-    # creating an absolute path of a temporary directory.
-    tmp_directory = mkdtemp()
     models = [Model.query.get(model_pk) for model_pk in session['last_models']]
     dataset = Dataset.query.get(models[-1].dataset_id)
 
@@ -130,6 +128,8 @@ def result():
     logger.info(f'y_test: {len(y_test)}')
 
     for model in models:
+        # creating an absolute path of a temporary directory.
+        cachedir = mkdtemp()
         preprocessing = Preprocessing.query.get(model.preprocessing_id)
         classifier = Classifier.query.get(model.classifier_id)
         prep_key = '_'.join(preprocessing.name.lower().split(' '))
@@ -141,7 +141,7 @@ def result():
         detector = Detector(copy.deepcopy(classifiers_obj[clf_key]))
         detector.define_tuning(copy.deepcopy(preprocessing_obj[prep_key]),
                                dataset.kfolds,
-                               tmp_directory)
+                               cachedir)
 
         hparam, train_date, train_dur = detector.train(x_train, y_train)
         pred, test_date, test_dur = detector.test(x_test)
@@ -158,8 +158,8 @@ def result():
             hyperparameters=str(hparam), model_id=model.id)
         db.session.add(result)
         db.session.commit()
-    # removing the temporary directory used by the Pipeline object.
-    rmtree(tmp_directory)
+        # removing the temporary directory used by the Pipeline object.
+        rmtree(cachedir)
     columns = Model.__table__.columns
 
     return render_template('setting/result.html',
