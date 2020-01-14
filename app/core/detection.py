@@ -11,26 +11,25 @@ from app.core.util import timing
 
 
 class Detector:
-    """Detects anomalous flows using supervised machine learning models.
+    """Detects intrusions using supervised machine learning model.
 
     Attributes
     ----------
     self.classifier: dict
-        Supervised machine learning object."""
+        Supervised machine learning object and parameters."""
 
     def __init__(self, classifier):
         self.classifier = classifier
 
     def define_tuning(self, preprocessing, kfolds, tmp_directory):
-        """Exhaustive search over specified parameters values for an machine
-        learning algorithm.
+        """Exhaustive search over a set of hyperparameters.
 
         Parameters
         ----------
         preprocessing: obj
             Preprocessing object.
         kfolds: int
-            Number of k folds.
+            Number of k-folds .
         tmp_directory: str
             Absoulute path of a temporary directory to cache each transformer
             after calling fit. It avoids computing the fit transformers many
@@ -53,19 +52,19 @@ class Detector:
 
     @timing
     def train(self, training_features, training_labels):
-        """Trains the machine learning algorithm.
+        """Training the machine learning algorithm.
 
         Parameters
         ----------
         training_features: list
-            Features to training the algorithm.
+            Features for training the algorithm.
         training_labels: list
-            Correct features labels to training the algorithm.
+            Features labels for training the algorithm.
 
         Returns
         -------
         param
-            Best parameters found by grid search."""
+            Best hyperparameters found by grid search."""
 
         self.classifier['obj'].fit(training_features, training_labels)
 
@@ -73,7 +72,7 @@ class Detector:
 
     @timing
     def test(self, test_features):
-        """Executes the machine learning algorithm.
+        """Makes predictions with the machine learning model.
 
         Parameters
         ----------
@@ -83,11 +82,12 @@ class Detector:
         Returns
         -------
         pred
-            Prediction for each test entry."""
+            Prediction for each test sample."""
 
         return self.classifier['obj'].predict(test_features)
 
 
+# classifiers methods to be used by detector instance.
 classifiers_obj = {
     'decision_tree': {
         'obj': DecisionTreeClassifier(),

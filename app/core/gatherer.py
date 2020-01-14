@@ -154,7 +154,7 @@ def capture_nfcapd(nfcapd_path, win_time):
     ----------
     nfcapd_path: list
         Absolute nfcapd path.
-    time_interval: list
+    win_time: list
         Duration of the time interval in seconds to rotate files.
 
     Returns

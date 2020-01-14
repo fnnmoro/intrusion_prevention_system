@@ -98,18 +98,18 @@ class StaticEntryFlowPusher:
 
 
 class Mitigator(StaticEntryFlowPusher):
-    """Mitigates anomalous flows by inserting flow table entries in the
+    """Mitigates intrusions by inserting flow table entries in the
     OpenFlow devices through the Floodlight controller.
 
-    The flow table entries are intended to drop the anomalous packets of an
+    The flow table entries are intended to drop the intrusions packets of an
     attacker device.
 
     Attributes
     ----------
     self.count: int
         Counter of the flow rules.
-    self.blacklist: list
-        Anomalous flows to be blocked."""
+    self.rule: dict
+        Rule pattern to be used to block an intrusion."""
 
     def __init__(self):
         super().__init__()
@@ -121,12 +121,12 @@ class Mitigator(StaticEntryFlowPusher):
 
     @util.timing
     def get_switch(self, source_address):
-        """Gets the switch where the anomalous device are attached.
+        """Gets the switch where the intrusion device are attached.
 
         Parameters
         ----------
-        entry: str
-            Anomalous IP address source.
+        source_address: str
+            Intrusion IP address source.
 
         Returns
         -------
@@ -142,10 +142,15 @@ class Mitigator(StaticEntryFlowPusher):
 
     @util.timing
     def block_attack(self, intrusion):
-        """Inserts flow rules to blocked the anomalous devices.
+        """Inserts flow rules to blocked the intrusion devices.
 
         Flow rules are saved in a database to allow deletion if the blocked
-        device is a false positive."""
+        device is a false positive.
+
+        Parameters
+        ----------
+        intrusion: obj
+            Intrusion object."""
 
         # defining rule.
         self.rule['switch'] = self.get_switch(intrusion.source_address)
@@ -166,7 +171,7 @@ class Mitigator(StaticEntryFlowPusher):
 
         Parameters
         ----------
-        rule_name: str
+        rule: str
             Rule name to be deleted."""
 
         self.delete({'name': rule})

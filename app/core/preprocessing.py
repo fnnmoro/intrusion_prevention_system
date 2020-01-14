@@ -15,10 +15,6 @@ class Formatter:
 
     Attributes
     ----------
-    self.header: list of list
-        Features description.
-    self.flows: list of list
-        IP flows.
     self.gather: bool
         Signals the gathering process.
     self.train: bool
@@ -31,6 +27,11 @@ class Formatter:
     @util.timing
     def format_header(self, header):
         """Format the header.
+
+        Parameters
+        ----------
+        header: list of list
+            Features description.
 
         Returns
         -------
@@ -45,6 +46,11 @@ class Formatter:
     @util.timing
     def format_flows(self, flows):
         """Formats the flows to be used by the machine learning algorithms.
+
+        Parameters
+        ----------
+        flows: list of list
+            IP flows.
 
         Returns
         -------
@@ -146,11 +152,7 @@ class Modifier:
 
     Attributes
     ----------
-    self.header: list of list
-        Formatted features description.
-    self.flows: list of list
-        Formatted IP flows.
-    label: int
+    self.label: int
         Flow class.
     self.threshold: int
         Aggregation threshold to prevent that mulitple flows become just
@@ -164,9 +166,14 @@ class Modifier:
     def extend_header(self, header):
         """Extendes header according to new aggregations features.
 
+        Parameters
+        ----------
+        header: list of list
+            Formatted features description.
+
         Returns
         -------
-        self.header: list of list
+        list of list
             Extended features description."""
 
         header.extend(['bps', 'bpp', 'pps', 'nsp', 'ndp', 'flw', 'lbl'])
@@ -175,7 +182,18 @@ class Modifier:
 
     @util.timing
     def aggregate_flows(self, flows):
-        #self.flows = flows
+        """Aggregates the flows to be used by the machine learning algorithms.
+
+        Parameters
+        ----------
+        flows: list of list
+            Formatted IP flows.
+
+        Returns
+        -------
+        list of list
+            Modified IP flows."""
+
         agg_flows = list()
 
         while flows:
@@ -190,12 +208,17 @@ class Modifier:
         The flow are aggregated considering the same start hour and minute,
         source address, destination address and protocol.
 
-        The threshold is useful when the flow to be aggregate are anomalous,
-        like a DoS attack.
+        The threshold is useful when the flow to be aggregate from an
+        intrusion, like a DoS attack.
+
+        Parameters
+        ----------
+        flows: list of list
+            Formatted IP flows.
 
         Returns
         -------
-        self.flow: list
+        list
             Modified IP flow."""
 
         # separating the flow that will be matched against the others.
@@ -328,7 +351,7 @@ class Extractor:
         return features, label
 
 
-# preprocessing methods to be used by detection instance.
+# preprocessing methods to be used by detector instance.
 preprocessing_obj = {
     'none': None,
     'max_absolute_scaler': MaxAbsScaler(),

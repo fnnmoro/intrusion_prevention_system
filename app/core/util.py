@@ -22,7 +22,9 @@ def make_directory(path, directory):
     Parameters
     ----------
     path: str
-        Absolute path."""
+        Absolute path.
+    directory: str
+        Directory."""
 
     count = 0
     while True:
