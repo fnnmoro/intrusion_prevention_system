@@ -1,6 +1,6 @@
-# Intrusion Prevention System
+# Intrusion prevention system
 
-This project was developed in 2019 to obtain a bachelor's degree in Information System.
+This project was developed in 2019 to obtain a bachelor's degree in Information Systems.
 
 To know how the program works, see [here](doc/final_paper.pdf).
 
