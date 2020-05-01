@@ -71,6 +71,21 @@ class Detector:
         return self.classifier['obj'].best_params_
 
     @timing
+    def retrain(self, features, labels):
+        """Retrains the machine learning algorithm with the best estimator that
+        was chosen by the search.
+
+        Parameters
+        ----------
+        features: list
+            All features.
+        labels: list
+            All labels."""
+
+        self.classifier['obj'] = self.classifier['obj'].best_estimator_
+        self.classifier['obj'].fit(features, labels)
+
+    @timing
     def test(self, test_features):
         """Makes predictions with the machine learning model.
 
