@@ -208,7 +208,7 @@ def model():
         detector.define_tuning(copy.deepcopy(preprocessing_obj[prep_key]),
                                dataset.kfolds,
                                tmp_directory)
-        detector.train(features, labels)
+        detector.retrain(features, labels)
 
         # model persistence.
         pickle.dump(detector,
