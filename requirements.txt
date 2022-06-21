@@ -16,7 +16,7 @@ Jinja2==2.10.1
 joblib==0.13.2
 Mako==1.1.0
 MarkupSafe==1.1.1
-numpy==1.16.4
+numpy==1.22.0
 parso==0.5.1
 pexpect==4.7.0
 pickleshare==0.7.5
